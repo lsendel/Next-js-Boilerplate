@@ -225,7 +225,7 @@ export class CognitoAdapter implements IAuthAdapter {
 
       if (!payload) {
         // JWT verification failed - redirect to sign-in
-        console.warn('Cognito JWT verification failed');
+        authLogger.warn('Cognito JWT verification failed');
         const cognitoConfig = getCognitoConfig();
         if (cognitoConfig.oauth) {
           const { getHostedUIUrl } = await import('./cognito/amplify-config');
