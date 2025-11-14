@@ -220,7 +220,7 @@ export function validateJWTClaims(
   // Check not before
   if (payload.nbf !== undefined) {
     if (payload.nbf - clockTolerance > now) {
-      console.warn('JWT not yet valid');
+      securityLogger.warn('JWT not yet valid', { nbf: payload.nbf, now });
       return false;
     }
   }
@@ -242,14 +242,14 @@ export function validateJWTClaims(
     );
 
     if (!hasValidAudience) {
-      console.warn('JWT audience mismatch');
+      securityLogger.warn('JWT audience mismatch', { expected: expectedAudiences, actual: tokenAudiences });
       return false;
     }
   }
 
   // Check issuer
   if (options.issuer && payload.iss !== options.issuer) {
-    console.warn('JWT issuer mismatch');
+    securityLogger.warn('JWT issuer mismatch', { expected: options.issuer, actual: payload.iss });
     return false;
   }
 
@@ -272,7 +272,7 @@ export async function verifyJWT(
     // Step 1: Decode the JWT
     const decoded = decodeJWT(token);
     if (!decoded) {
-      console.error('Failed to decode JWT');
+      securityLogger.error('Failed to decode JWT');
       return null;
     }
 
