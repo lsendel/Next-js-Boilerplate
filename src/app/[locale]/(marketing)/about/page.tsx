@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import Image from 'next/image';
+import { buildLocalizedMetadata } from '@/shared/utils/metadata';
 
 type IAboutProps = {
   params: Promise<{ locale: string }>;
@@ -13,10 +14,13 @@ export async function generateMetadata(props: IAboutProps): Promise<Metadata> {
     namespace: 'About',
   });
 
-  return {
+  return await buildLocalizedMetadata({
+    locale,
+    path: '/about',
     title: t('meta_title'),
     description: t('meta_description'),
-  };
+    keywords: ['About Next.js Boilerplate', 'Next.js starter mission'],
+  });
 }
 
 export default async function About(props: IAboutProps) {

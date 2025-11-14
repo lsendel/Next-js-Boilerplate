@@ -1,0 +1,109 @@
+# CI/CD Pipeline Configuration
+# This file contains configurable settings for the CI/CD pipeline
+# Modify these values to customize pipeline behavior
+
+# Security Scanning Configuration
+security:
+  codeql:
+    enabled: true
+    languages: [javascript, typescript]
+    queries: security-and-quality
+
+  dependency_scan:
+    enabled: true
+    severity_threshold: high
+    fail_on_issues: false
+
+  secret_scan:
+    enabled: true
+    verified_only: true
+
+  container_scan:
+    enabled: true
+    severity_levels: [CRITICAL, HIGH, MEDIUM]
+
+# Testing Configuration
+testing:
+  unit:
+    enabled: true
+    coverage_threshold: 80
+    upload_coverage: true
+
+  integration:
+    enabled: true
+    database: postgresql
+    redis: true
+
+  e2e:
+    enabled: true
+    browsers: [chromium, firefox, webkit]
+    visual_regression: true
+
+  performance:
+    enabled: true
+    lighthouse_thresholds:
+      performance: 90
+      accessibility: 95
+      best-practices: 90
+      seo: 95
+
+# Build Configuration
+build:
+  node_versions: [22.x, 24.x]
+  cache_enabled: true
+  parallel_builds: true
+  timeout_minutes: 10
+
+# Deployment Configuration
+deployment:
+  staging:
+    auto_deploy: true
+    require_approval: false
+    run_migrations: true
+    create_backup: true
+
+  production:
+    auto_deploy: false
+    require_approval: true
+    run_migrations: true
+    create_backup: true
+    smoke_tests: true
+
+# Notifications
+notifications:
+  slack:
+    enabled: false
+    webhook_url: ''
+
+  email:
+    enabled: false
+    recipients: []
+
+  pr_comments:
+    enabled: true
+    include_summary: true
+
+# Performance Budgets
+budgets:
+  bundle_size:
+    max_initial_js: 200kb
+    max_initial_css: 50kb
+    max_total_js: 500kb
+
+  lighthouse:
+    performance: 90
+    accessibility: 95
+    best_practices: 90
+    seo: 95
+    pwa: 80
+
+# Retention Policies
+retention:
+  artifacts:
+    test_results: 7 # days
+    build_cache: 7 # days
+    docker_images: 30 # days
+
+  logs:
+    ci_logs: 90 # days
+    deployment_logs: 365 # days

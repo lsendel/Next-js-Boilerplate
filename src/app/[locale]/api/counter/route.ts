@@ -4,8 +4,8 @@ import { NextResponse } from 'next/server';
 import * as z from 'zod';
 import { db } from '@/libs/DB';
 import { logger } from '@/libs/Logger';
-import { counterSchema } from '@/models/Schema';
-import { CounterValidation } from '@/validations/CounterValidation';
+import { counter } from '@/server/db/models/Schema';
+import { CounterValidation } from '@/shared/validators/counter.validator';
 
 export const PUT = async (request: Request) => {
   const json = await request.json();
@@ -20,11 +20,11 @@ export const PUT = async (request: Request) => {
   const id = Number((await headers()).get('x-e2e-random-id')) || 0;
 
   const count = await db
-    .insert(counterSchema)
+    .insert(counter)
     .values({ id, count: parse.data.increment })
     .onConflictDoUpdate({
-      target: counterSchema.id,
-      set: { count: sql`${counterSchema.count} + ${parse.data.increment}` },
+      target: counter.id,
+      set: { count: sql`${counter.count} + ${parse.data.increment}` },
     })
     .returning();
 

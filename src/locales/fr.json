@@ -5,7 +5,10 @@
     "counter_link": "Compteur",
     "portfolio_link": "Portfolio",
     "sign_in_link": "Se connecter",
-    "sign_up_link": "S'inscrire"
+    "sign_up_link": "S'inscrire",
+    "features_link": "Fonctionnalités",
+    "pricing_link": "Tarifs",
+    "contact_link": "Contact"
   },
   "BaseTemplate": {
     "description": "Code de démarrage pour Next.js avec Tailwind CSS",
@@ -71,5 +74,124 @@
     "dashboard_link": "Tableau de bord",
     "user_profile_link": "Gérer votre compte",
     "sign_out": "Se déconnecter"
+  },
+  "Pricing": {
+    "meta_title": "Tarifs de Next.js Boilerplate",
+    "meta_description": "Découvrez les formules proposées pour le starter kit Next.js Boilerplate.",
+    "hero_eyebrow": "Tarifs",
+    "hero_title": "Des tarifs qui suivent votre feuille de route",
+    "hero_subtitle": "Commencez gratuitement et passez à la formule supérieure lorsque vous avez besoin de support dédié ou d'intégrations sur mesure.",
+    "tiers": {
+      "hobby": {
+        "name": "Découverte",
+        "description": "Idéal pour évaluer le template et lancer des prototypes.",
+        "cta": "Télécharger sur GitHub",
+        "features": [
+          "Projet Next.js 16 + React 19 prêt à l'emploi",
+          "Pages marketing et espaces authentifiés",
+          "API et couche base de données typées",
+          "Environnements locaux illimités"
+        ]
+      },
+      "startup": {
+        "name": "Startup",
+        "description": "Lancez un SaaS en production avec monitoring, sécurité et accompagnement.",
+        "cta": "Demander une licence",
+        "features": [
+          "Authentification multi-fournisseur",
+          "Protection Arcjet et rate limiting",
+          "Stack de monitoring prête pour la prod",
+          "Support e-mail et session d'onboarding"
+        ]
+      },
+      "enterprise": {
+        "name": "Entreprise",
+        "description": "Pour les équipes qui ont besoin d'accords de support, de canaux privés et de développements sur mesure.",
+        "cta": "Discutons-en",
+        "features": [
+          "Assistance d'intégration personnalisée",
+          "Revue sécurité et conformité",
+          "Développements fonctionnels dédiés",
+          "Canal Slack privé"
+        ]
+      }
+    },
+    "cta_title": "Besoin d'une offre sur mesure ?",
+    "cta_description": "Nous accompagnons agences et startups pour adapter le boilerplate à la multi-location, aux tableaux de bord clients ou à des workflows spécifiques.",
+    "cta_primary": "Parler à l'équipe",
+    "cta_secondary": "Explorer le code"
+  },
+  "Features": {
+    "meta_title": "Fonctionnalités de Next.js Boilerplate",
+    "meta_description": "Explorez les intégrations et l'expérience développeur incluses dans le boilerplate.",
+    "hero_eyebrow": "Fonctionnalités",
+    "hero_title": "Tout ce dont vous avez besoin pour lancer sereinement",
+    "hero_subtitle": "Pensé pour l'itération rapide et durci pour la production.",
+    "grid_title": "Capacités principales",
+    "grid_description": "La boîte à outils est conçue pour la productivité des développeurs et la maintenabilité à long terme.",
+    "grid_cards": {
+      "auth": {
+        "title": "Adaptateurs d'authentification",
+        "description": "Passez de Clerk à Cloudflare Access ou AWS Cognito en changeant une variable d'environnement."
+      },
+      "database": {
+        "title": "Couches base de données fiables",
+        "description": "Drizzle ORM avec PostgreSQL, migrations, services et exemples de requêtes prêts à l'emploi."
+      },
+      "security": {
+        "title": "Sécurité intégrée",
+        "description": "Mitigation Arcjet, tokens CSRF, rate limiting, journal d'audit et helpers middleware."
+      },
+      "seo": {
+        "title": "SEO & i18n",
+        "description": "Utilitaires de données structurées, générateur de métadonnées localisées, sitemap et hreflang."
+      },
+      "monitoring": {
+        "title": "Monitoring & logs",
+        "description": "Sentry, Better Stack, PostHog et Checkly configurés avec des valeurs par défaut pertinentes."
+      },
+      "tooling": {
+        "title": "Outils développeurs",
+        "description": "ESLint, Prettier, Vitest, Playwright, Storybook et Tailwind CSS v4 dès l'installation."
+      }
+    },
+    "deep_dives_title": "Zooms techniques",
+    "deep_dives_description": "Les éléments qui différencient le boilerplate.",
+    "middleware_title": "Middleware prêt pour la production",
+    "middleware_description": "Composez protection Arcjet, garde d'authentification, routage et en-têtes en une seule fonction.",
+    "middleware_benefits": [
+      "Rate limiting token bucket sur les mutations API",
+      "Détection des bots configurable avec Arcjet",
+      "Routage localisé avec gestion automatique des 404",
+      "Headers de sécurité et helpers CORS"
+    ],
+    "marketing_title": "Système marketing composable",
+    "marketing_description": "Sections héro, tableaux de tarifs, témoignages et CTA prêts à réutiliser.",
+    "marketing_benefits": [
+      "Documentation Storybook sur chaque composant",
+      "Tokens Tailwind prêts pour votre charte graphique",
+      "Sémantique accessible et données structurées",
+      "Métadonnées SEO adaptées à chaque section"
+    ]
+  },
+  "Contact": {
+    "meta_title": "Contactez Next.js Boilerplate",
+    "meta_description": "Contactez-nous pour le support, les licences ou des développements personnalisés.",
+    "hero_eyebrow": "Contact",
+    "hero_title": "Nous serions ravis d'échanger",
+    "hero_subtitle": "Contactez-nous pour le support, les licences ou des développements personnalisés.",
+    "support_title": "Support & ventes",
+    "support_description": "Écrivez-nous pour les questions de licence, le support entreprise ou l'onboarding.",
+    "email_label": "Email",
+    "phone_label": "Téléphone",
+    "response_time_label": "Délai de réponse",
+    "response_time_value": "Sous un jour ouvré",
+    "community_title": "Communauté",
+    "community_description": "Rejoignez la discussion et suivez les nouveautés.",
+    "community_links": {
+      "github": "Discussions GitHub",
+      "twitter": "Actualités Twitter",
+      "blog": "Blog & changelog"
+    }
   }
 }

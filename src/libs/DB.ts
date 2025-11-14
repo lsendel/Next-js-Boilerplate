@@ -2,6 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type * as schema from '@/server/db/models/Schema';
 import { createDbConnection } from '@/server/lib/db-connection';
 import { Env } from './Env';
+import { dbLogger } from './Logger';
 
 // Stores the db connection in the global scope to prevent multiple instances due to hot reloading with Next.js
 const globalForDb = globalThis as unknown as {
@@ -19,7 +20,7 @@ function initializeDb(): NodePgDatabase<typeof schema> {
 
     return connection;
   } catch (error) {
-    console.error('Failed to initialize database connection:', error);
+    dbLogger.error('Failed to initialize database connection', { error });
     throw new Error('Database connection failed. Please check your DATABASE_URL configuration.');
   }
 }

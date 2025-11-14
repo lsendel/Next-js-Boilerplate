@@ -27,7 +27,39 @@ await configure({
         : ['console'],
       lowestLevel: 'debug',
     },
+    {
+      category: ['app', 'db'],
+      sinks: Env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN && Env.NEXT_PUBLIC_BETTER_STACK_INGESTING_HOST
+        ? ['console', 'betterStack']
+        : ['console'],
+      lowestLevel: 'debug',
+    },
+    {
+      category: ['app', 'auth'],
+      sinks: Env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN && Env.NEXT_PUBLIC_BETTER_STACK_INGESTING_HOST
+        ? ['console', 'betterStack']
+        : ['console'],
+      lowestLevel: 'debug',
+    },
+    {
+      category: ['app', 'security'],
+      sinks: Env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN && Env.NEXT_PUBLIC_BETTER_STACK_INGESTING_HOST
+        ? ['console', 'betterStack']
+        : ['console'],
+      lowestLevel: 'debug',
+    },
+    {
+      category: ['app', 'api'],
+      sinks: Env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN && Env.NEXT_PUBLIC_BETTER_STACK_INGESTING_HOST
+        ? ['console', 'betterStack']
+        : ['console'],
+      lowestLevel: 'debug',
+    },
   ],
 });
 
 export const logger = getLogger(['app']);
+export const dbLogger = getLogger(['app', 'db']);
+export const authLogger = getLogger(['app', 'auth']);
+export const securityLogger = getLogger(['app', 'security']);
+export const apiLogger = getLogger(['app', 'api']);

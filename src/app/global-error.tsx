@@ -1,15 +1,17 @@
 'use client';
 
-import * as Sentry from '@sentry/nextjs';
 import NextError from 'next/error';
 import { useEffect } from 'react';
+import { captureException } from '@/libs/LazyMonitoring';
 import { routing } from '@/libs/I18nRouting';
 
 export default function GlobalError(props: {
   error: Error & { digest?: string };
 }) {
   useEffect(() => {
-    Sentry.captureException(props.error);
+    // Eagerly load Sentry and capture the error
+    // This ensures critical errors are reported even if page didn't fully load
+    captureException(props.error);
   }, [props.error]);
 
   return (

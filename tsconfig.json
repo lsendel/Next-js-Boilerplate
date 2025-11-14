@@ -5,7 +5,7 @@
     // Language & Environment
     // Defines JavaScript version and runtime environment
     // ======================================================================
-    "target": "ES2017",
+    "target": "ES2022",
     "module": "esnext",
     "lib": [
       "dom",
@@ -57,8 +57,24 @@
     // ======================================================================
     "baseUrl": ".",
     "paths": {
+      // Clean path aliases (no fallbacks)
       "@/*": [
         "./src/*"
+      ],
+      "@/client/*": [
+        "./src/client/*"
+      ],
+      "@/server/*": [
+        "./src/server/*"
+      ],
+      "@/shared/*": [
+        "./src/shared/*"
+      ],
+      "@/middleware/*": [
+        "./src/middleware/*"
+      ],
+      "@/libs/*": [
+        "./src/libs/*"
       ],
       "@/public/*": [
         "./public/*"

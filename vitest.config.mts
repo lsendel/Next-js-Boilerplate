@@ -7,6 +7,8 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
   test: {
+    testTimeout: 30000, // 30 seconds for database tests
+    hookTimeout: 30000, // 30 seconds for setup/teardown hooks
     coverage: {
       include: ['src/**/*'],
       exclude: ['src/**/*.stories.{js,jsx,ts,tsx}'],
@@ -18,6 +20,14 @@ export default defineConfig({
           name: 'unit',
           include: ['src/**/*.test.{js,ts}'],
           exclude: ['src/hooks/**/*.test.ts'],
+          environment: 'node',
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'integration',
+          include: ['tests/integration/**/*.test.{js,ts}'],
           environment: 'node',
         },
       },

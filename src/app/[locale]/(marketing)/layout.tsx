@@ -1,8 +1,9 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import Link from 'next/link';
-import { DemoBanner } from '@/components/DemoBanner';
-import { LocaleSwitcher } from '@/components/LocaleSwitcher';
+import { DemoBanner } from '@/client/components/ui/DemoBanner';
+import { LocaleSwitcher } from '@/client/components/ui/LocaleSwitcher';
 import { BaseTemplate } from '@/templates/BaseTemplate';
+import { getI18nPath } from '@/shared/utils/helpers';
 
 export default async function Layout(props: {
   children: React.ReactNode;
@@ -15,6 +16,8 @@ export default async function Layout(props: {
     namespace: 'RootLayout',
   });
 
+  const buildHref = (path: string) => getI18nPath(path, locale);
+
   return (
     <>
       <DemoBanner />
@@ -23,7 +26,7 @@ export default async function Layout(props: {
           <>
             <li>
               <Link
-                href="/"
+                href={buildHref('/')}
                 className="border-none text-gray-700 hover:text-gray-900"
               >
                 {t('home_link')}
@@ -31,7 +34,7 @@ export default async function Layout(props: {
             </li>
             <li>
               <Link
-                href="/about/"
+                href={buildHref('/about/')}
                 className="border-none text-gray-700 hover:text-gray-900"
               >
                 {t('about_link')}
@@ -39,7 +42,7 @@ export default async function Layout(props: {
             </li>
             <li>
               <Link
-                href="/counter/"
+                href={buildHref('/counter/')}
                 className="border-none text-gray-700 hover:text-gray-900"
               >
                 {t('counter_link')}
@@ -47,10 +50,26 @@ export default async function Layout(props: {
             </li>
             <li>
               <Link
-                href="/portfolio/"
+                href={buildHref('/portfolio/')}
                 className="border-none text-gray-700 hover:text-gray-900"
               >
                 {t('portfolio_link')}
+              </Link>
+            </li>
+            <li>
+              <Link
+                href={buildHref('/features/')}
+                className="border-none text-gray-700 hover:text-gray-900"
+              >
+                {t('features_link')}
+              </Link>
+            </li>
+            <li>
+              <Link
+                href={buildHref('/pricing/')}
+                className="border-none text-gray-700 hover:text-gray-900"
+              >
+                {t('pricing_link')}
               </Link>
             </li>
             <li>
@@ -61,13 +80,21 @@ export default async function Layout(props: {
                 GitHub
               </a>
             </li>
+            <li>
+              <Link
+                href={buildHref('/contact/')}
+                className="border-none text-gray-700 hover:text-gray-900"
+              >
+                {t('contact_link')}
+              </Link>
+            </li>
           </>
         )}
         rightNav={(
           <>
             <li>
               <Link
-                href="/sign-in/"
+                href={buildHref('/sign-in/')}
                 className="border-none text-gray-700 hover:text-gray-900"
               >
                 {t('sign_in_link')}
@@ -76,7 +103,7 @@ export default async function Layout(props: {
 
             <li>
               <Link
-                href="/sign-up/"
+                href={buildHref('/sign-up/')}
                 className="border-none text-gray-700 hover:text-gray-900"
               >
                 {t('sign_up_link')}

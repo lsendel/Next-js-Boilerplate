@@ -1,0 +1,140 @@
+name: Reusable Test Workflow
+
+on:
+  workflow_call:
+    inputs:
+      test-type:
+        description: 'Type of test to run (unit|integration|e2e|performance)'
+        required: true
+        type: string
+      node-version:
+        description: Node.js version to use
+        required: false
+        type: string
+        default: 22.x
+      upload-coverage:
+        description: Upload coverage reports
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      CODECOV_TOKEN:
+        required: false
+      CLERK_SECRET_KEY:
+        required: false
+
+jobs:
+  test:
+    name: ${{ inputs.test-type }} Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nextjs_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 3s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run database migrations
+        if: inputs.test-type == 'integration' || inputs.test-type == 'e2e'
+        run: npm run db:migrate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nextjs_test
+
+      # Unit Tests
+      - name: Run unit tests
+        if: inputs.test-type == 'unit'
+        uses: docker://mcr.microsoft.com/playwright:v1.56.1
+        with:
+          args: npm run test -- --coverage
+
+      - name: Upload coverage
+        if: inputs.test-type == 'unit' && inputs.upload-coverage
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      # Integration Tests
+      - name: Run integration tests
+        if: inputs.test-type == 'integration'
+        run: npm run test:integration
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nextjs_test
+          REDIS_URL: redis://localhost:6379
+
+      # E2E Tests
+      - name: Build application
+        if: inputs.test-type == 'e2e'
+        run: npm run build-local
+        env:
+          NEXT_PUBLIC_SENTRY_DISABLED: 'true'
+
+      - name: Run E2E tests
+        if: inputs.test-type == 'e2e'
+        uses: docker://mcr.microsoft.com/playwright:v1.56.1
+        with:
+          args: sh -c "HOME=/root npm run test:e2e"
+        env:
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+
+      # Performance Tests
+      - name: Start application
+        if: inputs.test-type == 'performance'
+        run: |
+          npm run build-local
+          npm run start &
+          sleep 10
+        env:
+          NEXT_PUBLIC_SENTRY_DISABLED: 'true'
+
+      - name: Run Lighthouse CI
+        if: inputs.test-type == 'performance'
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            http://localhost:3000
+            http://localhost:3000/en
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      # Upload test results
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ inputs.test-type }}-test-results
+          path: |
+            test-results/
+            coverage/
+          retention-days: 7

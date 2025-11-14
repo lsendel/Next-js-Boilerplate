@@ -1,0 +1,110 @@
+name: Reusable Security Scan
+
+on:
+  workflow_call:
+    inputs:
+      scan-type:
+        description: Type of security scan to run
+        required: true
+        type: string
+      severity-threshold:
+        description: Minimum severity level to report
+        required: false
+        type: string
+        default: high
+    secrets:
+      SNYK_TOKEN:
+        required: false
+      GITHUB_TOKEN:
+        required: true
+
+jobs:
+  security-scan:
+    name: ${{ inputs.scan-type }} Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # CodeQL Scan
+      - name: Initialize CodeQL
+        if: inputs.scan-type == 'codeql'
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+          queries: +security-and-quality
+
+      - name: Autobuild
+        if: inputs.scan-type == 'codeql'
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        if: inputs.scan-type == 'codeql'
+        uses: github/codeql-action/analyze@v3
+
+      # Dependency Scan
+      - name: Set up Node.js
+        if: inputs.scan-type == 'dependencies'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        if: inputs.scan-type == 'dependencies'
+        run: npm ci
+
+      - name: Run Snyk Security Scan
+        if: inputs.scan-type == 'dependencies'
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=${{ inputs.severity-threshold }} --all-projects
+
+      # Secret Scan
+      - name: TruffleHog Secret Scan
+        if: inputs.scan-type == 'secrets'
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified
+
+      # Container Scan
+      - name: Set up Docker Buildx
+        if: inputs.scan-type == 'container'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        if: inputs.scan-type == 'container'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: security-scan:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy container scan
+        if: inputs.scan-type == 'container'
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: security-scan:test
+          format: sarif
+          output: trivy-results.sarif
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+      - name: Upload security results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ inputs.scan-type == 'container' && 'trivy-results.sarif' || 'snyk.sarif' }}

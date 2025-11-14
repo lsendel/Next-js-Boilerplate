@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
-import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
+import { headers } from 'next/headers';
 import Image from 'next/image';
-import { CounterForm } from '@/components/CounterForm';
-import { CurrentCount } from '@/components/CurrentCount';
+import { CounterForm } from '@/client/components/forms/CounterForm';
+import { CurrentCount } from '@/client/components/forms/CurrentCount';
+import { getCounter } from '@/libs/services/counter.service';
+import { buildLocalizedMetadata } from '@/shared/utils/metadata';
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
@@ -14,21 +16,26 @@ export async function generateMetadata(props: {
     namespace: 'Counter',
   });
 
-  return {
+  return await buildLocalizedMetadata({
+    locale,
+    path: '/counter',
     title: t('meta_title'),
     description: t('meta_description'),
-  };
+    keywords: ['Next.js counter example', 'Drizzle ORM example', 'React Hook Form counter'],
+  });
 }
 
-export default function Counter() {
-  const t = useTranslations('Counter');
+export default async function Counter() {
+  const t = await getTranslations('Counter');
+  const id = Number((await headers()).get('x-e2e-random-id')) || 0;
+  const count = await getCounter(id);
 
   return (
     <>
       <CounterForm />
 
       <div className="mt-3">
-        <CurrentCount />
+        <CurrentCount count={count} />
       </div>
 
       <div className="mt-5 text-center text-sm">
@@ -54,4 +61,4 @@ export default function Counter() {
       </a>
     </>
   );
-};
+}

@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
+import { buildLocalizedMetadata } from '@/shared/utils/metadata';
+import { getI18nPath } from '@/shared/utils/helpers';
 
 type IPortfolioProps = {
   params: Promise<{ locale: string }>;
@@ -14,10 +16,13 @@ export async function generateMetadata(props: IPortfolioProps): Promise<Metadata
     namespace: 'Portfolio',
   });
 
-  return {
+  return await buildLocalizedMetadata({
+    locale,
+    path: '/portfolio',
     title: t('meta_title'),
     description: t('meta_description'),
-  };
+    keywords: ['Next.js portfolio', 'SaaS case studies', 'Next.js starter showcase'],
+  });
 }
 
 export default async function Portfolio(props: IPortfolioProps) {
@@ -27,6 +32,7 @@ export default async function Portfolio(props: IPortfolioProps) {
     locale,
     namespace: 'Portfolio',
   });
+  const buildHref = (path: string) => getI18nPath(path, locale);
 
   return (
     <>
@@ -37,7 +43,7 @@ export default async function Portfolio(props: IPortfolioProps) {
           <Link
             className="hover:text-blue-700"
             key={elt}
-            href={`/portfolio/${elt}`}
+            href={buildHref(`/portfolio/${elt}`)}
           >
             {t('portfolio_name', { name: elt })}
           </Link>

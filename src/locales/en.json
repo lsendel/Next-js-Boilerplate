@@ -5,7 +5,10 @@
     "counter_link": "Counter",
     "portfolio_link": "Portfolio",
     "sign_in_link": "Sign in",
-    "sign_up_link": "Sign up"
+    "sign_up_link": "Sign up",
+    "features_link": "Features",
+    "pricing_link": "Pricing",
+    "contact_link": "Contact"
   },
   "BaseTemplate": {
     "description": "Starter code for your Nextjs Boilerplate with Tailwind CSS",
@@ -71,5 +74,124 @@
     "dashboard_link": "Dashboard",
     "user_profile_link": "Manage your account",
     "sign_out": "Sign out"
+  },
+  "Pricing": {
+    "meta_title": "Next.js Boilerplate Pricing",
+    "meta_description": "Transparent pricing tiers for the Next.js Boilerplate starter kit.",
+    "hero_eyebrow": "Pricing",
+    "hero_title": "Pricing that scales with your roadmap",
+    "hero_subtitle": "Start for free and upgrade when you need dedicated support or custom integrations.",
+    "tiers": {
+      "hobby": {
+        "name": "Hobby",
+        "description": "Perfect for evaluating the template and standing up prototypes.",
+        "cta": "Download on GitHub",
+        "features": [
+          "Next.js 16 + React 19 base project",
+          "Marketing and authenticated layouts",
+          "Type-safe API routes and DB layer",
+          "Unlimited local environments"
+        ]
+      },
+      "startup": {
+        "name": "Startup",
+        "description": "Launch a production SaaS with monitoring, security, and onboarding support.",
+        "cta": "Request license",
+        "features": [
+          "Multi-provider authentication",
+          "Arcjet protection and rate limiting",
+          "Production-ready monitoring setup",
+          "Email support and onboarding call"
+        ]
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "description": "For teams that need SLAs, private support channels, and bespoke work.",
+        "cta": "Talk to us",
+        "features": [
+          "Hands-on integration support",
+          "Security & compliance review",
+          "Custom feature development",
+          "Private Slack channel"
+        ]
+      }
+    },
+    "cta_title": "Need a custom plan?",
+    "cta_description": "We partner with agencies and startups to tailor the boilerplate to multi-tenancy, customer dashboards, or bespoke workflows.",
+    "cta_primary": "Talk to the team",
+    "cta_secondary": "Explore the codebase"
+  },
+  "Features": {
+    "meta_title": "Next.js Boilerplate Features Overview",
+    "meta_description": "Explore the integrations and developer experience included in the Next.js Boilerplate.",
+    "hero_eyebrow": "Features",
+    "hero_title": "Everything you need to launch confidently",
+    "hero_subtitle": "Built for fast iteration, hardened for production.",
+    "grid_title": "Core capabilities",
+    "grid_description": "The toolkit is designed for developer productivity and long-term maintainability.",
+    "grid_cards": {
+      "auth": {
+        "title": "Authentication adapters",
+        "description": "Switch between Clerk, Cloudflare Access, or AWS Cognito by changing a single environment variable."
+      },
+      "database": {
+        "title": "Reliable database layer",
+        "description": "Drizzle ORM with PostgreSQL, migrations, services, and example queries ready to use."
+      },
+      "security": {
+        "title": "Security built-in",
+        "description": "Arcjet bot mitigation, CSRF tokens, rate limiting, audit logging, and middleware helpers."
+      },
+      "seo": {
+        "title": "SEO & i18n",
+        "description": "Structured data utilities, localized metadata builders, sitemaps, and hreflang support."
+      },
+      "monitoring": {
+        "title": "Monitoring & logging",
+        "description": "Sentry, Better Stack, PostHog, and Checkly integrated with sensible defaults."
+      },
+      "tooling": {
+        "title": "Developer tooling",
+        "description": "ESLint, Prettier, Vitest, Playwright, Storybook, and Tailwind CSS v4 out of the box."
+      }
+    },
+    "deep_dives_title": "Deep dives",
+    "deep_dives_description": "Highlights of the systems that make the boilerplate stand out.",
+    "middleware_title": "Production-ready middleware",
+    "middleware_description": "Compose Arcjet protection, auth guards, routing, and headers in a single function.",
+    "middleware_benefits": [
+      "Token-bucket rate limiting for API mutations",
+      "Arcjet bot detection with configurable rules",
+      "Localized routing with automatic 404 handling",
+      "Security headers and CORS helpers"
+    ],
+    "marketing_title": "Composable marketing system",
+    "marketing_description": "Responsive hero sections, pricing tables, testimonials, and CTAs ready for reuse.",
+    "marketing_benefits": [
+      "Storybook documentation for every component",
+      "Tailwind CSS tokens ready for custom branding",
+      "Accessible semantics and structured data",
+      "SEO-friendly metadata per section"
+    ]
+  },
+  "Contact": {
+    "meta_title": "Contact Next.js Boilerplate",
+    "meta_description": "Get in touch for support, licensing, or custom feature work.",
+    "hero_eyebrow": "Contact",
+    "hero_title": "We'd love to hear from you",
+    "hero_subtitle": "Reach out for support, licensing, or custom feature work.",
+    "support_title": "Support & Sales",
+    "support_description": "Email us for licensing questions, enterprise support, or onboarding help.",
+    "email_label": "Email",
+    "phone_label": "Phone",
+    "response_time_label": "Response time",
+    "response_time_value": "Within 1 business day",
+    "community_title": "Community",
+    "community_description": "Join the conversation and get updates on upcoming features.",
+    "community_links": {
+      "github": "GitHub discussions",
+      "twitter": "Twitter updates",
+      "blog": "Blog & changelog"
+    }
   }
 }

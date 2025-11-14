@@ -353,6 +353,8 @@ npx playwright install # Only for the first time in a new environment
 npm run test:e2e
 ```
 
+Refer to [`docs/CI_E2E_ENVIRONMENTS.md`](docs/CI_E2E_ENVIRONMENTS.md) for configuring shared vs. custom tenant hosts (e.g., `environment.1pet.com`, `test.1pet.me`) in CI/CD or local runs.
+
 ### Storybook
 
 Storybook is configured for UI component development and testing. The project uses Storybook with Next.js and Vite integration, including accessibility testing and documentation features.
@@ -475,8 +477,49 @@ Arcjet is configured with two main features: bot detection and the Arcjet Shield
 
 - [Bot detection](https://docs.arcjet.com/bot-protection/concepts) is configured to allow search engines, preview link generators e.g. Slack and Twitter previews, and to allow common uptime monitoring services. All other bots, such as scrapers and AI crawlers, will be blocked. You can [configure additional bot types](https://docs.arcjet.com/bot-protection/identifying-bots) to allow or block.
 - [Arcjet Shield WAF](https://docs.arcjet.com/shield/concepts) will detect and block common attacks such as SQL injection, cross-site scripting, and other OWASP Top 10 vulnerabilities.
+- Token bucket rate limiting automatically protects every state-changing API route. You can tune the thresholds with the `ARCJET_API_REFILL_RATE`, `ARCJET_API_INTERVAL`, `ARCJET_API_CAPACITY`, and `ARCJET_API_RETRY_AFTER` environment variables.
 
 Arcjet is configured with a central client at `src/libs/Arcjet.ts` that includes the Shield WAF rules. Additional rules are applied when Arcjet is called in `middleware.ts`.
+
+To further customize Arcjet, the following environment variables are available:
+
+- `ARCJET_MODE` switches between `LIVE` (block bad traffic) and `DRY_RUN` (log only)
+- `ARCJET_TRUSTED_PROXIES` lets you define trusted load balancers or gateways
+- `ARCJET_ALLOWED_BOTS` controls which bot categories bypass the detector
+
+### Continuous Integration pipeline
+
+The repository ships with `.github/workflows/ci.yml`, a GitHub Actions workflow that runs on every push and pull request. The pipeline installs PostgreSQL and Redis clients, spins up Redis, and runs the following steps in order:
+
+1. `npm run lint`
+2. `npm run check:types`
+3. `npm test`
+4. `npm run test:integration` (backed by an ephemeral PGlite database)
+5. `npm run build` (which runs `db:migrate` as part of the release build)
+6. `npm run test:e2e` after installing the required Playwright browsers
+
+Each command executes against the same environment you run locally, so breaking changes are caught before merging.
+
+### Automated backups & observability
+
+Use `.github/workflows/backup.yml` to create daily encrypted database dumps with `scripts/backup-database.sh`. Provide a `BACKUP_DATABASE_URL` secret that points to your production database and the workflow will upload compressed artifacts you can restore from. Adjust the retention period or integrate with your cloud storage provider if you prefer off-site storage.
+
+For alerting, dashboards, and log retention, follow the runbook at `docs/ops/observability.md`. It walks through hardening Sentry alerts, PostHog dashboards, and Better Stack log pipelines so you get actionable signals before onboarding customers.
+
+### Code organization
+
+- All UI lives under `src/client` (components, hooks, providers). Legacy `src/components` has been removed – update imports to `@/client/...`.
+- Server-only code lives under `src/server` (db, API services, audit helpers).
+- Shared utilities/types belong to `src/shared` while middleware helpers live under `src/middleware`.
+See `docs/ops/environment-variables.md` for per-environment configuration and `docs/ops/ci-monitoring.md` for pipeline details.
+
+### Operations playbooks
+
+- [Environment & secrets matrix](docs/ops/environment-variables.md) – lists every variable you need per environment plus where to store it (hosting vs GitHub Actions).
+- [CI & workflow monitoring](docs/ops/ci-monitoring.md) – how to dry-run, monitor, and troubleshoot the GitHub Actions pipelines.
+- [Observability runbook](docs/ops/observability.md) – recommended alerting, dashboards, log retention, and backup drills.
+- [CI E2E environments](docs/CI_E2E_ENVIRONMENTS.md) – domains (`environment.1pet.com`, `test.1pet.me`) and secrets powering the shared/custom Playwright runs.
+- [Terraform infrastructure](docs/INFRA_TERRAFORM.md) – how to provision the Cloudflare Pages + AWS Amplify stacks for those domains.
 
 ### Useful commands
 
@@ -489,6 +532,8 @@ The project includes several commands to ensure code quality and consistency. Yo
 - `npm run check:types` to verify type safety across the entire project
 - `npm run check:deps` help identify unused dependencies and files
 - `npm run check:i18n` ensures all translations are complete and properly formatted
+
+> **Note:** `tests/**/*`, `**/*.test.ts`, and `**/*.stories.tsx` are temporarily excluded from linting while the e2e/unit fixtures and Storybook stories are migrated to the new client/server split. Re-enable in `eslint.config.mjs` once those suites are modernized.
 
 #### Bundle Analyzer
 
