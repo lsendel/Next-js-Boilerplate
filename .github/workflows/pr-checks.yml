@@ -1,0 +1,205 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  size-label:
+    name: PR Size Labeling
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Label PR by size
+        uses: codelytv/pr-size-labeler@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          xs_label: size/XS
+          xs_max_size: 10
+          s_label: size/S
+          s_max_size: 100
+          m_label: size/M
+          m_max_size: 500
+          l_label: size/L
+          l_max_size: 1000
+          xl_label: size/XL
+          fail_if_xl: false
+
+  changed-files:
+    name: Detect Changed Files
+    runs-on: ubuntu-latest
+    outputs:
+      env_files: ${{ steps.changed.outputs.env_files }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Get changed files
+        id: changed
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            .env
+            .env.production
+            .env.development
+            .env.test
+            **/*.env
+
+      - name: Check for .env files
+        if: steps.changed.outputs.any_changed == 'true'
+        run: |
+          echo "::error::Environment files detected in PR! Never commit .env files."
+          echo "Changed files: ${{ steps.changed.outputs.all_changed_files }}"
+          exit 1
+
+  prevent-secrets:
+    name: Prevent Secret Commits
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Scan for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified --fail
+
+  test-coverage:
+    name: Test Coverage Report
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run database migrations
+        run: npx pglite-server --include-database-url --run 'npm run db:migrate'
+
+      - name: Run tests with coverage
+        run: npm test -- --coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/coverage-final.json
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Coverage Summary
+        if: always()
+        run: |
+          echo "## Test Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f "coverage/coverage-summary.json" ]; then
+            COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+            echo "Line Coverage: $COVERAGE%" >> $GITHUB_STEP_SUMMARY
+
+            if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+              echo "::warning::Coverage is below 80% ($COVERAGE%)"
+            fi
+          fi
+
+  conventional-commits:
+    name: Conventional Commits Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Check commit messages
+        uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: .commitlintrc.json
+          failOnWarnings: false
+
+  breaking-changes:
+    name: Detect Breaking Changes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Check for breaking changes
+        id: breaking
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.pull_request.title.toLowerCase();
+            const body = context.payload.pull_request.body || '';
+
+            const hasBreaking = title.includes('breaking') ||
+                              title.includes('!:') ||
+                              body.toLowerCase().includes('breaking change');
+
+            if (hasBreaking) {
+              core.setOutput('has_breaking', 'true');
+              core.warning('This PR contains breaking changes!');
+            } else {
+              core.setOutput('has_breaking', 'false');
+            }
+
+      - name: Label breaking changes
+        if: steps.breaking.outputs.has_breaking == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['breaking-change']
+            });
+
+  pr-checks-summary:
+    name: PR Checks Summary
+    runs-on: ubuntu-latest
+    needs: [changed-files, prevent-secrets, test-coverage]
+    if: always()
+
+    steps:
+      - name: Summary
+        run: |
+          echo "## Pull Request Checks" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| .env Files | ${{ needs.changed-files.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secrets | ${{ needs.prevent-secrets.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Coverage | ${{ needs.test-coverage.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.changed-files.result }}" == "failure" ] || [ "${{ needs.prevent-secrets.result }}" == "failure" ]; then
+            echo "❌ **PR checks failed!** Please fix the issues above." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "✅ **All PR checks passed**" >> $GITHUB_STEP_SUMMARY
+          fi

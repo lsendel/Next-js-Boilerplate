@@ -34,6 +34,11 @@ yarn-error.log*
 
 # local env files
 .env*.local
+# SECURITY: Never commit environment files with secrets
+/.env
+/.env.production
+.env.development
+.env.test
 
 # Sentry Config File
 .env.sentry-build-plugin
@@ -50,6 +55,7 @@ next-env.d.ts
 
 # Database
 *.db
+backups
 
 # storybook
 storybook-static
