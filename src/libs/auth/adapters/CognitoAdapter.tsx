@@ -131,7 +131,7 @@ export class CognitoAdapter implements IAuthAdapter {
           window.location.href = resolveTenantClientPath('/');
         }
       } catch (error) {
-        console.error('Failed to sign out:', error);
+        authLogger.error('Failed to sign out', { error });
       }
     };
 
@@ -197,7 +197,7 @@ export class CognitoAdapter implements IAuthAdapter {
       // Decode token to get issuer (region and user pool ID)
       const decoded = decodeJWT(idToken);
       if (!decoded?.payload.iss) {
-        console.warn('Invalid Cognito token: missing issuer');
+        authLogger.warn('Invalid Cognito token: missing issuer');
         const cognitoConfig = getCognitoConfig();
         if (cognitoConfig.oauth) {
           const { getHostedUIUrl } = await import('./cognito/amplify-config');
@@ -211,7 +211,7 @@ export class CognitoAdapter implements IAuthAdapter {
       // Parse region and user pool ID from issuer
       const cognitoInfo = parseCognitoIssuer(decoded.payload.iss as string);
       if (!cognitoInfo) {
-        console.warn('Failed to parse Cognito issuer');
+        authLogger.warn('Failed to parse Cognito issuer', { issuer: decoded.payload.iss });
         return Response.redirect(new URL(config.signInUrl, request.url), 302);
       }
 
