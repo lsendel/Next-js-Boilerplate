@@ -4,6 +4,7 @@
  */
 
 import { Buffer } from 'node:buffer';
+import { securityLogger } from '@/libs/Logger';
 
 export type JWK = {
   kid: string;
@@ -94,7 +95,7 @@ export async function fetchJWKS(jwksUrl: string): Promise<JWKS | null> {
     });
 
     if (!response.ok) {
-      console.error(`Failed to fetch JWKS from ${jwksUrl}: ${response.status}`);
+      securityLogger.error('Failed to fetch JWKS', { jwksUrl, status: response.status });
       return null;
     }
 
@@ -108,7 +109,7 @@ export async function fetchJWKS(jwksUrl: string): Promise<JWKS | null> {
 
     return jwks;
   } catch (error) {
-    console.error('Failed to fetch JWKS:', error);
+    securityLogger.error('Failed to fetch JWKS', { error });
     return null;
   }
 }
@@ -127,7 +128,7 @@ export async function importJWK(jwk: JWK): Promise<CryptoKey | null> {
   try {
     // Only support RSA keys for now (most common for JWT)
     if (jwk.kty !== 'RSA') {
-      console.error('Only RSA keys are supported');
+      securityLogger.error('Only RSA keys are supported', { keyType: jwk.kty });
       return null;
     }
 
@@ -148,7 +149,7 @@ export async function importJWK(jwk: JWK): Promise<CryptoKey | null> {
       ['verify'],
     );
   } catch (error) {
-    console.error('Failed to import JWK:', error);
+    securityLogger.error('Failed to import JWK', { error });
     return null;
   }
 }
@@ -189,7 +190,7 @@ export async function verifyJWTSignature(
       signedDataBuffer,
     );
   } catch (error) {
-    console.error('Failed to verify JWT signature:', error);
+    securityLogger.error('Failed to verify JWT signature', { error });
     return false;
   }
 }
@@ -211,7 +212,7 @@ export function validateJWTClaims(
   // Check expiration
   if (payload.exp !== undefined) {
     if (payload.exp + clockTolerance < now) {
-      console.warn('JWT expired');
+      securityLogger.warn('JWT expired', { exp: payload.exp, now });
       return false;
     }
   }
