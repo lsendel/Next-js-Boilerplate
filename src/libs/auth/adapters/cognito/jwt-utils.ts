@@ -3,6 +3,7 @@
  */
 
 import { verifyJWT } from '@/libs/auth/security/jwt-verifier';
+import { securityLogger } from '@/libs/Logger';
 
 export type CognitoJWTPayload = {
   'sub': string; // User ID
@@ -57,18 +58,18 @@ export async function verifyCognitoToken(
 
     // Validate Cognito-specific fields
     if (!payload.token_use || !['id', 'access'].includes(payload.token_use as string)) {
-      console.warn('Invalid Cognito token_use claim');
+      securityLogger.warn('Invalid Cognito token_use claim', { tokenUse: payload.token_use });
       return null;
     }
 
     if (!payload.sub) {
-      console.warn('Missing sub claim in Cognito token');
+      securityLogger.warn('Missing sub claim in Cognito token');
       return null;
     }
 
     return payload as CognitoJWTPayload;
   } catch (error) {
-    console.error('Failed to verify Cognito token:', error);
+    securityLogger.error('Failed to verify Cognito token', { error });
     return null;
   }
 }

@@ -5,6 +5,7 @@
 
 import type { NextRequest } from 'next/server';
 import { verifyJWT } from '@/libs/auth/security/jwt-verifier';
+import { securityLogger } from '@/libs/Logger';
 
 export type CloudflareAccessJWT = {
   aud: string[]; // Audience (your application's audience tag)
@@ -94,13 +95,13 @@ export async function verifyCloudflareAccessToken(
 
     // Validate required Cloudflare Access fields
     if (!payload.email || !payload.exp) {
-      console.warn('Cloudflare Access token missing required fields');
+      securityLogger.warn('Cloudflare Access token missing required fields', { hasEmail: !!payload.email, hasExp: !!payload.exp });
       return null;
     }
 
     return payload as CloudflareAccessJWT;
   } catch (error) {
-    console.error('Failed to verify Cloudflare Access token:', error);
+    securityLogger.error('Failed to verify Cloudflare Access token', { error });
     return null;
   }
 }

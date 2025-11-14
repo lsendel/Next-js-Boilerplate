@@ -8,6 +8,7 @@ import { CognitoUserProfile } from './cognito/UserProfile';
 import { cognitoUserToAuthUser } from './cognito/utils';
 import { resolveTenantClientPath } from '@/shared/utils/tenant-client-path';
 import { decodeJWT } from '../security/jwt-verifier';
+import { authLogger } from '@/libs/Logger';
 
 /**
  * AWS Cognito Authentication Adapter
@@ -75,7 +76,7 @@ export class CognitoAdapter implements IAuthAdapter {
       const { signOut } = await import('aws-amplify/auth');
       await signOut();
     } catch (error) {
-      console.error('Failed to sign out:', error);
+      authLogger.error('Failed to sign out', { error });
     }
   }
 
