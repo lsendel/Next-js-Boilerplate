@@ -87,7 +87,10 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    authLogger.error('Error during sign in', { error });
+    authLogger.error('Error during sign in', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       { error: 'Failed to sign in' },
       { status: 500 },
