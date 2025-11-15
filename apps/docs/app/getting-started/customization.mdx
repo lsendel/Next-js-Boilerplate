@@ -1,0 +1,368 @@
+# Customization
+
+Make the Next.js Boilerplate your own by customizing branding, configuration, and features.
+
+## Quick Customization
+
+### 1. App Name & Metadata
+
+Edit `apps/web/src/shared/config/AppConfig.ts`:
+
+```typescript
+export const AppConfig = {
+  name: 'Your App Name',
+  locale: 'en',
+  locales: ['en', 'fr', 'es'], // Add/remove languages
+  defaultLocale: 'en',
+}
+```
+
+### 2. Favicon & Icons
+
+Replace these files in `apps/web/public/`:
+
+- `favicon.ico` - Browser tab icon
+- `apple-touch-icon.png` - iOS home screen icon
+- `favicon-16x16.png` - Small favicon
+- `favicon-32x32.png` - Large favicon
+
+**Tools:** Use [favicon.io](https://favicon.io/) or [realfavicongenerator.net](https://realfavicongenerator.net/)
+
+### 3. Theme & Colors
+
+Edit `apps/web/src/templates/BaseTemplate.tsx`:
+
+```tsx
+export default function BaseTemplate({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+      {/* Your custom theme */}
+      {children}
+    </div>
+  )
+}
+```
+
+Update Tailwind colors in `tailwind.config.ts` (if exists) or use Tailwind CSS 4 configuration.
+
+### 4. Homepage Content
+
+Edit `apps/web/src/app/[locale]/(marketing)/page.tsx` to customize:
+
+- Hero section
+- Features
+- Call-to-action buttons
+- Footer
+
+### 5. Navigation
+
+Edit navigation in `apps/web/src/client/components/navigation/` files.
+
+## Find All Customization Points
+
+Search for `FIXME:` comments throughout the codebase:
+
+```bash
+grep -r "FIXME:" apps/web/src/
+```
+
+This reveals key customization spots:
+
+```
+apps/web/src/shared/config/AppConfig.ts:15: FIXME: Update app name
+apps/web/src/templates/BaseTemplate.tsx:10: FIXME: Update default theme
+apps/web/next.config.ts:5: FIXME: Update domain for production
+apps/web/.env:3: FIXME: Add your API keys
+```
+
+## Environment Variables
+
+Create `apps/web/.env.local` (not tracked by Git) for secrets:
+
+```bash
+# Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_key
+CLERK_SECRET_KEY=sk_test_your_secret
+
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/mydb
+
+# Monitoring
+SENTRY_DSN=https://your-sentry-dsn
+NEXT_PUBLIC_POSTHOG_KEY=phc_your_key
+
+# Security
+ARCJET_KEY=your_arcjet_key
+
+# Logging
+NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN=your_token
+```
+
+[Full environment variables reference →](/reference/environment-variables)
+
+## Branding
+
+### Logo
+
+Replace or update the logo component:
+
+```tsx
+// apps/web/src/client/components/navigation/Logo.tsx
+export function Logo() {
+  return (
+    <Image
+      src="/assets/images/your-logo.png"
+      alt="Your App"
+      width={120}
+      height={40}
+    />
+  )
+}
+```
+
+### Colors & Typography
+
+#### Tailwind CSS 4
+
+If using default Tailwind setup, customize colors inline:
+
+```tsx
+<div className="bg-blue-600 text-white">
+  {/* Your branded content */}
+</div>
+```
+
+#### Custom Theme File
+
+Create `tailwind.config.ts`:
+
+```typescript
+import type { Config } from 'tailwindcss'
+
+export default {
+  content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
+  theme: {
+    extend: {
+      colors: {
+        brand: {
+          50: '#f0f9ff',
+          500: '#0ea5e9',
+          900: '#0c4a6e',
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Montserrat', 'sans-serif'],
+      },
+    },
+  },
+} satisfies Config
+```
+
+Use in components:
+
+```tsx
+<h1 className="font-display text-brand-500">
+  Your Headline
+</h1>
+```
+
+## Translation & Localization
+
+### Add a New Language
+
+1. **Add locale to config** (`apps/web/src/shared/config/AppConfig.ts`):
+
+```typescript
+export const AppConfig = {
+  locales: ['en', 'fr', 'es', 'de'], // Added German
+  //...
+}
+```
+
+2. **Copy translation file**:
+
+```bash
+cp apps/web/src/locales/en.json apps/web/src/locales/de.json
+```
+
+3. **Translate content** in `apps/web/src/locales/de.json`
+
+4. **Test**: Visit [http://localhost:3000/de](http://localhost:3000/de)
+
+[Full i18n guide →](/guides/i18n)
+
+## Authentication
+
+### Switch Providers
+
+Change provider via environment variable (no code changes!):
+
+```bash
+# .env.local
+NEXT_PUBLIC_AUTH_PROVIDER=clerk      # Default
+# NEXT_PUBLIC_AUTH_PROVIDER=cloudflare
+# NEXT_PUBLIC_AUTH_PROVIDER=cognito
+```
+
+[Full authentication guide →](/guides/authentication)
+
+## Database
+
+### Change Database Provider
+
+DrizzleORM supports PostgreSQL, MySQL, and SQLite:
+
+```typescript
+// apps/web/src/server/db/index.ts
+import { drizzle } from 'drizzle-orm/postgres-js' // PostgreSQL
+// import { drizzle } from 'drizzle-orm/mysql2'   // MySQL
+// import { drizzle } from 'drizzle-orm/better-sqlite3' // SQLite
+```
+
+Update `drizzle.config.ts` accordingly.
+
+[Full database guide →](/guides/database)
+
+## Remove Features
+
+### Remove Authentication
+
+1. Remove auth provider dependencies
+2. Delete `apps/web/src/libs/auth/`
+3. Remove auth middleware
+4. Delete auth pages
+
+### Remove i18n
+
+1. Remove `next-intl` dependency
+2. Delete `apps/web/src/locales/`
+3. Remove `[locale]` from routes
+4. Update middleware
+
+### Remove Monitoring
+
+```typescript
+// apps/web/next.config.ts
+// Comment out Sentry configuration
+```
+
+## SEO Customization
+
+### Metadata
+
+Edit in page files:
+
+```typescript
+// apps/web/src/app/[locale]/(marketing)/page.tsx
+export const metadata = {
+  title: 'Your Page Title',
+  description: 'Your page description',
+  openGraph: {
+    title: 'Your OG Title',
+    description: 'Your OG description',
+    images: ['/og-image.png'],
+  },
+}
+```
+
+### Sitemap
+
+Edit `apps/web/src/app/sitemap.ts`:
+
+```typescript
+export default function sitemap() {
+  return [
+    {
+      url: 'https://yourdomain.com',
+      lastModified: new Date(),
+    },
+    // Add your pages
+  ]
+}
+```
+
+### Robots.txt
+
+Edit `apps/web/src/app/robots.ts`:
+
+```typescript
+export default function robots() {
+  return {
+    rules: {
+      userAgent: '*',
+      allow: '/',
+      disallow: '/private/',
+    },
+    sitemap: 'https://yourdomain.com/sitemap.xml',
+  }
+}
+```
+
+## Analytics
+
+### PostHog
+
+Add to `apps/web/.env.local`:
+
+```bash
+NEXT_PUBLIC_POSTHOG_KEY=phc_your_key
+NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
+```
+
+### Google Analytics
+
+Add to `apps/web/.env.local`:
+
+```bash
+NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
+```
+
+Already integrated! Check `apps/web/src/client/providers/`.
+
+## Error Monitoring
+
+### Sentry
+
+1. Create Sentry project
+2. Add to `apps/web/.env.local`:
+
+```bash
+SENTRY_DSN=https://your-sentry-dsn
+NEXT_PUBLIC_SENTRY_DSN=https://your-sentry-dsn
+SENTRY_AUTH_TOKEN=your_auth_token
+SENTRY_ORG=your-org
+SENTRY_PROJECT=your-project
+```
+
+3. Upload source maps on build (already configured)
+
+[Full integrations guide →](/integrations)
+
+## Next Steps
+
+- **[Deploy to Production](/guides/deployment)** - Go live!
+- **[Architecture Overview](/architecture)** - Understand the design
+- **[Guides](/guides)** - Deep dive into features
+
+## Customization Checklist
+
+Before going to production, customize:
+
+- [ ] App name in `AppConfig.ts`
+- [ ] Favicon and icons
+- [ ] Theme colors
+- [ ] Homepage content
+- [ ] Navigation links
+- [ ] Footer content
+- [ ] Meta tags and SEO
+- [ ] Environment variables
+- [ ] Auth provider configuration
+- [ ] Database connection
+- [ ] Error monitoring setup
+- [ ] Analytics setup
+- [ ] Domain configuration in `next.config.ts`
+- [ ] Remove unused features
+- [ ] Update README.md
+
+Happy customizing! 🎨

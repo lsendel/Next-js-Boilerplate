@@ -1,0 +1,337 @@
+# Project Structure
+
+Understanding the codebase organization will help you navigate and modify the boilerplate effectively.
+
+## Monorepo Overview
+
+```
+Next-js-Boilerplate/
+├── apps/
+│   ├── web/              # Main Next.js application
+│   └── docs/             # Documentation site (Nextra)
+├── docs-archive/         # Archived historical documentation
+├── package.json          # Workspace root configuration
+└── pnpm-workspace.yaml   # Workspace definition
+```
+
+## Main Application (`apps/web/`)
+
+```
+apps/web/
+├── src/
+│   ├── app/              # Next.js App Router
+│   ├── client/           # Client-side only code
+│   ├── server/           # Server-side only code
+│   ├── shared/           # Shared code (client + server)
+│   ├── middleware/       # Middleware layers
+│   ├── libs/             # Third-party library configurations
+│   ├── locales/          # Translation files (i18n)
+│   └── templates/        # Page templates
+├── public/               # Static assets
+├── migrations/           # Database migrations
+├── tests/                # Test files
+├── scripts/              # Utility scripts
+├── .storybook/           # Storybook configuration
+└── Configuration files...
+```
+
+## App Router Structure (`apps/web/src/app/`)
+
+The app uses Next.js App Router with i18n and route groups:
+
+```
+src/app/[locale]/
+├── (marketing)/          # Public marketing pages
+│   ├── page.tsx          # Homepage
+│   ├── about/            # About page
+│   ├── features/         # Features page
+│   ├── portfolio/        # Portfolio page
+│   ├── pricing/          # Pricing page
+│   ├── contact/          # Contact page
+│   └── counter/          # Demo counter page
+│
+├── (auth)/               # Protected routes
+│   └── dashboard/        # Dashboard page (requires auth)
+│
+├── (auth)/(center)/      # Centered auth pages
+│   ├── sign-in/          # Sign-in page
+│   └── sign-up/          # Sign-up page
+│
+└── api/                  # API routes
+    ├── auth/             # Auth endpoints
+    ├── counter/          # Counter API
+    └── test-auth/        # Test auth endpoints
+```
+
+### Route Groups Explained
+
+Route groups `(marketing)`, `(auth)`, and `(center)` organize routes **without affecting URLs**:
+
+- `(marketing)` → Public pages
+- `(auth)` → Requires authentication
+- `(center)` → Centered layout for auth pages
+
+Example: `app/[locale]/(marketing)/about/page.tsx` → `/en/about`
+
+## Client/Server/Shared Architecture (`apps/web/src/`)
+
+The codebase is organized into three layers:
+
+### Client Layer (`src/client/`)
+
+**Client-side only code** (runs in browser):
+
+```
+src/client/
+├── components/           # React components
+│   ├── marketing/        # Marketing page components
+│   ├── forms/            # Form components
+│   ├── layout/           # Layout components
+│   ├── blog/             # Blog components
+│   ├── navigation/       # Navigation components
+│   └── ui/               # Reusable UI components
+├── providers/            # Client providers (e.g., PostHog)
+├── hooks/                # Client-side hooks
+└── styles/               # Client styles
+```
+
+### Server Layer (`src/server/`)
+
+**Server-side only code** (never sent to client):
+
+```
+src/server/
+├── api/                  # Backend API layer
+│   ├── controllers/      # Request handlers
+│   ├── routes/           # Route definitions
+│   └── services/         # Business logic
+│       ├── auth.service.ts
+│       ├── email.service.ts
+│       └── user.service.ts
+├── db/                   # Database layer
+│   ├── models/           # Drizzle ORM schemas
+│   │   └── Schema.ts
+│   └── repositories/     # Data access layer
+│       ├── user.repository.ts
+│       └── session.repository.ts
+├── constants/            # Server constants
+└── lib/                  # Server utilities
+    └── security-logger.ts
+```
+
+### Shared Layer (`src/shared/`)
+
+**Code used by both client and server**:
+
+```
+src/shared/
+├── config/               # App configuration
+├── constants/            # Shared constants
+├── utils/                # Utility functions
+│   ├── crypto.ts
+│   ├── format.ts
+│   ├── validation.ts
+│   ├── metadata.ts
+│   ├── helpers.ts
+│   └── tenant.ts
+├── validators/           # Zod schemas
+└── hooks/                # Shared hooks
+    └── useTenantPath.ts
+```
+
+## Middleware (`apps/web/src/middleware/`)
+
+Middleware is organized into layers:
+
+```
+src/middleware/
+├── index.ts              # Main middleware (orchestrates layers)
+├── layers/               # Middleware layers
+│   ├── security/         # Security headers, CORS
+│   ├── auth/             # Authentication
+│   ├── i18n/             # Internationalization
+│   ├── analytics/        # Analytics tracking
+│   └── rate-limit/       # Rate limiting
+└── utils/                # Middleware utilities
+    └── tenant.ts
+```
+
+**Execution order:**
+1. CORS preflight handling
+2. Tenant context resolution
+3. Arcjet bot detection & WAF
+4. Authentication (multi-provider)
+5. i18n routing
+6. Security headers
+
+## Libraries Configuration (`apps/web/src/libs/`)
+
+Third-party library configurations:
+
+```
+src/libs/
+├── auth/                 # Modular authentication
+│   ├── adapters/         # Provider implementations
+│   │   ├── ClerkAdapter.tsx
+│   │   ├── CloudflareAdapter.tsx
+│   │   └── CognitoAdapter.tsx
+│   ├── security/         # Security features
+│   │   ├── csrf.ts
+│   │   ├── jwt-verifier.ts
+│   │   ├── password-breach.ts
+│   │   ├── rate-limit.ts
+│   │   ├── session-fingerprint.ts
+│   │   └── session-manager.ts
+│   ├── factory.ts        # Provider factory (singleton)
+│   ├── components.tsx    # Unified components
+│   └── middleware.ts     # Auth middleware
+├── Arcjet.ts             # Arcjet (security, rate limiting)
+├── DB.ts                 # Database utilities
+├── Env.ts                # Type-safe env variables (T3 Env)
+├── I18n.ts               # next-intl configuration
+├── I18nRouting.ts        # I18n routing configuration
+├── I18nNavigation.ts     # Type-safe navigation
+├── Logger.ts             # LogTape configuration
+└── LazyMonitoring.ts     # Sentry lazy loading
+```
+
+## Database (`apps/web/src/server/db/`)
+
+```
+src/server/db/
+├── models/
+│   └── Schema.ts         # Drizzle ORM schema
+│       ├── users
+│       ├── sessions
+│       ├── passwordResetTokens
+│       ├── userPreferences
+│       ├── counter
+│       ├── tenants
+│       ├── tenantDomains
+│       └── tenantMembers
+└── repositories/
+    ├── user.repository.ts
+    └── session.repository.ts
+```
+
+Migrations are stored in `apps/web/migrations/`.
+
+## Testing (`apps/web/tests/`)
+
+```
+tests/
+├── e2e/                  # End-to-end tests (Playwright)
+│   ├── fixtures/         # Test fixtures
+│   ├── test-data/        # Test data
+│   └── *.e2e.ts          # E2E test files
+├── integration/          # Integration tests
+│   └── *.spec.ts         # Integration test files
+└── utils/                # Test utilities
+    ├── db-test-helpers.ts
+    └── test-factories.ts
+```
+
+Unit tests are colocated with source files (`.test.ts`, `.test.tsx`).
+
+## Configuration Files
+
+### Root Level
+
+```
+apps/web/
+├── next.config.ts        # Next.js configuration
+├── tsconfig.json         # TypeScript configuration
+├── drizzle.config.ts     # DrizzleORM configuration
+├── vitest.config.mts     # Vitest (unit tests)
+├── vitest.integration.config.ts  # Integration tests
+├── playwright.config.ts  # Playwright (E2E tests)
+├── eslint.config.mjs     # ESLint configuration
+├── postcss.config.mjs    # PostCSS (Tailwind CSS)
+├── lefthook.yml          # Git hooks
+├── commitlint.config.ts  # Commit linting
+├── knip.config.ts        # Unused code detection
+├── checkly.config.ts     # Monitoring as code
+└── crowdin.yml           # Translation management
+```
+
+### Environment Variables
+
+```
+apps/web/
+├── .env                  # Default values (tracked by Git)
+├── .env.local            # Secrets (NOT tracked)
+├── .env.example          # Template
+├── .env.production       # Production defaults
+├── .env.production.template
+└── .env.staging.template
+```
+
+## Import Paths
+
+The project uses absolute imports with `@/` prefix:
+
+```typescript
+// ✅ Good - Absolute imports
+import { getCurrentUser } from '@/libs/auth'
+import { userSchema } from '@/server/db/models/Schema'
+import { AppConfig } from '@/shared/config/AppConfig'
+
+// ❌ Bad - Relative imports (avoid)
+import { getCurrentUser } from '../../libs/auth'
+```
+
+TypeScript path mapping in `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}
+```
+
+## Key Files to Know
+
+| File | Purpose |
+|------|---------|
+| `src/shared/config/AppConfig.ts` | App configuration (name, locales, etc.) |
+| `src/server/db/models/Schema.ts` | Database schema definitions |
+| `src/libs/Env.ts` | Environment variables (type-safe) |
+| `src/libs/auth/factory.ts` | Auth provider factory |
+| `src/middleware.ts` | Main middleware (execution order) |
+| `instrumentation.ts` | Next.js instrumentation (DB migrations) |
+| `next.config.ts` | Next.js configuration |
+
+## Customization Points
+
+Search for `FIXME:` comments in the codebase:
+
+```bash
+# Find all customization points
+grep -r "FIXME:" apps/web/src/
+```
+
+Key files to customize:
+- `src/shared/config/AppConfig.ts` - App name, locales
+- `src/templates/BaseTemplate.tsx` - Default theme
+- `next.config.ts` - Next.js settings
+- `.env` - Environment variables
+- `public/favicon.ico` - Favicon
+
+## Next Steps
+
+Now that you understand the structure:
+
+- **[Customize the Boilerplate](/getting-started/customization)** - Make it yours
+- **[Architecture Overview](/architecture)** - Deep dive into design decisions
+- **[API Reference](/api)** - API documentation
+
+## Pro Tips
+
+- **Use workspace commands**: `pnpm --filter web <command>`
+- **Colocate tests**: Keep `.test.ts` files next to source code
+- **Follow layers**: Client → Shared ← Server (never Server → Client)
+- **Type everything**: Use TypeScript strict mode
+- **Absolute imports**: Always use `@/` prefix
