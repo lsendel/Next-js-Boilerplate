@@ -1,0 +1,178 @@
+# Next.js Boilerplate Documentation
+
+Welcome to the **Next.js Boilerplate** documentation! This is a production-ready boilerplate for Next.js 16+ with App Router, TypeScript, Tailwind CSS 4, and a comprehensive suite of modern development tools.
+
+## What's Included
+
+This boilerplate prioritizes **developer experience** with a flexible code structure. Only keep what you need:
+
+### Core Stack
+
+- ⚡ **[Next.js 16+](https://nextjs.org)** with App Router
+- 🔥 **[TypeScript](https://www.typescriptlang.org)** with strict mode
+- 💎 **[Tailwind CSS 4](https://tailwindcss.com)** for styling
+- ⚛️ **React 19** with strict mode
+
+### Authentication
+
+- 🔒 **Modular Authentication System** - Switch between providers with zero code changes
+  - **Clerk** (default) - Full-featured with MFA, social auth, passkeys
+  - **Cloudflare Access** - JWT-based authentication
+  - **AWS Cognito** - OAuth2 with social providers
+  - **Test Mode** - Form-based auth for E2E testing
+
+### Database & ORM
+
+- 📦 **[DrizzleORM](https://orm.drizzle.team)** - Type-safe ORM (PostgreSQL, SQLite, MySQL)
+- 💽 **PGlite** - Local development database (no Docker required!)
+- ☁️ **PostgreSQL** - Production database
+- 🔄 **Automated migrations** with CI/CD integration
+
+### Testing
+
+- 🧪 **[Vitest](https://vitest.dev)** - Unit and integration testing
+- 🎭 **[Playwright](https://playwright.dev)** - End-to-end testing
+- 📖 **[Storybook](https://storybook.js.org)** - Component documentation
+- 🔍 **[Checkly](https://www.checklyhq.com)** - Synthetic monitoring
+
+### Monitoring & Observability
+
+- 🐛 **[Sentry](https://sentry.io)** - Error monitoring
+- 📊 **[LogTape](https://github.com/dahlia/logtape)** - Structured logging
+- 📈 **[Better Stack](https://betterstack.com)** - Log management
+- 📊 **[PostHog](https://posthog.com)** - Product analytics
+
+### Security
+
+- 🛡️ **[Arcjet](https://arcjet.com)** - Bot detection, rate limiting, WAF
+- 🔐 **CSRF protection** with tokens
+- 🔒 **Session security** with fingerprinting
+- 🚨 **Password breach detection**
+
+### Developer Experience
+
+- 🌐 **[next-intl](https://next-intl-docs.vercel.app)** - Internationalization (i18n)
+- 🌍 **[Crowdin](https://crowdin.com)** - Translation management
+- ✅ **[ESLint](https://eslint.org)** - Linting with @antfu/eslint-config
+- 🎨 **[Prettier](https://prettier.io)** - Code formatting
+- 🔨 **[Lefthook](https://github.com/evilmartians/lefthook)** - Git hooks (replacing Husky)
+- 📝 **[Commitlint](https://commitlint.js.org)** - Conventional commits
+- 🤖 **[CodeRabbit](https://coderabbit.ai)** - AI-powered code reviews
+
+## Quick Start
+
+Get started in 5 minutes:
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/ixartz/Next-js-Boilerplate.git my-project
+   cd my-project
+   ```
+
+2. **Install dependencies**
+   ```bash
+   pnpm install
+   ```
+
+3. **Run development server**
+   ```bash
+   pnpm dev
+   ```
+
+4. **Open in browser**
+   ```
+   http://localhost:3000
+   ```
+
+👉 [**Full Installation Guide →**](/getting-started/installation)
+
+## Documentation Overview
+
+### For New Users
+
+- [**Getting Started**](/getting-started) - Installation and first steps
+- [**Project Structure**](/getting-started/project-structure) - Understanding the codebase
+- [**Customization**](/getting-started/customization) - Make it your own
+
+### For Developers
+
+- [**Architecture**](/architecture) - System design and patterns
+- [**Guides**](/guides) - Step-by-step feature guides
+- [**API Reference**](/api) - Complete API documentation
+
+### For DevOps
+
+- [**Deployment**](/guides/deployment) - Deploy to production
+- [**Operations**](/operations) - Monitoring, logging, troubleshooting
+- [**CI/CD**](/operations/ci-cd) - Automated testing and deployment
+
+## Key Features
+
+### 🎯 Modular Authentication
+
+Switch between authentication providers **without changing code**:
+
+```bash
+# Use Clerk (default)
+NEXT_PUBLIC_AUTH_PROVIDER=clerk
+
+# Use Cloudflare Access
+NEXT_PUBLIC_AUTH_PROVIDER=cloudflare
+
+# Use AWS Cognito
+NEXT_PUBLIC_AUTH_PROVIDER=cognito
+```
+
+[**Learn more →**](/guides/authentication)
+
+### 🗄️ Modern Database Stack
+
+Local development with **PGlite** (no Docker!), production with **PostgreSQL**:
+
+```bash
+# Local development
+pnpm dev  # Automatically starts PGlite
+
+# Database operations
+pnpm db:generate  # Generate migrations
+pnpm db:migrate   # Apply migrations
+pnpm db:studio    # Open Drizzle Studio
+```
+
+[**Learn more →**](/guides/database)
+
+### 🧪 Comprehensive Testing
+
+Three testing layers for confidence:
+
+- **Unit tests** - Vitest with React Testing Library
+- **Integration tests** - API and server component testing
+- **E2E tests** - Playwright for critical user flows
+
+[**Learn more →**](/guides/testing)
+
+### 🌍 Multi-Tenancy Ready
+
+Built-in support for multi-tenant applications:
+
+- Subdomain routing
+- Custom domain mapping
+- Tenant-specific locales
+- Team memberships with roles
+
+[**Learn more →**](/advanced/multi-tenancy)
+
+## Community & Support
+
+- 📖 **Documentation**: You're here!
+- 🐛 **Issues**: [GitHub Issues](https://github.com/ixartz/Next-js-Boilerplate/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/ixartz/Next-js-Boilerplate/discussions)
+- ⭐ **Star on GitHub**: [Next.js Boilerplate](https://github.com/ixartz/Next-js-Boilerplate)
+
+## License
+
+MIT License - feel free to use this project for commercial or personal use.
+
+---
+
+**Ready to get started?** → [Installation Guide](/getting-started/installation)
