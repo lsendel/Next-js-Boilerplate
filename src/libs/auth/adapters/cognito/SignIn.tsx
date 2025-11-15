@@ -36,8 +36,9 @@ export function CognitoSignIn({ path: _path, locale: _locale }: SignInProps) {
 
       const signInUrl = getOAuthSignInUrl(provider);
       window.location.href = signInUrl;
-    } catch (err: any) {
-      setError(err.message || 'Failed to initiate sign-in');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to initiate sign-in';
+      setError(message);
       setLoading(false);
     }
   };
@@ -47,8 +48,9 @@ export function CognitoSignIn({ path: _path, locale: _locale }: SignInProps) {
       setLoading(true);
       const hostedUIUrl = getHostedUIUrl();
       window.location.href = hostedUIUrl;
-    } catch (err: any) {
-      setError(err.message || 'Failed to redirect to Hosted UI');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to redirect to Hosted UI';
+      setError(message);
       setLoading(false);
     }
   };
@@ -83,8 +85,9 @@ export function CognitoSignIn({ path: _path, locale: _locale }: SignInProps) {
 
       // Sign in successful
       window.location.href = resolveTenantPath('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'Sign in failed');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Sign in failed';
+      setError(message);
       setLoading(false);
     }
   };

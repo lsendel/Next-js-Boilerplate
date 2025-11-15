@@ -6,6 +6,7 @@
  */
 
 import { Amplify } from 'aws-amplify';
+import type { ResourcesConfig } from 'aws-amplify';
 import { authLogger } from '@/libs/Logger';
 
 export type CognitoConfig = {
@@ -73,7 +74,7 @@ export function configureAmplify(): void {
     return;
   }
 
-  const amplifyConfig: any = {
+  const amplifyConfig: ResourcesConfig = {
     Auth: {
       Cognito: {
         userPoolId: config.userPoolId,
@@ -87,17 +88,17 @@ export function configureAmplify(): void {
 
   // Add OAuth configuration if available
   if (config.oauth) {
-    amplifyConfig.Auth.Cognito.loginWith.oauth = {
+    amplifyConfig.Auth!.Cognito.loginWith!.oauth = {
       domain: config.oauth.domain,
       scopes: config.oauth.scope,
       redirectSignIn: [config.oauth.redirectSignIn],
       redirectSignOut: [config.oauth.redirectSignOut],
       responseType: config.oauth.responseType,
-      providers: [], // Will be populated from env vars
+      providers: [] as ('Google' | 'Facebook' | 'Apple')[],
     };
 
     // Add social providers
-    const providers: string[] = [];
+    const providers: ('Google' | 'Facebook' | 'Apple')[] = [];
     if (process.env.NEXT_PUBLIC_COGNITO_OAUTH_GOOGLE === 'true') {
       providers.push('Google');
     }
@@ -109,13 +110,13 @@ export function configureAmplify(): void {
     }
 
     if (providers.length > 0) {
-      amplifyConfig.Auth.Cognito.loginWith.oauth.providers = providers;
+      amplifyConfig.Auth!.Cognito.loginWith!.oauth!.providers = providers;
     }
   }
 
   // Configure MFA
   if (config.mfa?.enabled) {
-    amplifyConfig.Auth.Cognito.mfa = {
+    amplifyConfig.Auth!.Cognito.mfa = {
       status: 'on',
       totpEnabled: config.mfa.preferredMethod === 'TOTP',
       smsEnabled: config.mfa.preferredMethod === 'SMS',

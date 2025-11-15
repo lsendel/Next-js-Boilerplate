@@ -7,9 +7,28 @@ import type { AuthUser } from '../../types';
 import { authLogger } from '@/libs/Logger';
 
 /**
+ * AWS Cognito User Type
+ * Represents the user object returned by AWS Amplify Auth
+ */
+export type CognitoUser = {
+  userId?: string;
+  username: string;
+  signInDetails?: {
+    loginId?: string;
+  };
+  attributes?: {
+    email?: string;
+    given_name?: string;
+    family_name?: string;
+    name?: string;
+    picture?: string;
+  };
+};
+
+/**
  * Convert Cognito user attributes to AuthUser format
  */
-export function cognitoUserToAuthUser(cognitoUser: any): AuthUser {
+export function cognitoUserToAuthUser(cognitoUser: CognitoUser): AuthUser {
   const attributes = cognitoUser.signInDetails?.loginId
     ? { email: cognitoUser.signInDetails.loginId }
     : cognitoUser.attributes || {};

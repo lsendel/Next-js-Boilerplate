@@ -87,8 +87,8 @@ export function CognitoUserProfile({ path: _path }: UserProfileProps) {
       } else {
         setError('TOTP setup failed. Please try again.');
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to setup TOTP');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to setup TOTP');
     } finally {
       setLoading(false);
     }
@@ -114,8 +114,8 @@ export function CognitoUserProfile({ path: _path }: UserProfileProps) {
       } else {
         setError('Invalid code. Please try again.');
       }
-    } catch (err: any) {
-      setError(err.message || 'Verification failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Verification failed');
     } finally {
       setLoading(false);
     }
@@ -142,8 +142,8 @@ export function CognitoUserProfile({ path: _path }: UserProfileProps) {
       } else {
         setError('Failed to disable MFA');
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to disable MFA');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to disable MFA');
     } finally {
       setLoading(false);
       setPendingDisableConfirmation(false);

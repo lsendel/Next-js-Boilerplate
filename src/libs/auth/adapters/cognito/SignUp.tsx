@@ -38,8 +38,8 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
 
       const signInUrl = getOAuthSignInUrl(provider);
       window.location.href = signInUrl;
-    } catch (err: any) {
-      setError(err.message || 'Failed to initiate sign-up');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to initiate sign-up');
       setLoading(false);
     }
   };
@@ -49,8 +49,8 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
       setLoading(true);
       const hostedUIUrl = getHostedUIUrl();
       window.location.href = hostedUIUrl;
-    } catch (err: any) {
-      setError(err.message || 'Failed to redirect to Hosted UI');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to redirect to Hosted UI');
       setLoading(false);
     }
   };
@@ -88,8 +88,8 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
         // Sign up complete, redirect to sign in
         window.location.href = resolveTenantPath('/sign-in');
       }
-    } catch (err: any) {
-      setError(err.message || 'Sign up failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Sign up failed');
     } finally {
       setLoading(false);
     }
@@ -113,8 +113,8 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
 
       // Verification successful, redirect to sign in
       window.location.href = resolveTenantPath('/sign-in?verified=true');
-    } catch (err: any) {
-      setError(err.message || 'Verification failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Verification failed');
     } finally {
       setLoading(false);
     }
@@ -129,8 +129,8 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
       const { resendSignUpCode } = await import('aws-amplify/auth');
       await resendSignUpCode({ username: email });
       setStatusMessage('Verification code resent! Check your email.');
-    } catch (err: any) {
-      setError(err.message || 'Failed to resend code');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to resend code');
     } finally {
       setLoading(false);
     }
