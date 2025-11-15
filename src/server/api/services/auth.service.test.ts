@@ -629,4 +629,125 @@ describe('AuthService', () => {
       expect(stats.active).toBeLessThanOrEqual(stats.total);
     });
   });
+
+  describe('Account Locking (Sprint 1)', () => {
+    let testEmail: string;
+    let testUserId: number;
+
+    beforeEach(async () => {
+      testEmail = `locktest-${Date.now()}@example.com`;
+      const user = await userRepo.createUser({
+        email: testEmail,
+        passwordHash: 'hash',
+        authProvider: 'local',
+        isActive: true,
+      });
+      testUserId = user.id;
+      testUserIds.push(testUserId);
+    });
+
+    describe('recordFailedLogin', () => {
+      it('should increment failed login attempts', async () => {
+        await authService.recordFailedLogin(testEmail, '192.168.1.1');
+
+        const user = await userRepo.findUserByEmail(testEmail);
+        expect(user?.failedLoginAttempts).toBe(1);
+        expect(user?.lastFailedLogin).toBeInstanceOf(Date);
+      });
+
+      it('should lock account after 5 failed attempts', async () => {
+        // Record 5 failed login attempts
+        for (let i = 0; i < 5; i++) {
+          await authService.recordFailedLogin(testEmail, '192.168.1.1');
+        }
+
+        const user = await userRepo.findUserByEmail(testEmail);
+        expect(user?.failedLoginAttempts).toBe(5);
+        expect(user?.lockedUntil).toBeInstanceOf(Date);
+        expect(user?.lockedUntil!.getTime()).toBeGreaterThan(Date.now());
+      });
+
+      it('should not reveal if user exists', async () => {
+        // Should not throw error for non-existent user
+        await expect(
+          authService.recordFailedLogin('nonexistent@example.com', '192.168.1.1'),
+        ).resolves.not.toThrow();
+      });
+    });
+
+    describe('checkAccountLocked', () => {
+      it('should return false for unlocked account', async () => {
+        const isLocked = await authService.checkAccountLocked(testEmail);
+        expect(isLocked).toBe(false);
+      });
+
+      it('should return true for locked account', async () => {
+        // Lock the account
+        for (let i = 0; i < 5; i++) {
+          await authService.recordFailedLogin(testEmail, '192.168.1.1');
+        }
+
+        const isLocked = await authService.checkAccountLocked(testEmail);
+        expect(isLocked).toBe(true);
+      });
+
+      it('should return true for inactive account', async () => {
+        await userRepo.deactivateUser(testUserId);
+
+        const isLocked = await authService.checkAccountLocked(testEmail);
+        expect(isLocked).toBe(true);
+      });
+
+      it('should auto-unlock after timeout', async () => {
+        // Manually set lock with past expiration
+        await userRepo.updateUser(testUserId, {
+          failedLoginAttempts: 5,
+          lockedUntil: new Date(Date.now() - 1000), // Already expired
+        });
+
+        const isLocked = await authService.checkAccountLocked(testEmail);
+        expect(isLocked).toBe(false);
+
+        // Verify failed attempts were reset
+        const user = await userRepo.findUserByEmail(testEmail);
+        expect(user?.failedLoginAttempts).toBe(0);
+        expect(user?.lockedUntil).toBeNull();
+      });
+
+      it('should return false for non-existent user', async () => {
+        const isLocked = await authService.checkAccountLocked(
+          'nonexistent@example.com',
+        );
+        expect(isLocked).toBe(false);
+      });
+    });
+
+    describe('resetFailedLoginAttempts', () => {
+      it('should reset failed login attempts', async () => {
+        // Record failed attempts
+        for (let i = 0; i < 3; i++) {
+          await authService.recordFailedLogin(testEmail, '192.168.1.1');
+        }
+
+        await authService.resetFailedLoginAttempts(testUserId);
+
+        const user = await userRepo.findUserByEmail(testEmail);
+        expect(user?.failedLoginAttempts).toBe(0);
+        expect(user?.lockedUntil).toBeNull();
+        expect(user?.lastFailedLogin).toBeNull();
+      });
+
+      it('should unlock account if locked', async () => {
+        // Lock the account
+        for (let i = 0; i < 5; i++) {
+          await authService.recordFailedLogin(testEmail, '192.168.1.1');
+        }
+
+        await authService.resetFailedLoginAttempts(testUserId);
+
+        const isLocked = await authService.checkAccountLocked(testEmail);
+        expect(isLocked).toBe(false);
+      });
+    });
+  });
 });
