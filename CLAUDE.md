@@ -6,114 +6,144 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Next.js 16+ boilerplate with App Router, TypeScript, Tailwind CSS 4, and production-ready integrations. It prioritizes developer experience with a comprehensive tech stack including authentication (Clerk), database ORM (DrizzleORM), i18n (next-intl), testing (Vitest + Playwright), error monitoring (Sentry), logging (LogTape), security (Arcjet), and analytics (PostHog).
 
+**Monorepo Structure:** This project uses a pnpm workspace monorepo with the following packages:
+- `apps/web/` - Main Next.js application (all core features)
+- `apps/docs/` - Documentation site (Nextra with App Router)
+
 ## Essential Commands
+
+**Package Manager:** This project uses `pnpm` for the monorepo. Install with: `npm install -g pnpm`
 
 ### Development
 ```bash
-npm run dev                 # Start dev server with PGlite database (http://localhost:3000)
-npm run dev:next            # Start Next.js dev server only
-npm run dev:spotlight       # Start Sentry Spotlight (dev error monitoring)
+pnpm dev                    # Start web app dev server (http://localhost:3000)
+pnpm dev:docs               # Start docs site dev server
+pnpm dev:all                # Start both apps in parallel
+pnpm --filter web dev:spotlight  # Start Sentry Spotlight (dev error monitoring)
 ```
 
 ### Build & Deploy
 ```bash
-npm run build-local         # Build with temporary in-memory database
-npm run build               # Production build (requires DATABASE_URL)
-npm start                   # Run production build
+pnpm build                  # Build web app
+pnpm build:docs             # Build docs site
+pnpm build:all              # Build both apps
+pnpm start                  # Run web app production build
+pnpm start:docs             # Run docs production build
+pnpm --filter web build-local    # Build web with in-memory database
 ```
 
-### Testing
+### Testing (Web App)
 ```bash
-npm run test                # Run all unit tests (Vitest)
-npm run test:e2e            # Run E2E tests (Playwright)
+pnpm test                   # Run all unit tests (Vitest)
+pnpm test:e2e               # Run E2E tests (Playwright)
 npx playwright install      # Install Playwright browsers (first time only)
-npm run storybook           # Start Storybook on http://localhost:6006
-npm run storybook:test      # Run Storybook tests in headless mode
+pnpm --filter web storybook # Start Storybook on http://localhost:6006
+pnpm --filter web storybook:test  # Run Storybook tests in headless mode
 ```
 
 ### Code Quality
 ```bash
-npm run lint                # Check for linting errors
-npm run lint:fix            # Auto-fix linting issues
-npm run check:types         # TypeScript type checking
-npm run check:deps          # Find unused dependencies/files (Knip)
-npm run check:i18n          # Validate translations completeness
-npm run build-stats         # Analyze bundle size
+pnpm lint                   # Lint web app
+pnpm lint:docs              # Lint docs site
+pnpm lint:all               # Lint all workspaces in parallel
+pnpm --filter web lint:fix  # Auto-fix linting issues in web app
+pnpm --filter web check:types    # TypeScript type checking
+pnpm --filter web check:deps     # Find unused dependencies/files (Knip)
+pnpm --filter web check:i18n     # Validate translations completeness
+pnpm --filter web build-stats    # Analyze bundle size
 ```
 
 ### Database
 ```bash
-npm run db:generate         # Generate migration from schema changes
-npm run db:migrate          # Apply migrations
-npm run db:studio           # Open Drizzle Studio (https://local.drizzle.studio)
+pnpm --filter web db:generate    # Generate migration from schema changes
+pnpm --filter web db:migrate     # Apply migrations
+pnpm --filter web db:studio      # Open Drizzle Studio (https://local.drizzle.studio)
 ```
 
 ### Other
 ```bash
-npm run commit              # Interactive commit with Conventional Commits
-npm run clean               # Remove .next, out, coverage directories
+pnpm --filter web commit         # Interactive commit with Conventional Commits
+pnpm clean                       # Remove .next, out, coverage from all apps
 ```
 
 ## Architecture
 
-### App Router Structure
+### Workspace Structure
 
-The project uses Next.js App Router with i18n and route groups:
+```
+/
+├── apps/
+│   ├── web/              # Main Next.js application
+│   │   ├── src/          # Application source code
+│   │   ├── public/       # Static assets
+│   │   ├── migrations/   # Database migrations
+│   │   └── package.json  # Web app dependencies
+│   └── docs/             # Documentation site (Nextra)
+│       ├── app/          # Nextra App Router structure
+│       └── package.json  # Docs dependencies
+├── pnpm-workspace.yaml   # Workspace configuration
+└── package.json          # Root workspace scripts
+```
 
-- `src/app/[locale]/(marketing)/` - Public marketing pages (home, about, portfolio)
-- `src/app/[locale]/(auth)/dashboard/` - Protected dashboard pages
-- `src/app/[locale]/(auth)/(center)/` - Centered auth pages (sign-in, sign-up)
-- `src/app/[locale]/api/` - API routes
+### App Router Structure (Web App)
+
+The web app uses Next.js App Router with i18n and route groups:
+
+- `apps/web/src/app/[locale]/(marketing)/` - Public marketing pages (home, about, portfolio)
+- `apps/web/src/app/[locale]/(auth)/dashboard/` - Protected dashboard pages
+- `apps/web/src/app/[locale]/(auth)/(center)/` - Centered auth pages (sign-in, sign-up)
+- `apps/web/src/app/[locale]/api/` - API routes
 
 Route groups `(marketing)`, `(auth)`, and `(center)` organize routes without affecting URLs.
 
-### Core Libraries Configuration
+### Core Libraries Configuration (Web App)
 
 **i18n Setup:**
-- `src/libs/I18n.ts` - next-intl configuration
-- `src/libs/I18nRouting.ts` - Routing configuration
-- `src/libs/I18nNavigation.ts` - Type-safe navigation with i18n
-- `src/locales/` - Translation files (only edit `en.json`, Crowdin handles others)
-- `src/utils/AppConfig.ts` - Locale configuration
+- `apps/web/src/libs/I18n.ts` - next-intl configuration
+- `apps/web/src/libs/I18nRouting.ts` - Routing configuration
+- `apps/web/src/libs/I18nNavigation.ts` - Type-safe navigation with i18n
+- `apps/web/src/locales/` - Translation files (only edit `en.json`, Crowdin handles others)
+- `apps/web/src/utils/AppConfig.ts` - Locale configuration
 
 **Database:**
-- `src/models/Schema.ts` - Drizzle ORM schema definitions
-- `src/utils/DBConnection.ts` - Database connection factory
-- `src/libs/DB.ts` - Database utilities
+- `apps/web/src/models/Schema.ts` - Drizzle ORM schema definitions
+- `apps/web/src/utils/DBConnection.ts` - Database connection factory
+- `apps/web/src/libs/DB.ts` - Database utilities
+- `apps/web/migrations/` - Database migration files
 - Local development uses PGlite (no Docker needed)
 - Production requires PostgreSQL (recommended: Prisma Postgres)
 
 **Security & Monitoring:**
-- `src/libs/Arcjet.ts` - Base Arcjet instance with Shield WAF
-- `src/middleware.ts` - Bot detection, auth protection, i18n routing
-- `src/libs/Logger.ts` - LogTape configuration with Better Stack integration
-- Sentry configured via `next.config.ts` and instrumentation files
+- `apps/web/src/libs/Arcjet.ts` - Base Arcjet instance with Shield WAF
+- `apps/web/src/middleware.ts` - Bot detection, auth protection, i18n routing
+- `apps/web/src/libs/Logger.ts` - LogTape configuration with Better Stack integration
+- Sentry configured via `apps/web/next.config.ts` and instrumentation files
 
 **Environment Variables:**
-- `src/libs/Env.ts` - Type-safe environment variables with T3 Env
-- `.env` - Default values (tracked by Git)
-- `.env.local` - Secrets and overrides (NOT tracked by Git)
+- `apps/web/src/libs/Env.ts` - Type-safe environment variables with T3 Env
+- `apps/web/.env` - Default values (tracked by Git)
+- `apps/web/.env.local` - Secrets and overrides (NOT tracked by Git)
 
-### Middleware Flow
+### Middleware Flow (Web App)
 
-The middleware (`src/middleware.ts`) executes in this order:
+The middleware (`apps/web/src/middleware.ts`) executes in this order:
 1. Arcjet bot detection and Shield WAF (if `ARCJET_KEY` is set)
 2. Clerk authentication for protected routes (`/dashboard`) and auth pages
 3. next-intl i18n routing
 
 **Important:** Middleware runs on Node.js runtime, not Edge. This is required for database connections with Webpack builds on Vercel.
 
-### Testing Strategy
+### Testing Strategy (Web App)
 
 **Unit Tests:**
-- Location: Colocated with source files (`*.test.ts`, `*.test.tsx`)
+- Location: Colocated with source files (`*.test.ts`, `*.test.tsx`) in `apps/web/src/`
 - Framework: Vitest with two projects:
   - `unit`: Node environment for `.test.ts` files (excluding hooks)
   - `ui`: Browser mode with Playwright for `.test.tsx` and hook tests
-- Run with: `npm run test`
+- Run with: `pnpm test`
 
 **Integration & E2E Tests:**
-- Location: `tests/integration/` and `tests/e2e/`
+- Location: `apps/web/tests/integration/` and `apps/web/tests/e2e/`
 - File patterns: `*.spec.ts` (integration), `*.e2e.ts` (E2E)
 - Framework: Playwright (Chromium locally, Chromium + Firefox in CI)
 - Checkly monitoring: Tests with `*.check.e2e.ts` run as synthetic monitoring
@@ -125,19 +155,19 @@ The middleware (`src/middleware.ts`) executes in this order:
 ### Database Schema Changes
 
 Workflow:
-1. Edit `src/models/Schema.ts`
-2. Run `npm run db:generate` to create migration
-3. Migration auto-applies on dev server restart via `instrumentation.ts`
-4. Or manually run `npm run db:migrate`
+1. Edit `apps/web/src/models/Schema.ts`
+2. Run `pnpm --filter web db:generate` to create migration
+3. Migration auto-applies on dev server restart via `apps/web/instrumentation.ts`
+4. Or manually run `pnpm --filter web db:migrate`
 
 Production deploys automatically run migrations during build.
 
 ### Translations (i18n)
 
 **Developer workflow:**
-- Only edit `src/locales/en.json` (or your default language)
+- Only edit `apps/web/src/locales/en.json` (or your default language)
 - Other languages are auto-generated by Crowdin
-- Validation: `npm run check:i18n`
+- Validation: `pnpm --filter web check:i18n`
 
 **Crowdin sync:**
 - Auto-syncs on push to `main` branch
@@ -147,28 +177,29 @@ Production deploys automatically run migrations during build.
 ### Styling
 
 - **Tailwind CSS 4** with PostCSS plugin
-- Configuration: `tailwind.config.ts` (if exists) or defaults
-- Base template: `src/templates/BaseTemplate.tsx`
+- Configuration: `apps/web/tailwind.config.ts` (if exists) or defaults
+- Base template: `apps/web/src/templates/BaseTemplate.tsx`
 - Unstyled by design - minimal opinionated styles
 
 ### Authentication (Modular System)
 
 **Provider Selection:**
 - Switch auth providers via `NEXT_PUBLIC_AUTH_PROVIDER` environment variable
-- Options: `'clerk'` (default), `'cloudflare'`, `'cognito'`
+- Options: `'clerk'` (default), `'cloudflare'`, `'cognito'`, `'test'`
 - No code changes needed to switch providers
 
 **Architecture:**
-- `src/libs/auth/` - Modular authentication system
-- `src/libs/auth/adapters/` - Provider implementations
+- `apps/web/src/libs/auth/` - Modular authentication system
+- `apps/web/src/libs/auth/adapters/` - Provider implementations
   - `ClerkAdapter.tsx` - Fully implemented ✅
   - `CloudflareAdapter.tsx` - Fully implemented ✅
   - `CognitoAdapter.tsx` - Stub implementation ⚠️
-- `src/libs/auth/adapters/cloudflare/` - Cloudflare utilities
+  - `TestAdapter.tsx` - Test/development adapter ✅
+- `apps/web/src/libs/auth/adapters/cloudflare/` - Cloudflare utilities
   - `utils.ts` - JWT verification, login/logout helpers
   - `UserProfile.tsx` - Custom profile UI
-- `src/libs/auth/factory.ts` - Provider factory (singleton)
-- `src/libs/auth/components.tsx` - Unified React components
+- `apps/web/src/libs/auth/factory.ts` - Provider factory (singleton)
+- `apps/web/src/libs/auth/components.tsx` - Unified React components
 
 **Usage:**
 ```typescript
@@ -180,8 +211,8 @@ import { AuthProvider, SignInComponent, SignOutButtonComponent } from '@/libs/au
 ```
 
 **Clerk Setup (default):**
-- Keyless mode in development (use test keys from `.env`)
-- Protected routes defined in `src/middleware.ts`
+- Keyless mode in development (use test keys from `apps/web/.env`)
+- Protected routes defined in `apps/web/src/middleware.ts`
 - Full-featured: UI components, multi-language, MFA, social auth
 
 **Cloudflare Access Setup:**
@@ -193,20 +224,20 @@ import { AuthProvider, SignInComponent, SignOutButtonComponent } from '@/libs/au
 ### Customization Points
 
 Search codebase for `FIXME:` comments to find key customization spots:
-- `src/utils/AppConfig.ts` - App name, locales
-- `src/templates/BaseTemplate.tsx` - Default theme
-- `next.config.ts` - Next.js configuration
-- `.env` - Environment variables
-- Favicon files in `public/`
+- `apps/web/src/utils/AppConfig.ts` - App name, locales
+- `apps/web/src/templates/BaseTemplate.tsx` - Default theme
+- `apps/web/next.config.ts` - Next.js configuration
+- `apps/web/.env` - Environment variables
+- Favicon files in `apps/web/public/`
 
 ### Git Workflow
 
 - **Commit convention:** Conventional Commits (enforced by Commitlint)
-- Use `npm run commit` for guided commit messages
+- Use `pnpm --filter web commit` for guided commit messages
 - GitHub Actions: CI tests, Crowdin sync, semantic releases
-- Pre-commit hooks managed by Lefthook (not Husky)
+- Pre-commit hooks managed by Lefthook (not Husky) - configured in `apps/web/lefthook.yml`
 
-### Key Integrations
+### Key Integrations (Web App)
 
 - **Error Monitoring:** Sentry (dev: Spotlight at `/monitoring`, prod: cloud)
 - **Logging:** LogTape + Better Stack (prod)
@@ -217,19 +248,25 @@ Search codebase for `FIXME:` comments to find key customization spots:
 
 ### TypeScript Paths
 
-Absolute imports use `@/` prefix mapping to `src/`:
+Absolute imports in web app use `@/` prefix mapping to `apps/web/src/`:
 ```typescript
 import { counterSchema } from '@/models/Schema';
 import { AppConfig } from '@/utils/AppConfig';
 ```
 
+In the web app context, these resolve to:
+- `@/models/Schema` → `apps/web/src/models/Schema.ts`
+- `@/utils/AppConfig` → `apps/web/src/utils/AppConfig.ts`
+
 ## Important Notes
 
+- **Package Manager:** Requires pnpm (install: `npm install -g pnpm`)
 - **Node version:** Requires Node.js 20+
+- **Monorepo:** Uses pnpm workspace with `apps/web` and `apps/docs`
 - **Database:** Local development works out of the box with PGlite. Production needs PostgreSQL connection string in `DATABASE_URL`.
 - **Secrets:** Never commit `.env.local` - it's in `.gitignore`
 - **Middleware runtime:** Uses `nodejs` runtime, not Edge (required for database connections)
-- **Bundle analyzer:** Run `npm run build-stats` to analyze webpack bundle size
+- **Bundle analyzer:** Run `pnpm --filter web build-stats` to analyze webpack bundle size
 - **React Compiler:** Enabled in production builds (`reactCompiler: true`)
 - **Turbopack:** File system caching enabled for dev mode
 
@@ -239,3 +276,11 @@ Recommended extensions defined in `.vscode/extension.json`. Configurations inclu
 - Debug configurations for frontend/backend
 - Tasks for common operations
 - Settings for ESLint, Prettier auto-fix on save
+
+## Documentation Site (apps/docs)
+
+The docs site uses Nextra with Next.js App Router:
+- **Tech Stack:** Next.js 15+, Nextra, App Router
+- **Content:** Documentation in `apps/docs/app/` directory
+- **Commands:** `pnpm dev:docs` (dev), `pnpm build:docs` (build)
+- **Port:** Runs on a different port from web app (configured in package.json)

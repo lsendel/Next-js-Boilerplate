@@ -1,0 +1,344 @@
+# First Steps
+
+Now that you have the boilerplate running, let's explore the key features and make your first changes.
+
+## Explore the Homepage
+
+Visit [http://localhost:3000](http://localhost:3000). You'll see:
+
+- **Navigation bar** with language switcher
+- **Hero section** with call-to-action
+- **Features showcase**
+- **Pricing section** (demo)
+- **Contact form**
+
+## Try the Authentication System
+
+The boilerplate includes a fully functional authentication system:
+
+### Test the Sign-In Flow
+
+1. Click **"Sign In"** in the navigation
+2. Default provider is Clerk (keyless mode for development)
+3. Create a test account or sign in with:
+   - Email/Password
+   - Social OAuth (Google, GitHub, etc.)
+   - Magic links
+
+### Switch Authentication Providers
+
+You can switch between auth providers **without changing code**:
+
+```bash
+# Edit apps/web/.env.local
+NEXT_PUBLIC_AUTH_PROVIDER=clerk      # Default
+# NEXT_PUBLIC_AUTH_PROVIDER=cloudflare # Cloudflare Access
+# NEXT_PUBLIC_AUTH_PROVIDER=cognito    # AWS Cognito
+# NEXT_PUBLIC_AUTH_PROVIDER=test       # E2E testing only
+```
+
+[Learn more about authentication →](/guides/authentication)
+
+## Database Exploration
+
+The app uses **PGlite** for local development (no Docker required!).
+
+### Open Drizzle Studio
+
+```bash
+pnpm --filter web db:studio
+```
+
+This opens Drizzle Studio at [https://local.drizzle.studio](https://local.drizzle.studio)
+
+### View Database Tables
+
+You'll see these tables:
+- `users` - User accounts
+- `sessions` - Active sessions
+- `passwordResetTokens` - Password recovery
+- `userPreferences` - User settings
+- `tenants` - Multi-tenancy support
+- `counter` - Demo table
+
+[Learn more about database →](/guides/database)
+
+## Change the Language
+
+The app supports multiple languages out of the box:
+
+1. Click the language switcher (globe icon)
+2. Select **Español** or **Français**
+3. The entire app translates instantly!
+
+### Add a New Translation
+
+Edit `apps/web/src/locales/en.json`:
+
+```json
+{
+  "Index": {
+    "meta_title": "Next.js Boilerplate",
+    "meta_description": "Production-ready Next.js boilerplate",
+    "your_new_key": "Your custom message"
+  }
+}
+```
+
+Use in components:
+
+```tsx
+import { useTranslations } from 'next-intl'
+
+export default function MyComponent() {
+  const t = useTranslations('Index')
+  return <h1>{t('your_new_key')}</h1>
+}
+```
+
+[Learn more about i18n →](/guides/i18n)
+
+## Run the Tests
+
+The boilerplate includes comprehensive testing:
+
+### Unit Tests (Vitest)
+
+```bash
+pnpm test
+```
+
+Run specific tests:
+
+```bash
+pnpm --filter web test src/components/Button.test.tsx
+```
+
+### E2E Tests (Playwright)
+
+```bash
+# Install browsers (first time only)
+npx playwright install
+
+# Run E2E tests
+pnpm test:e2e
+```
+
+### Storybook
+
+```bash
+pnpm --filter web storybook
+```
+
+Opens at [http://localhost:6006](http://localhost:6006)
+
+[Learn more about testing →](/guides/testing)
+
+## Make Your First Change
+
+Let's customize the homepage hero:
+
+### 1. Edit the Hero Component
+
+Open `apps/web/src/app/[locale]/(marketing)/page.tsx`:
+
+```tsx
+// Find this section and update:
+<h1 className="text-5xl font-bold">
+  Your Custom Headline Here
+</h1>
+```
+
+### 2. See Changes Instantly
+
+Save the file and check [http://localhost:3000](http://localhost:3000) - hot reload updates automatically!
+
+### 3. Update Translation
+
+Edit `apps/web/src/locales/en.json`:
+
+```json
+{
+  "Index": {
+    "title": "Your Custom Title",
+    "description": "Your custom description"
+  }
+}
+```
+
+## View Error Monitoring
+
+The app includes Sentry Spotlight for development error monitoring:
+
+### Start Spotlight
+
+```bash
+pnpm --filter web dev:spotlight
+```
+
+Access at [http://localhost:3000/monitoring](http://localhost:3000/monitoring)
+
+### Trigger a Test Error
+
+Add this to any component:
+
+```tsx
+<button onClick={() => {
+  throw new Error('Test error for Sentry')
+}}>
+  Trigger Error
+</button>
+```
+
+The error appears in Spotlight instantly!
+
+## Check Code Quality
+
+Run all quality checks:
+
+```bash
+# Linting
+pnpm lint
+
+# Type checking
+pnpm --filter web check:types
+
+# Check for unused dependencies
+pnpm --filter web check:deps
+
+# Validate translations
+pnpm --filter web check:i18n
+```
+
+Fix issues automatically:
+
+```bash
+pnpm --filter web lint:fix
+```
+
+## Database Migrations
+
+When you modify the database schema:
+
+### 1. Edit the Schema
+
+Open `apps/web/src/server/db/models/Schema.ts`:
+
+```typescript
+export const myNewTable = pgTable('my_new_table', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+})
+```
+
+### 2. Generate Migration
+
+```bash
+pnpm --filter web db:generate
+```
+
+This creates a new migration file in `apps/web/migrations/`
+
+### 3. Apply Migration
+
+```bash
+pnpm --filter web db:migrate
+```
+
+Or restart the dev server (auto-migrates on start).
+
+[Learn more about migrations →](/guides/database/migrations)
+
+## Environment Variables
+
+The app uses **T3 Env** for type-safe environment variables.
+
+### View All Variables
+
+Check `apps/web/src/libs/Env.ts` for all available variables.
+
+### Add Your Own
+
+```typescript
+// In apps/web/src/libs/Env.ts
+export const Env = createEnv({
+  server: {
+    MY_API_KEY: z.string().min(1),
+  },
+  client: {
+    NEXT_PUBLIC_MY_PUBLIC_KEY: z.string().min(1),
+  },
+  runtimeEnv: {
+    MY_API_KEY: process.env.MY_API_KEY,
+    NEXT_PUBLIC_MY_PUBLIC_KEY: process.env.NEXT_PUBLIC_MY_PUBLIC_KEY,
+  },
+})
+```
+
+Then add to `apps/web/.env.local`:
+
+```bash
+MY_API_KEY=your-secret-key
+NEXT_PUBLIC_MY_PUBLIC_KEY=your-public-key
+```
+
+[Learn more about environment variables →](/reference/environment-variables)
+
+## Commit Your Changes
+
+The boilerplate uses **Conventional Commits**:
+
+```bash
+# Guided commit (recommended)
+pnpm --filter web commit
+
+# Or manual commit
+git add .
+git commit -m "feat: update homepage hero"
+```
+
+Git hooks will automatically:
+- ✅ Lint your code
+- ✅ Check types
+- ✅ Validate commit message
+- ✅ Run tests (if configured)
+
+## Build for Production
+
+Test a production build locally:
+
+```bash
+# Build with local database
+pnpm --filter web build-local
+
+# Start production server
+pnpm start
+```
+
+Visit [http://localhost:3000](http://localhost:3000) to see the production build.
+
+## Next Steps
+
+You've explored the key features! Now:
+
+- **[Understand Project Structure](/getting-started/project-structure)** - Learn how the code is organized
+- **[Customize the Boilerplate](/getting-started/customization)** - Make it yours
+- **[Explore Guides](/guides)** - Deep dive into specific features
+- **[Deploy to Production](/guides/deployment)** - Go live!
+
+## Quick Reference
+
+| Task | Command |
+|------|---------|
+| Start dev server | `pnpm dev` |
+| Run tests | `pnpm test` |
+| Run E2E tests | `pnpm test:e2e` |
+| Open Storybook | `pnpm --filter web storybook` |
+| Open DB studio | `pnpm --filter web db:studio` |
+| Lint code | `pnpm lint` |
+| Type check | `pnpm --filter web check:types` |
+| Build | `pnpm build` |
+| Start prod server | `pnpm start` |
+
+Happy coding! 🚀

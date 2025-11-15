@@ -1,0 +1,22 @@
+{
+  "index": {
+    "title": "Overview",
+    "type": "page"
+  },
+  "installation": {
+    "title": "Installation",
+    "type": "page"
+  },
+  "first-steps": {
+    "title": "First Steps",
+    "type": "page"
+  },
+  "project-structure": {
+    "title": "Project Structure",
+    "type": "page"
+  },
+  "customization": {
+    "title": "Customization",
+    "type": "page"
+  }
+}

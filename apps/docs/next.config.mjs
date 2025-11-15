@@ -7,10 +7,6 @@ export default nextra({
   }
 })({
   reactStrictMode: true,
-  swcMinify: true,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: false,
   },

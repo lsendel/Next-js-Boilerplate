@@ -1,0 +1,185 @@
+# Installation
+
+Get the Next.js Boilerplate running on your machine in minutes.
+
+## Step 1: Clone the Repository
+
+Clone the project to your local machine:
+
+```bash
+git clone --depth=1 https://github.com/ixartz/Next-js-Boilerplate.git my-project-name
+cd my-project-name
+```
+
+The `--depth=1` flag creates a shallow clone, downloading only the latest commit for faster setup.
+
+## Step 2: Install Dependencies
+
+This project uses **pnpm** as the package manager for the monorepo:
+
+```bash
+# Install pnpm globally (if not already installed)
+npm install -g pnpm
+
+# Install all dependencies
+pnpm install
+```
+
+### Why pnpm?
+
+- **Faster** - Up to 2x faster than npm
+- **Efficient** - Saves disk space with content-addressable storage
+- **Strict** - Better dependency management
+- **Monorepo support** - Native workspace support
+
+## Step 3: Start Development Server
+
+Run the development server:
+
+```bash
+pnpm dev
+```
+
+This starts:
+- **Web app** at [http://localhost:3000](http://localhost:3000)
+- **PGlite database** (in-memory, no Docker required!)
+- **Hot reload** for instant updates
+
+### Start Documentation Site (Optional)
+
+```bash
+pnpm dev:docs
+```
+
+This starts the documentation site at [http://localhost:3001](http://localhost:3001)
+
+### Start Both Apps
+
+```bash
+pnpm dev:all
+```
+
+Runs both the web app and docs site in parallel.
+
+## Step 4: Verify Installation
+
+Open [http://localhost:3000](http://localhost:3000) in your browser. You should see:
+
+- ✅ The Next.js Boilerplate homepage
+- ✅ Working navigation
+- ✅ No error messages in the console
+
+**Congratulations!** Your development environment is ready. 🎉
+
+## Monorepo Structure
+
+This project uses a **pnpm workspace monorepo**:
+
+```
+Next-js-Boilerplate/
+├── apps/
+│   ├── web/          # Main Next.js application
+│   └── docs/         # Documentation site (Nextra)
+├── package.json      # Workspace root
+└── pnpm-workspace.yaml
+```
+
+## Next Steps
+
+Now that you have the app running, proceed to:
+
+- **[First Steps](/getting-started/first-steps)** - Explore the app and key features
+- **[Project Structure](/getting-started/project-structure)** - Understand the codebase
+- **[Customization](/getting-started/customization)** - Make it your own
+
+## Troubleshooting
+
+### Port Already in Use
+
+If port 3000 is already in use:
+
+```bash
+# Kill the process using port 3000
+lsof -ti:3000 | xargs kill -9
+
+# Or run on a different port
+pnpm --filter web dev -- -p 3001
+```
+
+### pnpm Not Found
+
+If `pnpm` command is not found after installation:
+
+```bash
+# Install pnpm with npm
+npm install -g pnpm
+
+# Or with Homebrew (macOS)
+brew install pnpm
+```
+
+### Node Version Too Old
+
+This project requires Node.js 20+:
+
+```bash
+# Check your Node version
+node -v
+
+# Upgrade with nvm (recommended)
+nvm install 20
+nvm use 20
+```
+
+### Permission Errors
+
+On macOS/Linux, you may need to use `sudo`:
+
+```bash
+sudo npm install -g pnpm
+```
+
+Or configure npm to use a different directory (recommended):
+
+```bash
+mkdir ~/.npm-global
+npm config set prefix '~/.npm-global'
+echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+```
+
+## System Requirements
+
+| Requirement | Minimum | Recommended |
+|-------------|---------|-------------|
+| Node.js | 20.0.0 | 22.0.0+ |
+| RAM | 4 GB | 8 GB+ |
+| Disk Space | 2 GB | 5 GB+ |
+| OS | macOS, Linux, Windows | Any |
+
+## Alternative Installation Methods
+
+### Using npm (Not Recommended)
+
+While pnpm is recommended, you can use npm:
+
+```bash
+npm install
+npm run dev
+```
+
+**Note:** Some workspace features may not work correctly with npm.
+
+### Using Docker
+
+A Docker setup is available:
+
+```bash
+docker-compose up
+```
+
+See `docker-compose.yml` for configuration.
+
+## What's Next?
+
+Continue to [First Steps](/getting-started/first-steps) to start building your application →
