@@ -201,10 +201,32 @@ export class AuthService {
   async recordFailedLogin(email: string, ip: string): Promise<void> {
     await securityLogger.logAuthFailure(email, ip, 'Invalid credentials');
 
-    // In a production system, you might want to:
-    // - Increment failed attempt counter in database
-    // - Trigger account lockout after X failed attempts
-    // - Send security alert email to user
+    const user = await userRepo.findUserByEmail(email);
+    if (!user) {
+      return; // Don't reveal if user exists
+    }
+
+    const attempts = (user.failedLoginAttempts || 0) + 1;
+    const maxAttempts = 5;
+    const lockoutDuration = 15 * 60 * 1000; // 15 minutes
+
+    const lockedUntil = attempts >= maxAttempts
+      ? new Date(Date.now() + lockoutDuration)
+      : null;
+
+    await userRepo.updateUser(user.id, {
+      failedLoginAttempts: attempts,
+      lockedUntil,
+      lastFailedLogin: new Date(),
+    });
+
+    if (lockedUntil) {
+      securityLogger.logSuspiciousActivity(
+        'Account locked due to failed login attempts',
+        ip,
+        { userId: user.id, email: user.email, attempts },
+      );
+    }
   }
 
   /**
@@ -220,18 +242,39 @@ export class AuthService {
       return false;
     }
 
-    // Check if user is inactive (could be locked)
+    // Check if user is inactive
     if (!user.isActive) {
       return true;
     }
 
-    // TODO: Implement actual account locking mechanism
-    // This could involve:
-    // - Checking failed_login_attempts table
-    // - Checking lockout_until timestamp
-    // - Automatic unlocking after timeout
+    // Check temporary lock
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      return true;
+    }
+
+    // Auto-unlock if timeout passed
+    if (user.lockedUntil && user.lockedUntil <= new Date()) {
+      await userRepo.updateUser(user.id, {
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+      });
+      return false;
+    }
 
     return false;
+  }
+
+  /**
+   * Reset failed login attempts after successful authentication
+   *
+   * @param userId - User ID
+   */
+  async resetFailedLoginAttempts(userId: number): Promise<void> {
+    await userRepo.updateUser(userId, {
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+      lastFailedLogin: null,
+    });
   }
 
   /**

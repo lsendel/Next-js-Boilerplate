@@ -14,6 +14,8 @@ import {
   validatePasswordStrength,
 } from '@/libs/auth/security/password-breach';
 import { logger } from '@/libs/Logger';
+import { db } from '@/libs/DB';
+import { passwordResetTokens } from '@/server/db/models/Schema';
 import type { NewUser, User } from '@/server/db/repositories/user.repository';
 import type { NewSession, Session } from '@/server/db/repositories/session.repository';
 
@@ -432,9 +434,15 @@ export class UserService {
     // Generate reset token
     const { token, expiresAt } = generatePasswordResetToken();
 
-    // In a real application, store the hash in the database
-    // For now, we'll just return the token
-    // TODO: Add password_reset_tokens table
+    // Hash token before storing in database
+    const hashedToken = await bcrypt.hash(token, 10);
+
+    // Store hashed token in database
+    await db.insert(passwordResetTokens).values({
+      userId: user.id,
+      token: hashedToken,
+      expiresAt,
+    });
 
     await securityLogger.logPasswordResetRequest(
       email,
