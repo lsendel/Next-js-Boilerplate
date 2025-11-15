@@ -19,7 +19,10 @@ export default defineConfig({
         test: {
           name: 'unit',
           include: ['src/**/*.test.{js,ts}'],
-          exclude: ['src/hooks/**/*.test.ts'],
+          exclude: [
+            'src/hooks/**/*.test.ts',
+            'src/server/**/*.test.ts', // Exclude server tests (need database)
+          ],
           environment: 'node',
         },
       },
@@ -27,7 +30,10 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'integration',
-          include: ['tests/integration/**/*.test.{js,ts}'],
+          include: [
+            'tests/integration/**/*.test.{js,ts}',
+            'src/server/**/*.test.ts', // Include server tests (need database)
+          ],
           environment: 'node',
         },
       },

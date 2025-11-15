@@ -90,14 +90,26 @@ const getTenantBySlug = async (slug: string) => {
     return cached;
   }
 
-  const result = await db.query.tenants.findFirst({
-    where: eq(tenants.slug, normalized),
-  });
+  try {
+    const result = await db.query.tenants.findFirst({
+      where: eq(tenants.slug, normalized),
+    });
 
-  const tenant = result ? mapTenantRecord(result) : null;
-  setCachedTenant(cacheKey, tenant);
+    const tenant = result ? mapTenantRecord(result) : null;
+    setCachedTenant(cacheKey, tenant);
 
-  return tenant;
+    return tenant;
+  } catch (error: any) {
+    // Gracefully handle missing tenant tables (e.g., during migrations or in test environments)
+    // Check both error.code and error.cause.code for PostgreSQL error codes
+    if (error.code === '42P01' || error.cause?.code === '42P01') {
+      // PostgreSQL error code for "relation does not exist"
+      // Return null - default tenant will be used
+      return null;
+    }
+    // Re-throw other errors
+    throw error;
+  }
 };
 
 const getTenantByDomain = async (domain: string) => {
@@ -108,21 +120,33 @@ const getTenantByDomain = async (domain: string) => {
     return cached;
   }
 
-  const result = await db.query.tenantDomains.findFirst({
-    where: eq(tenantDomains.domain, normalized),
-    with: {
-      tenant: true,
-    },
-  });
+  try {
+    const result = await db.query.tenantDomains.findFirst({
+      where: eq(tenantDomains.domain, normalized),
+      with: {
+        tenant: true,
+      },
+    });
 
-  const tenant = result?.tenant ? mapTenantRecord(result.tenant) : null;
-  setCachedTenant(cacheKey, tenant);
+    const tenant = result?.tenant ? mapTenantRecord(result.tenant) : null;
+    setCachedTenant(cacheKey, tenant);
 
-  if (tenant) {
-    setCachedTenant(makeCacheKey('slug', tenant.slug), tenant);
+    if (tenant) {
+      setCachedTenant(makeCacheKey('slug', tenant.slug), tenant);
+    }
+
+    return tenant;
+  } catch (error: any) {
+    // Gracefully handle missing tenant tables (e.g., during migrations or in test environments)
+    // Check both error.code and error.cause.code for PostgreSQL error codes
+    if (error.code === '42P01' || error.cause?.code === '42P01') {
+      // PostgreSQL error code for "relation does not exist"
+      // Return null - default tenant will be used
+      return null;
+    }
+    // Re-throw other errors
+    throw error;
   }
-
-  return tenant;
 };
 
 const createDefaultTenant = (): TenantRecord => ({
