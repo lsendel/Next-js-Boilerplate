@@ -12,13 +12,15 @@
  * - Can add error boundary that eagerly loads Sentry on first error
  */
 
+import { logger } from '@/libs/Logger';
+
 let sentryInitialized = false;
 
 /**
  * Initialize Sentry client-side monitoring
- * Called automatically after page load, or can be called manually
+ * Called automatically after page load
  */
-export async function initSentry() {
+async function initSentry() {
   // Skip if already initialized or on server
   if (sentryInitialized || typeof window === 'undefined') {
     return;
@@ -68,10 +70,10 @@ export async function initSentry() {
     sentryInitialized = true;
 
     if (process.env.NODE_ENV === 'development') {
-      console.warn('[LazyMonitoring] Sentry initialized after page load');
+      logger.warn('LazyMonitoring: Sentry initialized after page load');
     }
   } catch (error) {
-    console.error('[LazyMonitoring] Failed to initialize Sentry:', error);
+    logger.error('LazyMonitoring failed to initialize Sentry', { error });
   }
 }
 
@@ -118,6 +120,6 @@ export async function captureException(error: Error) {
     Sentry.captureException(error);
   } else {
     // Fallback: log to console if Sentry failed to initialize
-    console.error('[LazyMonitoring] Sentry not available, logging error:', error);
+    logger.error('LazyMonitoring: Sentry not available, logging error', { error });
   }
 }

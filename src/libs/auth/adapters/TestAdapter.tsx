@@ -5,6 +5,7 @@ import type { AuthMiddlewareConfig, AuthSession, AuthUser, IAuthAdapter } from '
 import { redirect } from 'next/navigation';
 import React, { useState } from 'react';
 import { routing } from '@/libs/I18nRouting';
+import { authLogger } from '@/libs/Logger';
 
 /**
  * In-memory user storage for test authentication
@@ -263,6 +264,7 @@ function TestSignInForm({ locale }: { path: string; locale: string }) {
                 onChange={e => setEmail(e.target.value)}
                 className="relative block w-full rounded-t-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
                 placeholder="Email"
+                aria-label="Email"
                 disabled={isLoading}
               />
             </div>
@@ -280,6 +282,7 @@ function TestSignInForm({ locale }: { path: string; locale: string }) {
                 onChange={e => setPassword(e.target.value)}
                 className="relative block w-full rounded-b-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
                 placeholder="Password"
+                aria-label="Password"
                 disabled={isLoading}
               />
             </div>
@@ -519,7 +522,7 @@ function TestSignOutButton({ children }: { children: React.ReactNode }) {
       // Redirect to home page
       window.location.href = '/';
     } catch (err) {
-      console.error('Sign out error:', err);
+      authLogger.error('Test auth sign out error', { error: err });
     }
   };
 
@@ -549,7 +552,7 @@ function TestUserProfile() {
           setUser(data);
         }
       } catch (err) {
-        console.error('Failed to fetch user:', err);
+        authLogger.error('Test auth failed to fetch user', { error: err });
       } finally {
         setIsLoading(false);
       }
@@ -613,6 +616,3 @@ function TestUserProfile() {
     </div>
   );
 }
-
-// Export storage for API routes
-export { sessions, users };

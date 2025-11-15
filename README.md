@@ -520,6 +520,7 @@ See `docs/ops/environment-variables.md` for per-environment configuration and `d
 - [Observability runbook](docs/ops/observability.md) – recommended alerting, dashboards, log retention, and backup drills.
 - [CI E2E environments](docs/CI_E2E_ENVIRONMENTS.md) – domains (`environment.1pet.com`, `test.1pet.me`) and secrets powering the shared/custom Playwright runs.
 - [Terraform infrastructure](docs/INFRA_TERRAFORM.md) – how to provision the Cloudflare Pages + AWS Amplify stacks for those domains.
+- [Environment matrix](docs/CI_ENVIRONMENTS.md) – branch → environment mapping (dev/stage/prod) and which domains get deployed per provider.
 
 ### Useful commands
 

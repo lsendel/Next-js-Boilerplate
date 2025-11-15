@@ -3,6 +3,7 @@ import { ClerkAdapter } from './adapters/ClerkAdapter';
 import { CloudflareAdapter } from './adapters/CloudflareAdapter';
 import { CognitoAdapter } from './adapters/CognitoAdapter';
 import { TestAdapter } from './adapters/TestAdapter';
+import { authLogger } from '@/libs/Logger';
 
 /**
  * Auth Provider Factory
@@ -41,7 +42,7 @@ export class AuthFactory {
         return new TestAdapter();
 
       default:
-        console.warn(`Unknown auth provider: ${provider}. Falling back to Clerk.`);
+        authLogger.warn('Unknown auth provider, falling back to Clerk', { provider });
         return new ClerkAdapter();
     }
   }

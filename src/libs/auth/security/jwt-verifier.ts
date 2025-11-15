@@ -284,34 +284,34 @@ export async function verifyJWT(
     // Step 3: Fetch JWKS
     const jwks = await fetchJWKS(jwksUrl);
     if (!jwks) {
-      console.error('Failed to fetch JWKS');
+      securityLogger.error('Failed to fetch JWKS');
       return null;
     }
 
     // Step 4: Find matching JWK
     const jwk = findJWK(jwks, decoded.header.kid);
     if (!jwk) {
-      console.error(`No matching JWK found for kid: ${decoded.header.kid}`);
+      securityLogger.error('No matching JWK found', { kid: decoded.header.kid });
       return null;
     }
 
     // Step 5: Import public key
     const publicKey = await importJWK(jwk);
     if (!publicKey) {
-      console.error('Failed to import public key');
+      securityLogger.error('Failed to import public key');
       return null;
     }
 
     // Step 6: Verify signature
     const isValid = await verifyJWTSignature(token, publicKey);
     if (!isValid) {
-      console.error('JWT signature verification failed');
+      securityLogger.error('JWT signature verification failed');
       return null;
     }
 
     return decoded.payload;
   } catch (error) {
-    console.error('JWT verification failed:', error);
+    securityLogger.error('JWT verification failed', { error });
     return null;
   }
 }

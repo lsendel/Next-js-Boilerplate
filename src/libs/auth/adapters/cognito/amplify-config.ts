@@ -6,6 +6,7 @@
  */
 
 import { Amplify } from 'aws-amplify';
+import { authLogger } from '@/libs/Logger';
 
 export type CognitoConfig = {
   region: string;
@@ -68,7 +69,7 @@ export function configureAmplify(): void {
   const config = getCognitoConfig();
 
   if (!config.userPoolId || !config.userPoolClientId) {
-    console.warn('Cognito configuration incomplete. Please set NEXT_PUBLIC_COGNITO_USER_POOL_ID and NEXT_PUBLIC_COGNITO_CLIENT_ID');
+    authLogger.warn('Cognito configuration incomplete. Please set NEXT_PUBLIC_COGNITO_USER_POOL_ID and NEXT_PUBLIC_COGNITO_CLIENT_ID');
     return;
   }
 

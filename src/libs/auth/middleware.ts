@@ -3,7 +3,7 @@ import type { AuthMiddlewareConfig } from './types';
 import { ClerkAdapter } from './adapters/ClerkAdapter';
 import { CloudflareAdapter } from './adapters/CloudflareAdapter';
 import { CognitoAdapter } from './adapters/CognitoAdapter';
-import { TestAdapter } from './adapters/TestAdapter';
+import { createTestMiddleware } from './adapters/TestAdapter.server';
 import { AuthFactory } from './factory';
 
 /**
@@ -23,7 +23,7 @@ export function createAuthMiddleware(config: AuthMiddlewareConfig) {
       return CognitoAdapter.createMiddleware(config);
 
     case 'test':
-      return TestAdapter.createMiddleware(config);
+      return createTestMiddleware(config);
 
     default:
       // Fallback to Clerk

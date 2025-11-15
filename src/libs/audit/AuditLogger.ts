@@ -13,6 +13,8 @@
  * - PII redaction
  */
 
+import { logger } from '@/libs/Logger';
+
 export type AuditEvent = {
   /** Event ID (auto-generated UUID) */
   id?: string;
@@ -167,7 +169,7 @@ class AuditLogger {
     try {
       await this.writeEvents(eventsToFlush);
     } catch (error) {
-      console.error('[AuditLogger] Failed to flush events:', error);
+      logger.error('AuditLogger failed to flush events', { error, eventCount: eventsToFlush.length });
 
       // Put events back in queue for retry
       this.eventQueue.unshift(...eventsToFlush);
@@ -222,7 +224,7 @@ class AuditLogger {
     );
     */
 
-    console.warn(`[AuditLogger] Would write ${events.length} events to database`);
+    logger.warn('AuditLogger would write events to database', { eventCount: events.length });
   }
 
   /**
@@ -247,7 +249,7 @@ class AuditLogger {
    */
   private async writeToS3(events: AuditEvent[]): Promise<void> {
     // Example S3 implementation
-    console.warn(`[AuditLogger] Would write ${events.length} events to S3`);
+    logger.warn('AuditLogger would write events to S3', { eventCount: events.length });
     // Implement S3 upload here
   }
 
@@ -256,7 +258,7 @@ class AuditLogger {
    */
   private async writeToCloudWatch(events: AuditEvent[]): Promise<void> {
     // Example CloudWatch implementation
-    console.warn(`[AuditLogger] Would write ${events.length} events to CloudWatch`);
+    logger.warn('AuditLogger would write events to CloudWatch', { eventCount: events.length });
     // Implement CloudWatch Logs here
   }
 

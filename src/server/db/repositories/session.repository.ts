@@ -87,16 +87,6 @@ export async function updateActivity(id: number): Promise<void> {
 }
 
 /**
- * Update session's last activity by token
- */
-export async function updateActivityByToken(token: string): Promise<void> {
-  await db
-    .update(sessions)
-    .set({ lastActivityAt: new Date() })
-    .where(eq(sessions.sessionToken, token));
-}
-
-/**
  * Delete session by ID
  */
 export async function deleteSession(id: number): Promise<boolean> {

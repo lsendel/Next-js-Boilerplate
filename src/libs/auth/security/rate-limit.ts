@@ -162,17 +162,6 @@ export async function checkAuthRateLimit(
 }
 
 /**
- * Reset rate limit for an identifier (e.g., after successful auth)
- */
-export async function resetAuthRateLimit(
-  identifier: string,
-  operation: keyof typeof AuthRateLimits,
-): Promise<void> {
-  const key = `auth:${operation}:${identifier}`;
-  return rateLimitStore.reset(key);
-}
-
-/**
  * Get client identifier from request
  * Uses combination of IP and user agent for fingerprinting
  */

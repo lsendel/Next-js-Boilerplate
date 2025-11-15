@@ -10,6 +10,7 @@ import {
   verifyCloudflareAccessToken,
 } from './cloudflare/utils';
 import { resolveTenantClientPath } from '@/shared/utils/tenant-client-path';
+import { authLogger } from '@/libs/Logger';
 
 /**
  * Cloudflare Access Authentication Adapter
@@ -153,7 +154,7 @@ export class CloudflareAdapter implements IAuthAdapter {
 
     const handleSignOut = () => {
       if (!teamDomain) {
-        console.error('NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN not configured');
+        authLogger.error('NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN not configured');
         return;
       }
 
@@ -230,14 +231,14 @@ export class CloudflareAdapter implements IAuthAdapter {
 
           if (!payload) {
             // JWT verification failed
-            console.warn('Cloudflare Access JWT verification failed');
+            authLogger.warn('Cloudflare Access JWT verification failed');
             const loginUrl = getCloudflareLoginUrl(teamDomain, request.url);
             return Response.redirect(loginUrl, 302);
           }
 
           // Token is valid, continue
         } else {
-          console.warn('Cloudflare Access JWT token not found');
+          authLogger.warn('Cloudflare Access JWT token not found');
         }
       }
 

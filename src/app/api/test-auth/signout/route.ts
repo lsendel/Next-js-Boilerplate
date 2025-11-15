@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { authLogger } from '@/libs/Logger';
 
 /**
  * API endpoint to clear session cookie for test authentication
@@ -13,7 +14,7 @@ export async function POST() {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error clearing session cookie:', error);
+    authLogger.error('Error clearing session cookie', { error });
     return NextResponse.json(
       { error: 'Failed to clear session cookie' },
       { status: 500 },

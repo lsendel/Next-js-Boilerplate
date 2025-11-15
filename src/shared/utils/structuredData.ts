@@ -134,31 +134,6 @@ export function generateFAQPageSchema(faq: FAQPage) {
 }
 
 /**
- * Generate Review JSON-LD
- */
-export function generateReviewSchema(review: Review, itemReviewed: { name: string; type: string }) {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'Review',
-    'itemReviewed': {
-      '@type': itemReviewed.type,
-      'name': itemReviewed.name,
-    },
-    'author': {
-      '@type': 'Person',
-      'name': review.author,
-    },
-    'datePublished': review.datePublished,
-    'reviewBody': review.reviewBody,
-    'reviewRating': {
-      '@type': 'Rating',
-      'ratingValue': review.reviewRating.ratingValue,
-      'bestRating': review.reviewRating.bestRating || 5,
-    },
-  };
-}
-
-/**
  * Generate BreadcrumbList JSON-LD
  */
 export function generateBreadcrumbSchema(items: BreadcrumbItem[]) {
@@ -210,32 +185,6 @@ export function generateSoftwareApplicationSchema(app: {
           '@type': 'AggregateRating',
           'ratingValue': app.aggregateRating.ratingValue,
           'reviewCount': app.aggregateRating.reviewCount,
-        }
-      : undefined,
-  };
-}
-
-/**
- * Generate WebSite JSON-LD with SearchAction
- */
-export function generateWebSiteSchema(site: {
-  name: string;
-  url: string;
-  searchUrl?: string;
-}) {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    'name': site.name,
-    'url': site.url,
-    'potentialAction': site.searchUrl
-      ? {
-          '@type': 'SearchAction',
-          'target': {
-            '@type': 'EntryPoint',
-            'urlTemplate': `${site.searchUrl}?q={search_term_string}`,
-          },
-          'query-input': 'required name=search_term_string',
         }
       : undefined,
   };

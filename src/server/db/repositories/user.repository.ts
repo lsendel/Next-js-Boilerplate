@@ -485,66 +485,6 @@ export async function userExists(email: string): Promise<boolean> {
 }
 
 /**
- * Get total user count (excludes soft-deleted)
- */
-export async function getUserCount(): Promise<number> {
-  const result = await db
-    .select({ count: count() })
-    .from(users)
-    .where(isNull(users.deletedAt));
-
-  return result[0]?.count || 0;
-}
-
-/**
- * Find all active users (not deleted, isActive = true)
- */
-export async function findActiveUsers(): Promise<User[]> {
-  return await db
-    .select()
-    .from(users)
-    .where(and(eq(users.isActive, true), isNull(users.deletedAt)))
-    .orderBy(desc(users.createdAt));
-}
-
-/**
- * Search users by name or email
- *
- * Note: This is a basic ILIKE search. For production with large datasets,
- * consider using PostgreSQL full-text search or external search services like:
- * - Elasticsearch
- * - Typesense
- * - Meilisearch
- */
-export async function searchUsers(query: string): Promise<User[]> {
-  if (!query || query.trim().length === 0) {
-    return [];
-  }
-
-  const searchTerm = `%${query.toLowerCase()}%`;
-
-  // Import or and ilike from drizzle-orm
-  const { or, ilike } = await import('drizzle-orm');
-
-  return await db
-    .select()
-    .from(users)
-    .where(
-      and(
-        isNull(users.deletedAt),
-        or(
-          ilike(users.email, searchTerm),
-          ilike(users.firstName, searchTerm),
-          ilike(users.lastName, searchTerm),
-          ilike(users.displayName, searchTerm),
-        ),
-      ),
-    )
-    .orderBy(desc(users.createdAt))
-    .limit(50);
-}
-
-/**
  * Mark user as inactive
  */
 export async function deactivateUser(id: number): Promise<User | null> {
@@ -555,22 +495,6 @@ export async function deactivateUser(id: number): Promise<User | null> {
       updatedAt: new Date(),
     })
     .where(and(eq(users.id, id), isNull(users.deletedAt)))
-    .returning();
-
-  return result[0] || null;
-}
-
-/**
- * Reactivate user
- */
-export async function reactivateUser(id: number): Promise<User | null> {
-  const result = await db
-    .update(users)
-    .set({
-      isActive: true,
-      updatedAt: new Date(),
-    })
-    .where(eq(users.id, id))
     .returning();
 
   return result[0] || null;

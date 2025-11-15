@@ -4,6 +4,8 @@
  * Handles email sending functionality
  */
 
+import { logger } from '@/libs/Logger';
+
 export type EmailTemplate = 'welcome' | 'password-reset' | 'verification';
 
 export type EmailOptions = {
@@ -22,7 +24,9 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
   // TODO: Implement actual email sending
   // Examples: SendGrid, AWS SES, Resend, etc.
 
-  console.warn(`[Email Service] Sending ${template} email to ${to}:`, {
+  logger.warn('Email service would send email', {
+    template,
+    to,
     subject,
     data,
   });

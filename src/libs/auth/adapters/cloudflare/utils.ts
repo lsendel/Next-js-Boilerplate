@@ -19,26 +19,10 @@ export type CloudflareAccessJWT = {
 };
 
 /**
- * Extract user information from Cloudflare Access headers
- */
-export function getUserFromHeaders(request: NextRequest): {
-  email: string | null;
-  userId: string | null;
-} {
-  const email = request.headers.get('Cf-Access-Authenticated-User-Email');
-  const userId = request.headers.get('Cf-Access-Authenticated-User-Id') || email;
-
-  return {
-    email,
-    userId,
-  };
-}
-
-/**
  * Check if request is authenticated by Cloudflare Access
  */
 export function isCloudflareAuthenticated(request: NextRequest): boolean {
-  const { email } = getUserFromHeaders(request);
+  const email = request.headers.get('Cf-Access-Authenticated-User-Email');
   return email !== null;
 }
 
@@ -130,12 +114,4 @@ export function getCloudflareLoginUrl(teamDomain: string, redirectUrl?: string):
   }
 
   return loginUrl;
-}
-
-/**
- * Generate a redirect response to Cloudflare Access login
- */
-export function redirectToCloudflareLogin(teamDomain: string, requestUrl: string): Response {
-  const loginUrl = getCloudflareLoginUrl(teamDomain, requestUrl);
-  return Response.redirect(loginUrl, 302);
 }

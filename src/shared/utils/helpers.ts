@@ -54,7 +54,3 @@ export const getBaseUrl = () => {
 export const getI18nPath = (url: string, locale: string) => {
   return buildTenantPath(url, locale);
 };
-
-export const isServer = () => {
-  return typeof window === 'undefined';
-};

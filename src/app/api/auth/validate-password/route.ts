@@ -18,6 +18,7 @@ import {
   getClientIdentifier,
   getRateLimitHeaders,
 } from '@/libs/auth/security/rate-limit';
+import { securityLogger } from '@/libs/Logger';
 
 /**
  * POST /api/auth/validate-password
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
       },
     );
   } catch (error) {
-    console.error('Password validation error:', error);
+    securityLogger.error('Password validation error', { error });
     return NextResponse.json(
       {
         error: 'Password validation failed',

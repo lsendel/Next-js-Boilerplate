@@ -1,4 +1,3 @@
-import type { MiddlewareFunction } from '../types';
 import type { NextRequest, NextResponse as NextResponseType } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -91,11 +90,24 @@ export const applySecurityHeaders = (
       'Strict-Transport-Security',
       'max-age=31536000; includeSubDomains; preload',
     );
+    // Certificate Transparency: Expect valid certificate to be logged
+    headers.set('Expect-CT', 'max-age=86400, enforce');
   }
 
-  const allowOrigin = process.env.NEXT_PUBLIC_APP_URL || request.headers.get('origin') || '*';
+  // CORS: Use origin whitelist instead of reflection
+  const ALLOWED_ORIGINS = [
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.NEXT_PUBLIC_SITE_URL,
+    'http://localhost:3000', // Development
+    'http://127.0.0.1:3000', // Development
+  ].filter((origin): origin is string => Boolean(origin));
 
   if (request.nextUrl.pathname.includes('/api/')) {
+    const requestOrigin = request.headers.get('origin');
+    const allowOrigin = requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin)
+      ? requestOrigin
+      : ALLOWED_ORIGINS[0] || 'null';
+
     headers.set('Access-Control-Allow-Credentials', 'true');
     headers.set('Access-Control-Allow-Origin', allowOrigin);
     headers.set('Vary', 'Origin');
@@ -118,23 +130,6 @@ export const handleCorsPreflight = (request: NextRequest) => {
   }
 
   const response = new NextResponse(null, { status: 204 });
-
-  return applySecurityHeaders(request, response);
-};
-
-/**
- * Security Middleware Layer
- *
- * Adds security headers and protections following OWASP best practices.
- */
-export const securityMiddleware: MiddlewareFunction = async (request) => {
-  const preflightResponse = handleCorsPreflight(request);
-
-  if (preflightResponse) {
-    return preflightResponse;
-  }
-
-  const response = NextResponse.next();
 
   return applySecurityHeaders(request, response);
 };

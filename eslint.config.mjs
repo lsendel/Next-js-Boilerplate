@@ -87,6 +87,8 @@ export default antfu(
       'playwright/no-conditional-in-test': 'off',
       'playwright/no-conditional-expect': 'off',
       'playwright/prefer-web-first-assertions': 'off',
+      // Security: Prevent console statements - use structured logging instead
+      'no-console': 'error',
     },
   },
 );

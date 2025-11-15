@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/libs/auth';
+import { authLogger } from '@/libs/Logger';
 
 /**
  * API endpoint to get current authenticated user
@@ -24,7 +25,7 @@ export async function GET() {
       imageUrl: user.imageUrl,
     });
   } catch (error) {
-    console.error('Error fetching user:', error);
+    authLogger.error('Error fetching user', { error });
     return NextResponse.json(
       { error: 'Failed to fetch user' },
       { status: 500 },

@@ -6,6 +6,7 @@
  */
 
 import crypto from 'node:crypto';
+import { securityLogger } from '@/libs/Logger';
 
 type BreachCheckResult = {
   breached: boolean;
@@ -43,7 +44,7 @@ export async function checkPasswordBreach(
 
     if (!response.ok) {
       // If API is down, fail open (allow password) but log warning
-      console.warn('HIBP API unavailable, skipping breach check');
+      securityLogger.warn('HIBP API unavailable, skipping breach check', { status: response.status });
       return { breached: false, occurrences: 0 };
     }
 
@@ -65,7 +66,7 @@ export async function checkPasswordBreach(
     return { breached: false, occurrences: 0 };
   } catch (error) {
     // Fail open on errors but log them
-    console.error('Password breach check failed:', error);
+    securityLogger.error('Password breach check failed', { error });
     return { breached: false, occurrences: 0 };
   }
 }

@@ -3,6 +3,7 @@
 import type { MFAStatus } from './utils';
 import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
+import { authLogger } from '@/libs/Logger';
 
 type UserProfileProps = {
   path: string;
@@ -49,7 +50,7 @@ export function CognitoUserProfile({ path: _path }: UserProfileProps) {
         });
       }
     } catch (err) {
-      console.error('Failed to load user data:', err);
+      authLogger.error('Failed to load user data', { error: err });
     } finally {
       setLoading(false);
     }
@@ -61,7 +62,7 @@ export function CognitoUserProfile({ path: _path }: UserProfileProps) {
       const status = await getMFAStatus();
       setMFAStatus(status);
     } catch (err) {
-      console.error('Failed to load MFA status:', err);
+      authLogger.error('Failed to load MFA status', { error: err });
     }
   }, []);
 
