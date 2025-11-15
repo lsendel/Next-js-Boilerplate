@@ -13,30 +13,11 @@ import {
   checkPasswordBreach,
   validatePasswordStrength,
 } from '@/libs/auth/security/password-breach';
-import { logger } from '@/libs/Logger';
 import { db } from '@/libs/DB';
 import { passwordResetTokens } from '@/server/db/models/Schema';
+import { securityLogger } from '@/server/lib/security-logger';
 import type { NewUser, User } from '@/server/db/repositories/user.repository';
 import type { NewSession, Session } from '@/server/db/repositories/session.repository';
-
-// Security logger instance - wraps standard logger with security-specific methods
-const securityLogger = {
-  logAuthSuccess: (userId: number, email: string, ip: string) => {
-    logger.info('Authentication successful', { userId, email, ip, event: 'auth_success' });
-  },
-  logAuthFailure: (email: string, ip: string, reason: string) => {
-    logger.warn('Authentication failed', { email, ip, reason, event: 'auth_failure' });
-  },
-  logPasswordChanged: (userId: number, email: string, ip: string) => {
-    logger.info('Password changed', { userId, email, ip, event: 'password_change' });
-  },
-  logPasswordResetRequest: (email: string, ip: string) => {
-    logger.info('Password reset requested', { email, ip, event: 'password_reset_request' });
-  },
-  logSuspiciousActivity: (message: string, ip: string, details: Record<string, unknown>) => {
-    logger.warn('Suspicious activity detected', { message, ip, details, event: 'suspicious_activity' });
-  },
-};
 
 /**
  * Hash password using bcrypt with 12 rounds (OWASP recommended)

@@ -18,7 +18,9 @@ export function TestUserProfile() {
   React.useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch('/api/test-auth/user');
+        const response = await fetch('/api/test-auth/user', {
+          credentials: 'same-origin', // Required to send session cookies
+        });
         if (response.ok) {
           const data = await response.json();
           setUser(data);

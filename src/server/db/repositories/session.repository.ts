@@ -4,7 +4,7 @@
  * Data access layer for session management
  */
 
-import { and, count, eq, gt, lt } from 'drizzle-orm';
+import { and, count, eq, gt, lt, ne } from 'drizzle-orm';
 import { db } from '@/server/db/DB';
 import { sessions } from '@/server/db/models/Schema';
 
@@ -131,8 +131,6 @@ export async function deleteAllButCurrent(
   userId: number,
   currentSessionId: number,
 ): Promise<number> {
-  const { ne } = await import('drizzle-orm');
-
   const result = await db
     .delete(sessions)
     .where(and(eq(sessions.userId, userId), ne(sessions.id, currentSessionId)))

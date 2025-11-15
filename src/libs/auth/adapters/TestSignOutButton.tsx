@@ -11,6 +11,7 @@ export function TestSignOutButton({ children }: { children: React.ReactNode }) {
       // Clear session cookie via API route
       await fetch('/api/test-auth/signout', {
         method: 'POST',
+        credentials: 'same-origin', // Required to send session cookies
       });
 
       // Redirect to home page

@@ -39,6 +39,9 @@ export class AuthFactory {
         return new CognitoAdapter();
 
       case 'test':
+        // TestAdapter works on both client and server
+        // Uses server-side imports (next/headers) when needed
+        authLogger.info('Using TestAdapter for authentication (test mode)');
         return new TestAdapter();
 
       default:

@@ -162,7 +162,11 @@ export async function findUserByExternalId(
 export async function createUser(data: NewUser): Promise<User> {
   const result = await db.insert(users).values(data).returning();
 
-  return result[0]!;
+  if (!result[0]) {
+    throw new Error('Failed to create user - no result returned from database');
+  }
+
+  return result[0];
 }
 
 /**

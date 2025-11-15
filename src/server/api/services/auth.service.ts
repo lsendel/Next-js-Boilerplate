@@ -8,30 +8,11 @@
 import { randomBytes } from 'node:crypto';
 import * as sessionRepo from '@/server/db/repositories/session.repository';
 import * as userRepo from '@/server/db/repositories/user.repository';
-import { logger } from '@/libs/Logger';
 import { checkAuthRateLimit } from '@/libs/auth/security/rate-limit';
+import { securityLogger } from '@/server/lib/security-logger';
 import type { NewSession, Session } from '@/server/db/repositories/session.repository';
 import type { User } from '@/server/db/repositories/user.repository';
 import type { RateLimitResult } from '@/libs/auth/security/rate-limit';
-
-// Security logger instance - wraps standard logger with security-specific methods
-const securityLogger = {
-  logAuthSuccess: (userId: number, email: string, ip: string) => {
-    logger.info('Authentication successful', { userId, email, ip, event: 'auth_success' });
-  },
-  logAuthFailure: (email: string, ip: string, reason: string) => {
-    logger.warn('Authentication failed', { email, ip, reason, event: 'auth_failure' });
-  },
-  logPasswordChanged: (userId: number, email: string, ip: string) => {
-    logger.info('Password changed', { userId, email, ip, event: 'password_change' });
-  },
-  logPasswordResetRequest: (email: string, ip: string) => {
-    logger.info('Password reset requested', { email, ip, event: 'password_reset_request' });
-  },
-  logSuspiciousActivity: (message: string, ip: string, details: Record<string, unknown>) => {
-    logger.warn('Suspicious activity detected', { message, ip, details, event: 'suspicious_activity' });
-  },
-};
 
 /**
  * Client information for session tracking

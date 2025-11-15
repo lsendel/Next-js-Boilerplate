@@ -23,6 +23,7 @@ export function TestSignInForm({ locale }: { path: string; locale: string }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
+        credentials: 'same-origin', // Required to receive session cookies
       });
 
       const data = await response.json();
