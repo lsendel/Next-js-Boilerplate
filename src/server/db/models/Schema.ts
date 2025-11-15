@@ -88,6 +88,34 @@ export const passwordResetTokens = pgTable('password_reset_tokens', {
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
 });
 
+// User preferences table for storing user-specific settings
+export const userPreferences = pgTable('user_preferences', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+
+  // UI preferences
+  theme: varchar('theme', { length: 20 }).default('light'), // 'light', 'dark', 'auto'
+  language: varchar('language', { length: 10 }).default('en'), // 'en', 'fr', 'es', etc.
+
+  // Notification preferences
+  emailNotifications: boolean('email_notifications').default(true).notNull(),
+  pushNotifications: boolean('push_notifications').default(false).notNull(),
+
+  // Display preferences
+  timezone: varchar('timezone', { length: 50 }).default('UTC'),
+  dateFormat: varchar('date_format', { length: 20 }).default('MM/DD/YYYY'),
+
+  // Metadata
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+}, table => ({
+  // Add index on userId for faster lookups
+  userIdIdx: uniqueIndex('user_preferences_user_id_idx').on(table.userId),
+}));
+
 // Counter table (example/demo table)
 export const counter = pgTable('counter', {
   id: serial('id').primaryKey(),
