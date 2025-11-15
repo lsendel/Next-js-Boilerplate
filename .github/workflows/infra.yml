@@ -1,0 +1,188 @@
+name: Infrastructure Deploy
+
+on:
+  push:
+    branches:
+      - dev
+      - staging
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment (dev, stage, prod)'
+        required: false
+        default: dev
+
+permissions:
+  contents: read
+
+jobs:
+  meta:
+    runs-on: ubuntu-latest
+    outputs:
+      env_name: ${{ steps.set.outputs.env_name }}
+      branch_name: ${{ steps.set.outputs.branch_name }}
+      shared_domain: ${{ steps.set.outputs.shared_domain }}
+      shared_subdomain: ${{ steps.set.outputs.shared_subdomain }}
+      shared_url: ${{ steps.set.outputs.shared_url }}
+      custom_domain: ${{ steps.set.outputs.custom_domain }}
+      custom_url: ${{ steps.set.outputs.custom_url }}
+    steps:
+      - id: set
+        run: |
+          event="${{ github.event_name }}"
+          input_env="${{ github.event.inputs.environment }}"
+          ref="${GITHUB_REF_NAME}"
+          if [ "$event" = "workflow_dispatch" ] && [ -n "$input_env" ]; then
+            env_name="$input_env"
+          else
+            case "$ref" in
+              dev) env_name="dev" ;;
+              staging) env_name="stage" ;;
+              main) env_name="prod" ;;
+              *) env_name="dev" ;;
+            esac
+          fi
+
+          case "$env_name" in
+            dev)
+              branch_name="dev"
+              shared_domain="environment-dev.1pet.com"
+              shared_subdomain="environment-dev"
+              custom_domain="dev.test.1pet.me"
+              ;;
+            stage)
+              branch_name="staging"
+              shared_domain="environment-stage.1pet.com"
+              shared_subdomain="environment-stage"
+              custom_domain="stage.test.1pet.me"
+              ;;
+            prod)
+              branch_name="main"
+              shared_domain="environment.1pet.com"
+              shared_subdomain="environment"
+              custom_domain="test.1pet.me"
+              ;;
+            *)
+              branch_name="dev"
+              shared_domain="environment-dev.1pet.com"
+              shared_subdomain="environment-dev"
+              custom_domain="dev.test.1pet.me"
+              ;;
+          esac
+
+          shared_url="https://$shared_domain"
+          custom_url="https://$custom_domain"
+
+          echo "env_name=$env_name" >> "$GITHUB_OUTPUT"
+          echo "branch_name=$branch_name" >> "$GITHUB_OUTPUT"
+          echo "shared_domain=$shared_domain" >> "$GITHUB_OUTPUT"
+          echo "shared_subdomain=$shared_subdomain" >> "$GITHUB_OUTPUT"
+          echo "shared_url=$shared_url" >> "$GITHUB_OUTPUT"
+          echo "custom_domain=$custom_domain" >> "$GITHUB_OUTPUT"
+          echo "custom_url=$custom_url" >> "$GITHUB_OUTPUT"
+
+  terraform-cloudflare:
+    needs: meta
+    if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ZONE_ID != '' && secrets.CLOUDFLARE_ZONE_NAME != '' }}
+    runs-on: ubuntu-latest
+    environment: ${{ needs.meta.outputs.env_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Init (Cloudflare)
+        env:
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          TF_VAR_zone_name: ${{ secrets.CLOUDFLARE_ZONE_NAME }}
+        run: terraform -chdir=infra/terraform/cloudflare init -input=false
+
+      - name: Terraform Workspace (Cloudflare)
+        env:
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          TF_VAR_zone_name: ${{ secrets.CLOUDFLARE_ZONE_NAME }}
+        run: |
+          terraform -chdir=infra/terraform/cloudflare workspace select ${{ needs.meta.outputs.env_name }} 2>/dev/null \
+            || terraform -chdir=infra/terraform/cloudflare workspace new ${{ needs.meta.outputs.env_name }}
+
+      - name: Terraform Plan (Cloudflare)
+        env:
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          TF_VAR_zone_name: ${{ secrets.CLOUDFLARE_ZONE_NAME }}
+        run: |
+          terraform -chdir=infra/terraform/cloudflare plan -input=false -out=tfplan \
+            -var "shared_subdomain=${{ needs.meta.outputs.shared_subdomain }}" \
+            -var "pages_project_name=nextjs-${{ needs.meta.outputs.env_name }}" \
+            -var "production_branch=${{ needs.meta.outputs.branch_name }}" \
+            -var "production_env={NEXT_PUBLIC_APP_URL=\"${{ needs.meta.outputs.shared_url }}\"}" \
+            -var "preview_env={NEXT_PUBLIC_APP_URL=\"${{ needs.meta.outputs.shared_url }}\"}"
+
+      - name: Terraform Apply (Cloudflare)
+        env:
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          TF_VAR_zone_name: ${{ secrets.CLOUDFLARE_ZONE_NAME }}
+        run: terraform -chdir=infra/terraform/cloudflare apply -input=false tfplan
+
+  terraform-aws:
+    needs: meta
+    if: ${{ secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != '' && secrets.AWS_ROUTE53_ZONE_ID != '' && secrets.AWS_ACM_CERT_ARN != '' }}
+    runs-on: ubuntu-latest
+    environment: ${{ needs.meta.outputs.env_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Init (AWS)
+        env:
+          TF_VAR_route53_zone_id: ${{ secrets.AWS_ROUTE53_ZONE_ID }}
+          TF_VAR_acm_certificate_arn: ${{ secrets.AWS_ACM_CERT_ARN }}
+        run: terraform -chdir=infra/terraform/aws init -input=false
+
+      - name: Terraform Workspace (AWS)
+        env:
+          TF_VAR_route53_zone_id: ${{ secrets.AWS_ROUTE53_ZONE_ID }}
+          TF_VAR_acm_certificate_arn: ${{ secrets.AWS_ACM_CERT_ARN }}
+        run: |
+          terraform -chdir=infra/terraform/aws workspace select ${{ needs.meta.outputs.env_name }} 2>/dev/null \
+            || terraform -chdir=infra/terraform/aws workspace new ${{ needs.meta.outputs.env_name }}
+
+      - name: Terraform Plan (AWS)
+        env:
+          TF_VAR_route53_zone_id: ${{ secrets.AWS_ROUTE53_ZONE_ID }}
+          TF_VAR_acm_certificate_arn: ${{ secrets.AWS_ACM_CERT_ARN }}
+          TF_VAR_custom_domain: ${{ needs.meta.outputs.custom_domain }}
+          TF_VAR_app_name: tenant-${{ needs.meta.outputs.env_name }}
+        run: |
+          terraform -chdir=infra/terraform/aws plan -input=false -out=tfplan \
+            -var "repository=https://github.com/${{ github.repository }}" \
+            -var "production_branch=${{ needs.meta.outputs.branch_name }}" \
+            -var "environment_variables={NEXT_PUBLIC_APP_URL=\"${{ needs.meta.outputs.custom_url }}\"}" \
+            -var "custom_domain=${{ needs.meta.outputs.custom_domain }}"
+
+      - name: Terraform Apply (AWS)
+        env:
+          TF_VAR_route53_zone_id: ${{ secrets.AWS_ROUTE53_ZONE_ID }}
+          TF_VAR_acm_certificate_arn: ${{ secrets.AWS_ACM_CERT_ARN }}
+          TF_VAR_custom_domain: ${{ needs.meta.outputs.custom_domain }}
+        run: terraform -chdir=infra/terraform/aws apply -input=false tfplan

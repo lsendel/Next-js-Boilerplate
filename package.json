@@ -1,6 +1,13 @@
 {
   "name": "next-js-boilerplate",
+  "version": "1.0.0",
+  "description": "Production-ready Next.js 16 boilerplate with TypeScript, Tailwind CSS, authentication, i18n, testing, and monitoring",
   "author": "Ixartz (https://github.com/ixartz)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ixartz/Next-js-Boilerplate.git"
+  },
   "engines": {
     "node": ">=20"
   },
@@ -59,7 +66,7 @@
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
     "@commitlint/prompt-cli": "^20.1.0",
-    "@electric-sql/pglite-socket": "^0.0.16",
+    "@electric-sql/pglite-socket": "^0.0.19",
     "@eslint-react/eslint-plugin": "^2.3.5",
     "@faker-js/faker": "^10.1.0",
     "@lingual/i18n-check": "^0.8.12",
@@ -75,7 +82,7 @@
     "@tailwindcss/postcss": "^4.1.17",
     "@types/node": "^24.10.1",
     "@types/pg": "^8.15.6",
-    "@types/react": "^19.2.4",
+    "@types/react": "^19.2.5",
     "@vitejs/plugin-react": "^5.1.1",
     "@vitest/browser": "^4.0.9",
     "@vitest/browser-playwright": "^4.0.9",
@@ -107,6 +114,10 @@
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.0.9",
     "vitest-browser-react": "^2.0.2"
+  },
+  "overrides": {
+    "@electric-sql/pglite": "^0.3.14",
+    "esbuild": "^0.27.0"
   },
   "release": {
     "branches": [
