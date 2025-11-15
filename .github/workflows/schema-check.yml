@@ -5,7 +5,7 @@ on:
     paths:
       - 'src/server/db/models/**'
       - 'migrations/**'
-      - 'drizzle.config.ts'
+      - drizzle.config.ts
 
 permissions:
   contents: read
@@ -19,7 +19,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Need full history for git diff
+          fetch-depth: 0 # Need full history for git diff
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

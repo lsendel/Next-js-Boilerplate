@@ -1,0 +1,139 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+env:
+  ENVIRONMENT: staging
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: staging
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Pre-deploy validation
+        run: |
+          echo "## Pre-Deploy Validation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check for pending migrations
+          if npm run db:validate; then
+            echo "✅ Schema validation passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️  Schema validation warnings (non-blocking)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Run database migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
+          GRAFANA_LOKI_URL: ${{ secrets.GRAFANA_LOKI_URL }}
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Database Migration" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -n "$DATABASE_URL" ]; then
+            # Run migration with telemetry
+            if npm run db:migrate:staging; then
+              echo "✅ Migrations applied successfully" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ Migration failed - deployment aborted" >> $GITHUB_STEP_SUMMARY
+              exit 1
+            fi
+          else
+            echo "⚠️  DATABASE_URL_STAGING not set, skipping migrations" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Build application
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: npm run build
+
+      - name: Deploy to Vercel Staging
+        id: deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          # Install Vercel CLI
+          npm install -g vercel@latest
+
+          # Deploy to staging (preview)
+          DEPLOYMENT_URL=$(vercel deploy \
+            --token=$VERCEL_TOKEN \
+            --build-env DATABASE_URL="${{ secrets.DATABASE_URL_STAGING }}" \
+            --yes 2>&1 | grep -oP 'https://[^\s]+' | tail -1)
+
+          echo "url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🚀 Deployed to: [$DEPLOYMENT_URL]($DEPLOYMENT_URL)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Post-deploy drift check
+        if: always()
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Post-Deploy Verification" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if npm run db:check-drift; then
+            echo "✅ No drift detected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️  Drift detected - review required" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Smoke tests
+        if: success()
+        env:
+          STAGING_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Smoke Tests" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Basic health check
+          if curl -f -s -o /dev/null "$STAGING_URL"; then
+            echo "✅ Health check passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️  Health check failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Optional: Run E2E tests against staging
+          # npm run test:e2e:staging || echo "⚠️ E2E tests failed (non-blocking)"
+
+      - name: Notify team
+        if: failure()
+        run: |
+          echo "❌ Staging deployment failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Troubleshooting" >> $GITHUB_STEP_SUMMARY
+          echo "- Check migration logs above" >> $GITHUB_STEP_SUMMARY
+          echo "- Verify DATABASE_URL_STAGING secret is set" >> $GITHUB_STEP_SUMMARY
+          echo "- Review recent schema changes" >> $GITHUB_STEP_SUMMARY
