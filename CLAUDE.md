@@ -14,6 +14,17 @@ This is a Next.js 16+ boilerplate with App Router, TypeScript, Tailwind CSS 4, a
 
 **Package Manager:** This project uses `pnpm` for the monorepo. Install with: `npm install -g pnpm`
 
+**Makefile Available:** For convenience, a comprehensive `Makefile` is provided with shorter, memorable commands. Use `make help` to see all available commands.
+
+### Quick Start with Makefile
+```bash
+make help           # Show all available commands
+make dev            # Start development server
+make test           # Run tests
+make ready          # Check if ready to commit
+make ship           # Prepare for deployment
+```
+
 ### Development
 ```bash
 pnpm dev                    # Start web app dev server (http://localhost:3000)
@@ -284,3 +295,52 @@ The docs site uses Nextra with Next.js App Router:
 - **Content:** Documentation in `apps/docs/app/` directory
 - **Commands:** `pnpm dev:docs` (dev), `pnpm build:docs` (build)
 - **Port:** Runs on a different port from web app (configured in package.json)
+
+## Makefile Commands
+
+A comprehensive `Makefile` provides an intuitive interface for all common operations. Commands are organized into logical categories:
+
+### Quick Reference
+```bash
+# Most Common Commands
+make dev              # Start development server
+make test             # Run unit tests
+make test-e2e         # Run E2E tests
+make lint             # Lint code
+make build            # Build for production
+
+# Workflow Shortcuts
+make work             # Install deps + start dev (typical start)
+make dev-fresh        # Clean + install + dev (fresh start)
+make ready            # Run all checks before commit
+make ship             # Full deployment preparation
+make setup            # Initial project setup
+
+# Database
+make db-migrate       # Apply migrations
+make db-generate      # Generate new migration
+make db-studio        # Open database GUI
+
+# Quality
+make quality          # Run all quality checks
+make ci-check         # Run all CI checks
+make type-check       # TypeScript type checking
+
+# Utilities
+make help             # Show all available commands
+make info             # Show project information
+make clean            # Remove build artifacts
+```
+
+### Command Categories
+1. **Development** - dev, dev-docs, dev-all, dev-spotlight
+2. **Build & Production** - build, build-docs, build-all, start
+3. **Testing** - test, test-e2e, test-coverage, test-all
+4. **Database** - db-migrate, db-generate, db-studio, db-reset
+5. **Code Quality** - lint, format, type-check, quality
+6. **Dependencies** - install, update, outdated
+7. **Cleanup** - clean, clean-deps, clean-cache
+8. **Tools** - storybook, commit, pre-commit
+9. **Workflows** - work, ready, ship, setup
+
+Run `make help` to see the complete list with descriptions.
