@@ -1,4 +1,4 @@
-import { useRouter } from 'next/router'
+import { usePathname } from 'next/navigation'
 import type { DocsThemeConfig } from 'nextra-theme-docs'
 
 const config: DocsThemeConfig = {
@@ -17,30 +17,20 @@ const config: DocsThemeConfig = {
       </span>
     ),
   },
-  head: () => {
-    const { asPath } = useRouter()
-    return (
-      <>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta property="og:title" content="Next.js Boilerplate Documentation" />
-        <meta
-          property="og:description"
-          content="Production-ready Next.js 16 boilerplate with TypeScript, Tailwind CSS, authentication, i18n, testing, and monitoring"
-        />
-        <meta property="og:url" content={`https://docs.yourapp.com${asPath}`} />
-        <link rel="icon" href="/favicon.ico" />
-      </>
-    )
-  },
+  head: (
+    <>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta property="og:title" content="Next.js Boilerplate Documentation" />
+      <meta
+        property="og:description"
+        content="Production-ready Next.js 16 boilerplate with TypeScript, Tailwind CSS, authentication, i18n, testing, and monitoring"
+      />
+      <link rel="icon" href="/favicon.ico" />
+    </>
+  ),
   useNextSeoProps() {
-    const { asPath } = useRouter()
-    if (asPath !== '/') {
-      return {
-        titleTemplate: '%s – Next.js Boilerplate'
-      }
-    }
     return {
-      titleTemplate: 'Next.js Boilerplate Documentation'
+      titleTemplate: '%s – Next.js Boilerplate'
     }
   },
   navigation: {
