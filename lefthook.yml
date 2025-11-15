@@ -16,3 +16,22 @@ pre-commit:
       glob: '*.{ts,tsx}'
       run: npm run check:types
       priority: 2
+    schema-check:
+      glob: 'src/server/db/models/**/*.ts'
+      run: |
+        # Check if schema files are being committed
+        if git diff --cached --quiet src/server/db/models/; then
+          # No schema changes, skip check
+          exit 0
+        fi
+
+        # Schema changed - ensure migrations are also staged
+        if git diff --cached --quiet migrations/; then
+          echo "❌ Schema changed but migrations not staged"
+          echo "Run: npm run db:generate && git add migrations/"
+          exit 1
+        fi
+
+        echo "✓ Schema and migrations both staged"
+        exit 0
+      priority: 3

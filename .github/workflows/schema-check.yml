@@ -1,0 +1,97 @@
+name: Schema Validation
+
+on:
+  pull_request:
+    paths:
+      - 'src/server/db/models/**'
+      - 'migrations/**'
+      - 'drizzle.config.ts'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate-schema:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for git diff
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure migrations are committed
+        run: |
+          echo "## Schema Validation Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Generate migrations from current schema
+          npm run db:generate
+
+          # Check if generated migrations differ from committed ones
+          if ! git diff --exit-code migrations src/server/db/models/Schema.ts; then
+            echo "❌ **FAILED:** Schema changed but migrations not generated or committed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Fix this by running:" >> $GITHUB_STEP_SUMMARY
+            echo '```bash' >> $GITHUB_STEP_SUMMARY
+            echo 'npm run db:generate' >> $GITHUB_STEP_SUMMARY
+            echo 'git add migrations/' >> $GITHUB_STEP_SUMMARY
+            echo 'git commit -m "db: update migrations"' >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+          echo "✅ **PASSED:** Migrations are up to date with schema" >> $GITHUB_STEP_SUMMARY
+
+      - name: Apply migrations to ephemeral database
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Migration Application" >> $GITHUB_STEP_SUMMARY
+
+          # Use PGlite for fast ephemeral database
+          npx pglite-server --once --run 'npm run db:migrate' && \
+            echo "✅ Migrations applied successfully" >> $GITHUB_STEP_SUMMARY || \
+            (echo "❌ Migration application failed" >> $GITHUB_STEP_SUMMARY && exit 1)
+
+      - name: Drift detection (if DATABASE_URL_DEV set)
+        if: env.DATABASE_URL_DEV != ''
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_DEV }}
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Drift Detection" >> $GITHUB_STEP_SUMMARY
+
+          if npm run db:validate; then
+            echo "✅ No drift detected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️  **WARNING:** Drift detected - manual DB changes found" >> $GITHUB_STEP_SUMMARY
+            echo "Review and create forward-fix migrations if needed" >> $GITHUB_STEP_SUMMARY
+            # Don't fail the build for drift, just warn
+          fi
+
+      - name: Generate migration report
+        if: always()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Migration History" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Recent Migrations:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          ls -1 migrations/*.sql 2>/dev/null | tail -5 || echo "No migrations found"
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Migration Journal:" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          cat migrations/meta/_journal.json 2>/dev/null || echo "{}"
+          echo '```' >> $GITHUB_STEP_SUMMARY
