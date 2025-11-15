@@ -41,6 +41,11 @@ export const users = pgTable('users', {
   lastLoginAt: timestamp('last_login_at', { mode: 'date' }),
   passwordChangedAt: timestamp('password_changed_at', { mode: 'date' }),
 
+  // Account locking (security)
+  failedLoginAttempts: integer('failed_login_attempts').default(0).notNull(),
+  lockedUntil: timestamp('locked_until', { mode: 'date' }),
+  lastFailedLogin: timestamp('last_failed_login', { mode: 'date' }),
+
   // Metadata
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { mode: 'date' })
@@ -64,6 +69,20 @@ export const sessions = pgTable('sessions', {
   // Session lifecycle
   expiresAt: timestamp('expires_at', { mode: 'date' }).notNull(),
   lastActivityAt: timestamp('last_activity_at', { mode: 'date' }).defaultNow().notNull(),
+
+  // Metadata
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+});
+
+// Password reset tokens table for secure password recovery
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+
+  // Token data
+  token: varchar('token', { length: 255 }).notNull().unique(), // Hashed token
+  expiresAt: timestamp('expires_at', { mode: 'date' }).notNull(),
+  usedAt: timestamp('used_at', { mode: 'date' }), // Mark as used after successful reset
 
   // Metadata
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),

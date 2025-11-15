@@ -8,22 +8,6 @@ import { routing } from '@/libs/I18nRouting';
 import { authLogger } from '@/libs/Logger';
 
 /**
- * In-memory user storage for test authentication
- * This is cleared on server restart - only for E2E testing!
- */
-interface TestUser {
-  id: string;
-  email: string;
-  password: string;
-  firstName: string | null;
-  lastName: string | null;
-  imageUrl: string | null;
-}
-
-const users = new Map<string, TestUser>();
-const sessions = new Map<string, string>(); // sessionId -> userId
-
-/**
  * Test Authentication Adapter
  * Simple form-based authentication for E2E tests
  *
@@ -34,7 +18,10 @@ export class TestAdapter implements IAuthAdapter {
   private static readonly SESSION_COOKIE = 'test-auth-session';
 
   async getCurrentUser(): Promise<AuthUser | null> {
+    // Import server-side modules
     const { cookies } = await import('next/headers');
+    const { sessions, users } = await import('./TestAdapter.server');
+
     const cookieStore = await cookies();
     const sessionId = cookieStore.get(TestAdapter.SESSION_COOKIE)?.value;
 
@@ -62,7 +49,10 @@ export class TestAdapter implements IAuthAdapter {
   }
 
   async getSession(): Promise<AuthSession | null> {
+    // Import server-side modules
     const { cookies } = await import('next/headers');
+    const { sessions } = await import('./TestAdapter.server');
+
     const cookieStore = await cookies();
     const sessionId = cookieStore.get(TestAdapter.SESSION_COOKIE)?.value;
 
@@ -90,12 +80,16 @@ export class TestAdapter implements IAuthAdapter {
     request: NextRequest,
     _config: AuthMiddlewareConfig,
   ): Promise<{ isAuthenticated: boolean; redirectUrl?: string }> {
+    // This method should not be used - middleware uses TestAdapter.server directly
+    // Kept for interface compliance
     const sessionId = request.cookies.get(TestAdapter.SESSION_COOKIE)?.value;
 
     if (!sessionId) {
       return { isAuthenticated: false };
     }
 
+    // Import server-side modules
+    const { sessions } = await import('./TestAdapter.server');
     const userId = sessions.get(sessionId);
     if (!userId) {
       return { isAuthenticated: false };
@@ -127,6 +121,7 @@ export class TestAdapter implements IAuthAdapter {
 
   /**
    * Test-specific middleware wrapper
+   * @deprecated Use createTestMiddleware from TestAdapter.server instead
    */
   static createMiddleware(config: AuthMiddlewareConfig) {
     return async (request: NextRequest) => {
@@ -139,6 +134,9 @@ export class TestAdapter implements IAuthAdapter {
       }
 
       const sessionId = request.cookies.get(TestAdapter.SESSION_COOKIE)?.value;
+
+      // Import server-side modules
+      const { sessions } = await import('./TestAdapter.server');
       const userId = sessionId ? sessions.get(sessionId) : null;
 
       if (!userId) {
@@ -168,48 +166,19 @@ function TestSignInForm({ locale }: { path: string; locale: string }) {
     setIsLoading(true);
 
     try {
-      // Validate email format
-      if (!email || !email.includes('@')) {
-        setError('Please enter a valid email address');
-        setIsLoading(false);
-        return;
-      }
-
-      // Validate password
-      if (!password || password.length < 8) {
-        setError('Password must be at least 8 characters');
-        setIsLoading(false);
-        return;
-      }
-
-      // Find user by email
-      let user: TestUser | null = null;
-      for (const u of users.values()) {
-        if (u.email === email) {
-          user = u;
-          break;
-        }
-      }
-
-      if (!user || user.password !== password) {
-        setError('Invalid email or password');
-        setIsLoading(false);
-        return;
-      }
-
-      // Create session
-      const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-      sessions.set(sessionId, user.id);
-
-      // Set cookie via API route
+      // Call API route to authenticate
       const response = await fetch('/api/test-auth/signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ email, password }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to set session cookie');
+        setError(data.error || 'Failed to sign in');
+        setIsLoading(false);
+        return;
       }
 
       // Redirect to dashboard
@@ -331,61 +300,19 @@ function TestSignUpForm({ locale }: { path: string; locale: string }) {
     setIsLoading(true);
 
     try {
-      // Validate email format
-      if (!email || !email.includes('@')) {
-        setError('Please enter a valid email address');
-        setIsLoading(false);
-        return;
-      }
-
-      // Validate password
-      if (!password || password.length < 8) {
-        setError('Password must be at least 8 characters');
-        setIsLoading(false);
-        return;
-      }
-
-      // Validate password confirmation
-      if (password !== confirmPassword) {
-        setError('Passwords do not match');
-        setIsLoading(false);
-        return;
-      }
-
-      // Check if email already exists
-      for (const user of users.values()) {
-        if (user.email === email) {
-          setError('An account with this email already exists');
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      // Create user
-      const userId = `user_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-      const newUser: TestUser = {
-        id: userId,
-        email,
-        password, // In real app, this would be hashed!
-        firstName: null,
-        lastName: null,
-        imageUrl: null,
-      };
-      users.set(userId, newUser);
-
-      // Create session
-      const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-      sessions.set(sessionId, userId);
-
-      // Set cookie via API route
-      const response = await fetch('/api/test-auth/signin', {
+      // Call API route to register
+      const response = await fetch('/api/test-auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ email, password, confirmPassword }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to set session cookie');
+        setError(data.error || 'Failed to create account');
+        setIsLoading(false);
+        return;
       }
 
       // Redirect to dashboard

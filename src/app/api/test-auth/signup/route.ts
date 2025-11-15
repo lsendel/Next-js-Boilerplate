@@ -5,13 +5,13 @@ import { SESSION_COOKIE, sessions, users } from '@/libs/auth/adapters/TestAdapte
 import { authLogger } from '@/libs/Logger';
 
 /**
- * API endpoint to handle user authentication for test authentication
+ * API endpoint to handle user registration for test authentication
  * This is only used when NEXT_PUBLIC_AUTH_PROVIDER=test
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password } = body;
+    const { email, password, confirmPassword } = body;
 
     // Validate email format
     if (!email || typeof email !== 'string' || !email.includes('@')) {
@@ -29,25 +29,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user by email
-    let user = null;
-    for (const u of users.values()) {
-      if (u.email === email) {
-        user = u;
-        break;
-      }
-    }
-
-    if (!user || user.password !== password) {
+    // Validate password confirmation
+    if (password !== confirmPassword) {
       return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 },
+        { error: 'Passwords do not match' },
+        { status: 400 },
       );
     }
 
+    // Check if email already exists
+    for (const user of users.values()) {
+      if (user.email === email) {
+        return NextResponse.json(
+          { error: 'An account with this email already exists' },
+          { status: 409 },
+        );
+      }
+    }
+
+    // Create user
+    const userId = `user_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const newUser = {
+      id: userId,
+      email,
+      password, // In real app, this would be hashed!
+      firstName: null,
+      lastName: null,
+      imageUrl: null,
+    };
+    users.set(userId, newUser);
+
     // Create session
     const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-    sessions.set(sessionId, user.id);
+    sessions.set(sessionId, userId);
 
     // Set session cookie
     const cookieStore = await cookies();
@@ -59,22 +73,22 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
-    authLogger.info('Test auth: User signed in', { userId: user.id, email });
+    authLogger.info('Test auth: User registered', { userId, email });
 
     return NextResponse.json({
       success: true,
       user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        imageUrl: user.imageUrl,
+        id: userId,
+        email,
+        firstName: null,
+        lastName: null,
+        imageUrl: null,
       },
     });
   } catch (error) {
-    authLogger.error('Error during sign in', { error });
+    authLogger.error('Error during sign up', { error });
     return NextResponse.json(
-      { error: 'Failed to sign in' },
+      { error: 'Failed to create account' },
       { status: 500 },
     );
   }
