@@ -1,8 +1,12 @@
 # Platform Deployment Guide
 ## Step-by-Step Instructions for Cloudflare, AWS, and GCP
 
-**Last Updated:** November 14, 2025
+**Last Updated:** November 15, 2025
 **Sprint 3 Optimized:** 29.7% Bundle Reduction Applied
+
+> **📖 For CI/CD workflows, branch strategy, and automation:** See [CI_CD_GUIDE.md](./CI_CD_GUIDE.md)
+>
+> This guide covers **manual deployment** and **platform-specific setup**. For the complete CI/CD pipeline, automated deployments, environment promotion, and best practices, refer to the CI/CD Guide.
 
 ---
 
@@ -12,6 +16,11 @@
 2. [AWS Deployment (ECS/Fargate)](#aws-deployment-ecsfargate)
 3. [Google Cloud Platform Deployment](#google-cloud-platform-deployment)
 4. [Post-Deployment Verification](#post-deployment-verification)
+
+**Related Guides:**
+- [CI/CD Guide](./CI_CD_GUIDE.md) - Complete CI/CD workflows and best practices
+- [OAuth Configuration](./OAUTH_CONFIGURATION.md) - Authentication setup
+- [Environment Setup](./ENVIRONMENT_SETUP.md) - Environment variables and secrets
 
 ---
 
