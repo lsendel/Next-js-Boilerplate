@@ -2,21 +2,21 @@
  * AWS Cognito JWT Verification Utilities
  */
 
-import { verifyJWT } from '@/libs/auth/security/jwt-verifier';
-import { securityLogger } from '@/libs/Logger';
+import { verifyJWT } from "@/libs/auth/security/jwt-verifier";
+import { securityLogger } from "@/libs/Logger";
 
 export type CognitoJWTPayload = {
-  'sub': string; // User ID
-  'email'?: string;
-  'email_verified'?: boolean;
-  'cognito:username'?: string;
-  'cognito:groups'?: string[];
-  'token_use': 'id' | 'access';
-  'auth_time': number;
-  'iat': number;
-  'exp': number;
-  'iss': string; // Issuer (Cognito User Pool URL)
-  'aud'?: string; // Client ID
+  sub: string; // User ID
+  email?: string;
+  email_verified?: boolean;
+  "cognito:username"?: string;
+  "cognito:groups"?: string[];
+  token_use: "id" | "access";
+  auth_time: number;
+  iat: number;
+  exp: number;
+  iss: string; // Issuer (Cognito User Pool URL)
+  aud?: string; // Client ID
   [key: string]: unknown;
 };
 
@@ -57,19 +57,24 @@ export async function verifyCognitoToken(
     }
 
     // Validate Cognito-specific fields
-    if (!payload.token_use || !['id', 'access'].includes(payload.token_use as string)) {
-      securityLogger.warn('Invalid Cognito token_use claim', { tokenUse: payload.token_use });
+    if (
+      !payload.token_use ||
+      !["id", "access"].includes(payload.token_use as string)
+    ) {
+      securityLogger.warn("Invalid Cognito token_use claim", {
+        tokenUse: payload.token_use,
+      });
       return null;
     }
 
     if (!payload.sub) {
-      securityLogger.warn('Missing sub claim in Cognito token');
+      securityLogger.warn("Missing sub claim in Cognito token");
       return null;
     }
 
     return payload as CognitoJWTPayload;
   } catch (error) {
-    securityLogger.error('Failed to verify Cognito token', { error });
+    securityLogger.error("Failed to verify Cognito token", { error });
     return null;
   }
 }
@@ -83,7 +88,9 @@ export function parseCognitoIssuer(issuer: string): {
 } | null {
   try {
     // Format: https://cognito-idp.{region}.amazonaws.com/{userPoolId}
-    const match = issuer.match(/https:\/\/cognito-idp\.([^.]+)\.amazonaws\.com\/([^/]+)/);
+    const match = issuer.match(
+      /https:\/\/cognito-idp\.([^.]+)\.amazonaws\.com\/([^/]+)/,
+    );
 
     if (!match || !match[1] || !match[2]) {
       return null;
@@ -104,21 +111,22 @@ export function parseCognitoIssuer(issuer: string): {
  */
 export function extractCognitoTokenFromCookies(
   cookieHeader: string,
-  tokenType: 'idToken' | 'accessToken' = 'idToken',
+  tokenType: "idToken" | "accessToken" = "idToken",
 ): string | null {
   try {
-    const cookies = cookieHeader.split(';').map(c => c.trim());
+    const cookies = cookieHeader.split(";").map((c) => c.trim());
 
     // Find the cookie containing the token type
-    const tokenCookie = cookies.find(c =>
-      c.includes(`CognitoIdentityServiceProvider`) && c.includes(tokenType),
+    const tokenCookie = cookies.find(
+      (c) =>
+        c.includes(`CognitoIdentityServiceProvider`) && c.includes(tokenType),
     );
 
     if (!tokenCookie) {
       return null;
     }
 
-    const token = tokenCookie.split('=')[1];
+    const token = tokenCookie.split("=")[1];
     return token || null;
   } catch {
     return null;

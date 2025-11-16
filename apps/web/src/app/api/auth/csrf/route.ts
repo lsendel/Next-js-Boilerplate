@@ -4,9 +4,9 @@
  * Provides CSRF tokens for client-side auth operations
  */
 
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
-import { getCsrfTokenForClient } from '@/libs/auth/security/csrf';
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { getCsrfTokenForClient } from "@/libs/auth/security/csrf";
 
 /**
  * GET /api/auth/csrf
@@ -22,16 +22,16 @@ export async function GET(_request: NextRequest) {
       {
         status: 200,
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
-          'Pragma': 'no-cache',
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+          Pragma: "no-cache",
         },
       },
     );
   } catch {
     return NextResponse.json(
       {
-        error: 'Failed to generate CSRF token',
-        code: 'CSRF_TOKEN_GENERATION_FAILED',
+        error: "Failed to generate CSRF token",
+        code: "CSRF_TOKEN_GENERATION_FAILED",
       },
       { status: 500 },
     );

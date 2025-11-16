@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 export type HeroCenteredProps = {
   title: string;
@@ -47,16 +47,19 @@ export function HeroCentered({
               <path d="M100 200V.5M.5 .5H200" fill="none" />
             </pattern>
           </defs>
-          <rect width="100%" height="100%" strokeWidth={0} fill="url(#hero-pattern)" />
+          <rect
+            width="100%"
+            height="100%"
+            strokeWidth={0}
+            fill="url(#hero-pattern)"
+          />
         </svg>
       </div>
 
       <div className="mx-auto max-w-4xl text-center">
         {/* Badge */}
         {badge && (
-          <div className="mb-8 inline-flex justify-center">
-            {badge}
-          </div>
+          <div className="mb-8 inline-flex justify-center">{badge}</div>
         )}
 
         {/* Title */}
@@ -65,9 +68,7 @@ export function HeroCentered({
         </h1>
 
         {/* Description */}
-        <p className="mt-6 text-lg leading-8 text-gray-600">
-          {description}
-        </p>
+        <p className="mt-6 text-lg leading-8 text-gray-600">{description}</p>
 
         {/* CTAs */}
         {(primaryCta || secondaryCta) && (

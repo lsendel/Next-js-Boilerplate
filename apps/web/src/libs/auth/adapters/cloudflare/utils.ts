@@ -3,9 +3,9 @@
  * Helper functions for working with Cloudflare Access
  */
 
-import type { NextRequest } from 'next/server';
-import { verifyJWT } from '@/libs/auth/security/jwt-verifier';
-import { securityLogger } from '@/libs/Logger';
+import type { NextRequest } from "next/server";
+import { verifyJWT } from "@/libs/auth/security/jwt-verifier";
+import { securityLogger } from "@/libs/Logger";
 
 export type CloudflareAccessJWT = {
   aud: string[]; // Audience (your application's audience tag)
@@ -22,7 +22,7 @@ export type CloudflareAccessJWT = {
  * Check if request is authenticated by Cloudflare Access
  */
 export function isCloudflareAuthenticated(request: NextRequest): boolean {
-  const email = request.headers.get('Cf-Access-Authenticated-User-Email');
+  const email = request.headers.get("Cf-Access-Authenticated-User-Email");
   return email !== null;
 }
 
@@ -31,20 +31,20 @@ export function isCloudflareAuthenticated(request: NextRequest): boolean {
  */
 export function getCloudflareAccessToken(request: NextRequest): string | null {
   // Cloudflare Access JWT is typically in the CF_Authorization cookie
-  const cookieHeader = request.headers.get('cookie');
+  const cookieHeader = request.headers.get("cookie");
 
   if (!cookieHeader) {
     return null;
   }
 
-  const cookies = cookieHeader.split(';').map(c => c.trim());
-  const cfAuthCookie = cookies.find(c => c.startsWith('CF_Authorization='));
+  const cookies = cookieHeader.split(";").map((c) => c.trim());
+  const cfAuthCookie = cookies.find((c) => c.startsWith("CF_Authorization="));
 
   if (!cfAuthCookie) {
     return null;
   }
 
-  const token = cfAuthCookie.split('=')[1];
+  const token = cfAuthCookie.split("=")[1];
   return token || null;
 }
 
@@ -79,13 +79,16 @@ export async function verifyCloudflareAccessToken(
 
     // Validate required Cloudflare Access fields
     if (!payload.email || !payload.exp) {
-      securityLogger.warn('Cloudflare Access token missing required fields', { hasEmail: !!payload.email, hasExp: !!payload.exp });
+      securityLogger.warn("Cloudflare Access token missing required fields", {
+        hasEmail: !!payload.email,
+        hasExp: !!payload.exp,
+      });
       return null;
     }
 
     return payload as CloudflareAccessJWT;
   } catch (error) {
-    securityLogger.error('Failed to verify Cloudflare Access token', { error });
+    securityLogger.error("Failed to verify Cloudflare Access token", { error });
     return null;
   }
 }
@@ -93,7 +96,10 @@ export async function verifyCloudflareAccessToken(
 /**
  * Get Cloudflare Access logout URL
  */
-export function getCloudflareLogoutUrl(teamDomain: string, redirectUrl?: string): string {
+export function getCloudflareLogoutUrl(
+  teamDomain: string,
+  redirectUrl?: string,
+): string {
   const logoutUrl = `${teamDomain}/cdn-cgi/access/logout`;
 
   if (redirectUrl) {
@@ -106,7 +112,10 @@ export function getCloudflareLogoutUrl(teamDomain: string, redirectUrl?: string)
 /**
  * Get Cloudflare Access login URL
  */
-export function getCloudflareLoginUrl(teamDomain: string, redirectUrl?: string): string {
+export function getCloudflareLoginUrl(
+  teamDomain: string,
+  redirectUrl?: string,
+): string {
   const loginUrl = `${teamDomain}/cdn-cgi/access/login`;
 
   if (redirectUrl) {

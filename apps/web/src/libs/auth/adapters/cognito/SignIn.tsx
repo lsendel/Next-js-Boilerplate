@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { TenantLink } from '@/client/components/navigation/TenantLink';
-import { useTenantPath } from '@/shared/hooks/useTenantPath';
-import { getHostedUIUrl, getOAuthSignInUrl } from './amplify-config';
-import { getAvailableOAuthProviders, getOAuthProviderInfo } from './utils';
+import { useState } from "react";
+import { TenantLink } from "@/client/components/navigation/TenantLink";
+import { useTenantPath } from "@/shared/hooks/useTenantPath";
+import { getHostedUIUrl, getOAuthSignInUrl } from "./amplify-config";
+import { getAvailableOAuthProviders, getOAuthProviderInfo } from "./utils";
 
 type SignInProps = {
   path: string;
@@ -22,22 +22,25 @@ type SignInProps = {
  */
 export function CognitoSignIn({ path: _path, locale: _locale }: SignInProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
   const useHostedUI = Boolean(process.env.NEXT_PUBLIC_COGNITO_OAUTH_DOMAIN);
 
   const oauthProviders = getAvailableOAuthProviders();
   const hasOAuth = oauthProviders.length > 0;
   const resolveTenantPath = useTenantPath();
 
-  const handleOAuthSignIn = async (provider: 'Google' | 'Facebook' | 'Apple') => {
+  const handleOAuthSignIn = async (
+    provider: "Google" | "Facebook" | "Apple",
+  ) => {
     try {
       setLoading(true);
-      setError('');
+      setError("");
 
       const signInUrl = getOAuthSignInUrl(provider);
       window.location.href = signInUrl;
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to initiate sign-in';
+      const message =
+        err instanceof Error ? err.message : "Failed to initiate sign-in";
       setError(message);
       setLoading(false);
     }
@@ -49,44 +52,47 @@ export function CognitoSignIn({ path: _path, locale: _locale }: SignInProps) {
       const hostedUIUrl = getHostedUIUrl();
       window.location.href = hostedUIUrl;
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to redirect to Hosted UI';
+      const message =
+        err instanceof Error ? err.message : "Failed to redirect to Hosted UI";
       setError(message);
       setLoading(false);
     }
   };
 
-  const handleEmailPasswordSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleEmailPasswordSignIn = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
 
     try {
-      const { signIn } = await import('aws-amplify/auth');
+      const { signIn } = await import("aws-amplify/auth");
       const result = await signIn({
         username: email,
         password,
       });
 
       // Check if MFA is required
-      if (result.nextStep?.signInStep === 'CONFIRM_SIGN_IN_WITH_TOTP_CODE') {
+      if (result.nextStep?.signInStep === "CONFIRM_SIGN_IN_WITH_TOTP_CODE") {
         // Redirect to MFA page or show MFA input
-        window.location.href = resolveTenantPath('/sign-in/mfa?method=totp');
+        window.location.href = resolveTenantPath("/sign-in/mfa?method=totp");
         return;
       }
 
-      if (result.nextStep?.signInStep === 'CONFIRM_SIGN_IN_WITH_SMS_CODE') {
-        window.location.href = resolveTenantPath('/sign-in/mfa?method=sms');
+      if (result.nextStep?.signInStep === "CONFIRM_SIGN_IN_WITH_SMS_CODE") {
+        window.location.href = resolveTenantPath("/sign-in/mfa?method=sms");
         return;
       }
 
       // Sign in successful
-      window.location.href = resolveTenantPath('/dashboard');
+      window.location.href = resolveTenantPath("/dashboard");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Sign in failed';
+      const message = err instanceof Error ? err.message : "Sign in failed";
       setError(message);
       setLoading(false);
     }
@@ -99,7 +105,8 @@ export function CognitoSignIn({ path: _path, locale: _locale }: SignInProps) {
           <div className="rounded-lg bg-red-50 p-4">
             <p className="font-semibold text-red-800">Configuration Error</p>
             <p className="mt-1 text-sm text-red-600">
-              AWS Cognito is not configured. Please set the required environment variables.
+              AWS Cognito is not configured. Please set the required environment
+              variables.
             </p>
           </div>
         </div>
@@ -164,7 +171,7 @@ export function CognitoSignIn({ path: _path, locale: _locale }: SignInProps) {
               disabled={loading}
               className="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? 'Redirecting...' : 'Sign in with Cognito Hosted UI'}
+              {loading ? "Redirecting..." : "Sign in with Cognito Hosted UI"}
             </button>
           )}
 
@@ -172,7 +179,10 @@ export function CognitoSignIn({ path: _path, locale: _locale }: SignInProps) {
           {!useHostedUI && (
             <form onSubmit={handleEmailPasswordSignIn} className="space-y-4">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Email address
                 </label>
                 <input
@@ -186,7 +196,10 @@ export function CognitoSignIn({ path: _path, locale: _locale }: SignInProps) {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Password
                 </label>
                 <input
@@ -204,32 +217,41 @@ export function CognitoSignIn({ path: _path, locale: _locale }: SignInProps) {
                 disabled={loading}
                 className="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? 'Signing in...' : 'Sign in'}
+                {loading ? "Signing in..." : "Sign in"}
               </button>
             </form>
           )}
 
           {/* Additional Options */}
           <div className="mt-6 text-center text-sm">
-            <TenantLink href="/forgot-password" className="text-blue-600 hover:underline">
+            <TenantLink
+              href="/forgot-password"
+              className="text-blue-600 hover:underline"
+            >
               Forgot your password?
             </TenantLink>
           </div>
 
           <div className="mt-4 text-center text-sm text-gray-600">
-            Don't have an account?
-            {' '}
-            <TenantLink href="/sign-up" className="font-medium text-blue-600 hover:underline">
+            Don't have an account?{" "}
+            <TenantLink
+              href="/sign-up"
+              className="font-medium text-blue-600 hover:underline"
+            >
               Sign up
             </TenantLink>
           </div>
 
           {/* MFA Info */}
-          {process.env.NEXT_PUBLIC_COGNITO_MFA_ENABLED === 'true' && (
+          {process.env.NEXT_PUBLIC_COGNITO_MFA_ENABLED === "true" && (
             <div className="mt-6 rounded-lg bg-blue-50 p-4">
               <div className="flex">
                 <div className="shrink-0">
-                  <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                  <svg
+                    className="h-5 w-5 text-blue-400"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
                     <path
                       fillRule="evenodd"
                       d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
@@ -243,8 +265,9 @@ export function CognitoSignIn({ path: _path, locale: _locale }: SignInProps) {
                   </h3>
                   <div className="mt-1 text-sm text-blue-700">
                     <p>
-                      After signing in, you'll be prompted to enter a verification code from your
-                      authenticator app or receive it via SMS.
+                      After signing in, you'll be prompted to enter a
+                      verification code from your authenticator app or receive
+                      it via SMS.
                     </p>
                   </div>
                 </div>

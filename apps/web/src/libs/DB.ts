@@ -7,4 +7,4 @@
 // driver. In production on Cloudflare, we'll switch `@/server/db/DB`
 // to use the D1 driver while keeping this public API stable.
 
-export { db } from '@/server/db/DB';
+export { db } from "@/server/db/DB";

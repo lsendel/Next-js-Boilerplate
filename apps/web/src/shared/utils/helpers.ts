@@ -1,18 +1,20 @@
-import type { ReadonlyHeaders } from 'next/dist/server/web/spec-extension/adapters/headers';
-import { headers } from 'next/headers';
-import { buildTenantPath } from './tenant-context';
+import type { ReadonlyHeaders } from "next/dist/server/web/spec-extension/adapters/headers";
+import { headers } from "next/headers";
+import { buildTenantPath } from "./tenant-context";
 
 const isPromise = (value: unknown): value is Promise<unknown> => {
-  return typeof value === 'object'
-    && value !== null
-    && 'then' in value
-    && typeof (value as any).then === 'function';
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "then" in value &&
+    typeof (value as any).then === "function"
+  );
 };
 
 const getHeadersSafe = (): ReadonlyHeaders | null => {
   try {
     const result = headers();
-    return isPromise(result) ? null : result as ReadonlyHeaders;
+    return isPromise(result) ? null : (result as ReadonlyHeaders);
   } catch {
     return null;
   }
@@ -25,8 +27,9 @@ export const getBaseUrl = () => {
   let host: string | null = null;
 
   if (headerList) {
-    protocol = headerList.get('x-forwarded-proto') || headerList.get('protocol');
-    host = headerList.get('x-forwarded-host') || headerList.get('host');
+    protocol =
+      headerList.get("x-forwarded-proto") || headerList.get("protocol");
+    host = headerList.get("x-forwarded-host") || headerList.get("host");
   }
 
   if (protocol && host) {
@@ -38,8 +41,8 @@ export const getBaseUrl = () => {
   }
 
   if (
-    process.env.VERCEL_ENV === 'production'
-    && process.env.VERCEL_PROJECT_PRODUCTION_URL
+    process.env.VERCEL_ENV === "production" &&
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
   ) {
     return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
   }
@@ -48,7 +51,7 @@ export const getBaseUrl = () => {
     return `https://${process.env.VERCEL_URL}`;
   }
 
-  return 'http://localhost:3000';
+  return "http://localhost:3000";
 };
 
 export const getI18nPath = (url: string, locale: string) => {

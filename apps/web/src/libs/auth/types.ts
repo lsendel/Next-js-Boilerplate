@@ -1,11 +1,11 @@
-import type { NextRequest } from 'next/server';
+import type { NextRequest } from "next/server";
 
 /**
  * Auth Provider Types
  * These types define the contract that all auth providers must implement
  */
 
-export type AuthProvider = 'clerk' | 'cloudflare' | 'cognito' | 'test';
+export type AuthProvider = "clerk" | "cloudflare" | "cognito" | "test";
 
 export type AuthUser = {
   id: string;
@@ -47,16 +47,24 @@ export type IAuthAdapter = {
   signOut: () => Promise<void>;
 
   // Middleware methods
-  protectRoute: (request: NextRequest, config: AuthMiddlewareConfig) => Promise<{
+  protectRoute: (
+    request: NextRequest,
+    config: AuthMiddlewareConfig,
+  ) => Promise<{
     isAuthenticated: boolean;
     redirectUrl?: string;
   }>;
 
   // Client component render methods
-  renderProvider: (props: { children: React.ReactNode; locale: string }) => React.ReactElement;
+  renderProvider: (props: {
+    children: React.ReactNode;
+    locale: string;
+  }) => React.ReactElement;
   renderSignIn: (props: { path: string; locale: string }) => React.ReactElement;
   renderSignUp: (props: { path: string; locale: string }) => React.ReactElement;
-  renderSignOutButton: (props: { children: React.ReactNode }) => React.ReactElement;
+  renderSignOutButton: (props: {
+    children: React.ReactNode;
+  }) => React.ReactElement;
   renderUserProfile: (props: { path: string }) => React.ReactElement;
 };
 

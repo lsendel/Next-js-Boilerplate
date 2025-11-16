@@ -4,7 +4,7 @@
  * Tests how utility functions work together and interact with each other
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 import {
   capitalize,
   formatCurrency,
@@ -12,8 +12,8 @@ import {
   formatNumber,
   slugify,
   truncate,
-} from '@/shared/utils/format';
-import { generateRandomString, simpleHash } from '@/shared/utils/crypto';
+} from "@/shared/utils/format";
+import { generateRandomString, simpleHash } from "@/shared/utils/crypto";
 import {
   hasMaxLength,
   hasMinLength,
@@ -21,23 +21,24 @@ import {
   isValidEmail,
   isValidUrl,
   isValidUUID,
-} from '@/shared/utils/validation';
+} from "@/shared/utils/validation";
 
-describe('Utility Functions Integration Tests', () => {
-  describe('Format + Validation Integration', () => {
-    it('should format and validate blog post metadata', () => {
-      const title = 'How to Build Modern Web Applications';
-      const author = 'john doe';
-      const publishDate = new Date('2024-01-15T12:00:00.000Z');
+describe("Utility Functions Integration Tests", () => {
+  describe("Format + Validation Integration", () => {
+    it("should format and validate blog post metadata", () => {
+      const title = "How to Build Modern Web Applications";
+      const author = "john doe";
+      const publishDate = new Date("2024-01-15T12:00:00.000Z");
       const views = 12345;
-      const summary = 'This is a comprehensive guide to building modern web applications with Next.js, React, and TypeScript. Learn best practices and advanced techniques.';
+      const summary =
+        "This is a comprehensive guide to building modern web applications with Next.js, React, and TypeScript. Learn best practices and advanced techniques.";
 
       // Format the data
       const formattedTitle = capitalize(title.toLowerCase());
       const slug = slugify(title);
       const formattedAuthor = capitalize(author);
-      const formattedDate = formatDate(publishDate, 'en-US');
-      const formattedViews = formatNumber(views, 'en-US');
+      const formattedDate = formatDate(publishDate, "en-US");
+      const formattedViews = formatNumber(views, "en-US");
       const truncatedSummary = truncate(summary, 100);
 
       // Validate the formatted data
@@ -48,19 +49,20 @@ describe('Utility Functions Integration Tests', () => {
       expect(hasMaxLength(truncatedSummary, 103)).toBe(true); // 100 chars + "..."
 
       // Verify formatting worked correctly
-      expect(formattedTitle).toContain('How to build');
-      expect(slug).toBe('how-to-build-modern-web-applications');
-      expect(formattedAuthor).toBe('John doe');
-      expect(formattedDate).toContain('2024');
-      expect(formattedViews).toBe('12,345');
+      expect(formattedTitle).toContain("How to build");
+      expect(slug).toBe("how-to-build-modern-web-applications");
+      expect(formattedAuthor).toBe("John doe");
+      expect(formattedDate).toContain("2024");
+      expect(formattedViews).toBe("12,345");
       expect(truncatedSummary.length).toBeLessThanOrEqual(103);
     });
 
-    it('should format and validate user profile data', () => {
-      const name = 'JANE SMITH';
-      const email = 'jane.smith@example.com';
-      const bio = 'Software engineer passionate about web development and open source. Building amazing things with React and TypeScript!';
-      const website = 'https://janesmith.dev';
+    it("should format and validate user profile data", () => {
+      const name = "JANE SMITH";
+      const email = "jane.smith@example.com";
+      const bio =
+        "Software engineer passionate about web development and open source. Building amazing things with React and TypeScript!";
+      const website = "https://janesmith.dev";
 
       // Format the data
       const formattedName = capitalize(name);
@@ -73,20 +75,21 @@ describe('Utility Functions Integration Tests', () => {
       expect(hasMaxLength(truncatedBio, 83)).toBe(true);
 
       // Verify formatting
-      expect(formattedName).toBe('Jane smith');
+      expect(formattedName).toBe("Jane smith");
       expect(truncatedBio.length).toBeLessThanOrEqual(83);
     });
 
-    it('should format and validate e-commerce product', () => {
-      const productName = 'premium wireless headphones 2024';
+    it("should format and validate e-commerce product", () => {
+      const productName = "premium wireless headphones 2024";
       const price = 299.99;
-      const description = 'High-quality wireless headphones with active noise cancellation, 30-hour battery life, and premium sound quality. Perfect for music lovers and professionals.';
-      const sku = 'WH-2024-PRO';
+      const description =
+        "High-quality wireless headphones with active noise cancellation, 30-hour battery life, and premium sound quality. Perfect for music lovers and professionals.";
+      const sku = "WH-2024-PRO";
 
       // Format the data
       const formattedName = capitalize(productName);
       const slug = slugify(productName);
-      const formattedPrice = formatCurrency(price, 'USD', 'en-US');
+      const formattedPrice = formatCurrency(price, "USD", "en-US");
       const truncatedDescription = truncate(description, 120);
 
       // Validate
@@ -96,14 +99,14 @@ describe('Utility Functions Integration Tests', () => {
       expect(hasMaxLength(truncatedDescription, 123)).toBe(true);
 
       // Verify
-      expect(formattedName).toBe('Premium wireless headphones 2024');
-      expect(slug).toBe('premium-wireless-headphones-2024');
-      expect(formattedPrice).toBe('$299.99');
+      expect(formattedName).toBe("Premium wireless headphones 2024");
+      expect(slug).toBe("premium-wireless-headphones-2024");
+      expect(formattedPrice).toBe("$299.99");
     });
   });
 
-  describe('Crypto + Validation Integration', () => {
-    it('should generate and validate session tokens', () => {
+  describe("Crypto + Validation Integration", () => {
+    it("should generate and validate session tokens", () => {
       const tokenLength = 32;
       const token = generateRandomString(tokenLength);
 
@@ -122,13 +125,13 @@ describe('Utility Functions Integration Tests', () => {
       expect(hash).toBe(hash2);
     });
 
-    it('should generate and validate API keys', () => {
-      const prefix = 'sk';
+    it("should generate and validate API keys", () => {
+      const prefix = "sk";
       const randomPart = generateRandomString(48);
       const apiKey = `${prefix}_${randomPart}`;
 
       // Validate format
-      expect(apiKey.startsWith('sk_')).toBe(true);
+      expect(apiKey.startsWith("sk_")).toBe(true);
       expect(hasMinLength(apiKey, 48)).toBe(true);
       expect(isNonEmptyString(apiKey)).toBe(true);
 
@@ -140,8 +143,8 @@ describe('Utility Functions Integration Tests', () => {
       expect(simpleHash(apiKey)).toBe(keyHash);
     });
 
-    it('should generate and validate UUIDs with hashing', () => {
-      const uuid = '123e4567-e89b-12d3-a456-426614174000';
+    it("should generate and validate UUIDs with hashing", () => {
+      const uuid = "123e4567-e89b-12d3-a456-426614174000";
 
       // Validate UUID
       expect(isValidUUID(uuid)).toBe(true);
@@ -155,15 +158,15 @@ describe('Utility Functions Integration Tests', () => {
     });
   });
 
-  describe('Multi-Format Data Pipeline', () => {
-    it('should process user registration data end-to-end', () => {
+  describe("Multi-Format Data Pipeline", () => {
+    it("should process user registration data end-to-end", () => {
       // Raw user input
       const rawData = {
-        firstName: '  john  ',
-        lastName: '  DOE  ',
-        email: 'john.doe@EXAMPLE.com',
-        username: 'John_Doe_2024',
-        bio: 'Passionate developer building amazing products. Love coding, coffee, and open source. Always learning new technologies and sharing knowledge with the community.',
+        firstName: "  john  ",
+        lastName: "  DOE  ",
+        email: "john.doe@EXAMPLE.com",
+        username: "John_Doe_2024",
+        bio: "Passionate developer building amazing products. Love coding, coffee, and open source. Always learning new technologies and sharing knowledge with the community.",
       };
 
       // Step 1: Normalize and format
@@ -191,32 +194,32 @@ describe('Utility Functions Integration Tests', () => {
       expect(isNonEmptyString(userHash)).toBe(true);
 
       // Step 5: Verify final output
-      expect(firstName).toBe('John');
-      expect(lastName).toBe('Doe');
-      expect(email).toBe('john.doe@example.com');
-      expect(username).toBe('john-doe-2024');
+      expect(firstName).toBe("John");
+      expect(lastName).toBe("Doe");
+      expect(email).toBe("john.doe@example.com");
+      expect(username).toBe("john-doe-2024");
       expect(userId).toHaveLength(16);
       expect(sessionToken).toHaveLength(64);
     });
 
-    it('should process article publishing workflow', () => {
+    it("should process article publishing workflow", () => {
       // Raw article data
       const article = {
-        title: '  UNDERSTANDING REACT SERVER COMPONENTS  ',
-        author: 'jane smith',
-        content: 'Lorem ipsum '.repeat(100), // Very long content
-        tags: ['React', 'Server Components', 'Next.js'],
-        publishDate: new Date('2024-01-15T12:00:00.000Z'),
+        title: "  UNDERSTANDING REACT SERVER COMPONENTS  ",
+        author: "jane smith",
+        content: "Lorem ipsum ".repeat(100), // Very long content
+        tags: ["React", "Server Components", "Next.js"],
+        publishDate: new Date("2024-01-15T12:00:00.000Z"),
         views: 0,
       };
 
       // Step 1: Format metadata
       const title = capitalize(article.title.trim().toLowerCase());
       const slug = slugify(article.title);
-      const author = article.author.split(' ').map(capitalize).join(' ');
+      const author = article.author.split(" ").map(capitalize).join(" ");
       const excerpt = truncate(article.content, 200);
-      const formattedDate = formatDate(article.publishDate, 'en-US');
-      const formattedViews = formatNumber(article.views, 'en-US');
+      const formattedDate = formatDate(article.publishDate, "en-US");
+      const formattedViews = formatNumber(article.views, "en-US");
 
       // Step 2: Process tags
       const formattedTags = article.tags.map((tag) => slugify(tag));
@@ -235,25 +238,25 @@ describe('Utility Functions Integration Tests', () => {
       expect(isNonEmptyString(contentHash)).toBe(true);
 
       // Step 5: Verify specific formats
-      expect(title).toBe('Understanding react server components');
-      expect(slug).toBe('understanding-react-server-components');
-      expect(author).toBe('Jane Smith');
-      expect(formattedTags).toEqual(['react', 'server-components', 'nextjs']);
-      expect(formattedDate).toContain('2024');
-      expect(formattedViews).toBe('0');
+      expect(title).toBe("Understanding react server components");
+      expect(slug).toBe("understanding-react-server-components");
+      expect(author).toBe("Jane Smith");
+      expect(formattedTags).toEqual(["react", "server-components", "nextjs"]);
+      expect(formattedDate).toContain("2024");
+      expect(formattedViews).toBe("0");
     });
 
-    it('should process e-commerce order pipeline', () => {
+    it("should process e-commerce order pipeline", () => {
       const order = {
-        customerName: 'JOHN DOE',
-        email: 'john@example.com',
+        customerName: "JOHN DOE",
+        email: "john@example.com",
         total: 1234.56,
         items: [
-          { name: 'Premium Widget', price: 299.99, quantity: 2 },
-          { name: 'Super Gadget Pro', price: 634.58, quantity: 1 },
+          { name: "Premium Widget", price: 299.99, quantity: 2 },
+          { name: "Super Gadget Pro", price: 634.58, quantity: 1 },
         ],
-        shippingAddress: '123 Main Street, Apt 4B',
-        orderDate: new Date('2024-01-20T15:30:00.000Z'),
+        shippingAddress: "123 Main Street, Apt 4B",
+        orderDate: new Date("2024-01-20T15:30:00.000Z"),
       };
 
       // Step 1: Format customer data
@@ -261,11 +264,11 @@ describe('Utility Functions Integration Tests', () => {
       const email = order.email.toLowerCase();
 
       // Step 2: Format financial data
-      const formattedTotal = formatCurrency(order.total, 'USD', 'en-US');
+      const formattedTotal = formatCurrency(order.total, "USD", "en-US");
       const formattedItems = order.items.map((item) => ({
         name: capitalize(item.name.toLowerCase()),
-        price: formatCurrency(item.price, 'USD', 'en-US'),
-        quantity: formatNumber(item.quantity, 'en-US'),
+        price: formatCurrency(item.price, "USD", "en-US"),
+        quantity: formatNumber(item.quantity, "en-US"),
       }));
 
       // Step 3: Format address
@@ -284,33 +287,33 @@ describe('Utility Functions Integration Tests', () => {
       expect(isNonEmptyString(orderHash)).toBe(true);
 
       // Step 6: Verify formatting
-      expect(customerName).toBe('John doe');
-      expect(formattedTotal).toBe('$1,234.56');
-      expect(formattedItems[0]?.name).toBe('Premium widget');
-      expect(formattedItems[0]?.price).toBe('$299.99');
-      expect(formattedItems[1]?.price).toBe('$634.58');
-      expect(orderId.startsWith('ORD-')).toBe(true);
+      expect(customerName).toBe("John doe");
+      expect(formattedTotal).toBe("$1,234.56");
+      expect(formattedItems[0]?.name).toBe("Premium widget");
+      expect(formattedItems[0]?.price).toBe("$299.99");
+      expect(formattedItems[1]?.price).toBe("$634.58");
+      expect(orderId.startsWith("ORD-")).toBe(true);
       expect(orderId).toHaveLength(12);
     });
   });
 
-  describe('Security and Data Integrity', () => {
-    it('should maintain data integrity through format-validate cycle', () => {
-      const email = 'user@example.com';
+  describe("Security and Data Integrity", () => {
+    it("should maintain data integrity through format-validate cycle", () => {
+      const email = "user@example.com";
 
       // Format and validate multiple times
       for (let i = 0; i < 5; i++) {
         const lower = email.toLowerCase();
         expect(isValidEmail(lower)).toBe(true);
-        expect(lower).toBe('user@example.com');
+        expect(lower).toBe("user@example.com");
       }
     });
 
-    it('should generate consistent hashes for cache keys', () => {
+    it("should generate consistent hashes for cache keys", () => {
       const cacheKeys = [
-        'user:123:profile',
-        'post:456:comments',
-        'session:789:data',
+        "user:123:profile",
+        "post:456:comments",
+        "session:789:data",
       ];
 
       const hashes = cacheKeys.map((key) => simpleHash(key));
@@ -325,8 +328,8 @@ describe('Utility Functions Integration Tests', () => {
       expect(uniqueHashes.size).toBe(3);
     });
 
-    it('should validate formatted URLs before redirect', () => {
-      const userInput = 'https://example.com/path?query=value';
+    it("should validate formatted URLs before redirect", () => {
+      const userInput = "https://example.com/path?query=value";
 
       // Validate
       expect(isValidUrl(userInput)).toBe(true);
@@ -341,8 +344,8 @@ describe('Utility Functions Integration Tests', () => {
     });
   });
 
-  describe('Performance and Edge Cases', () => {
-    it('should handle large data volumes efficiently', () => {
+  describe("Performance and Edge Cases", () => {
+    it("should handle large data volumes efficiently", () => {
       // Generate many random tokens
       const tokens = Array.from({ length: 100 }, () =>
         generateRandomString(32),
@@ -364,8 +367,8 @@ describe('Utility Functions Integration Tests', () => {
       expect(simpleHash(tokens[0]!)).toBe(hashes[0]);
     });
 
-    it('should handle unicode and special characters across utilities', () => {
-      const text = 'Café naïve 🎉';
+    it("should handle unicode and special characters across utilities", () => {
+      const text = "Café naïve 🎉";
 
       // Formatting
       const capitalized = capitalize(text.toLowerCase());
@@ -381,20 +384,20 @@ describe('Utility Functions Integration Tests', () => {
       expect(simpleHash(text)).toBe(hash);
     });
 
-    it('should handle empty and edge case inputs gracefully', () => {
+    it("should handle empty and edge case inputs gracefully", () => {
       // Empty strings
-      expect(isNonEmptyString('')).toBe(false);
-      expect(slugify('')).toBe('');
-      expect(truncate('', 10)).toBe('');
+      expect(isNonEmptyString("")).toBe(false);
+      expect(slugify("")).toBe("");
+      expect(truncate("", 10)).toBe("");
 
       // Single character
-      expect(capitalize('a')).toBe('A');
-      expect(slugify('a')).toBe('a');
-      expect(truncate('a', 1)).toBe('a');
+      expect(capitalize("a")).toBe("A");
+      expect(slugify("a")).toBe("a");
+      expect(truncate("a", 1)).toBe("a");
 
       // Zero values
-      expect(formatNumber(0, 'en-US')).toBe('0');
-      expect(formatCurrency(0, 'USD', 'en-US')).toBe('$0.00');
+      expect(formatNumber(0, "en-US")).toBe("0");
+      expect(formatCurrency(0, "USD", "en-US")).toBe("$0.00");
     });
   });
 });

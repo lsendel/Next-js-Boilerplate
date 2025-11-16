@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { TenantLink } from '@/client/components/navigation/TenantLink';
-import { useTenantPath } from '@/shared/hooks/useTenantPath';
-import { getHostedUIUrl, getOAuthSignInUrl } from './amplify-config';
-import { getAvailableOAuthProviders, getOAuthProviderInfo } from './utils';
+import { useState } from "react";
+import { TenantLink } from "@/client/components/navigation/TenantLink";
+import { useTenantPath } from "@/shared/hooks/useTenantPath";
+import { getHostedUIUrl, getOAuthSignInUrl } from "./amplify-config";
+import { getAvailableOAuthProviders, getOAuthProviderInfo } from "./utils";
 
 type SignUpProps = {
   path: string;
@@ -21,25 +21,29 @@ type SignUpProps = {
  */
 export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>('');
-  const [statusMessage, setStatusMessage] = useState('');
+  const [error, setError] = useState<string>("");
+  const [statusMessage, setStatusMessage] = useState("");
   const [verificationRequired, setVerificationRequired] = useState(false);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
 
   const oauthProviders = getAvailableOAuthProviders();
   const hasOAuth = oauthProviders.length > 0;
   const useHostedUI = !!process.env.NEXT_PUBLIC_COGNITO_OAUTH_DOMAIN;
   const resolveTenantPath = useTenantPath();
 
-  const handleOAuthSignUp = async (provider: 'Google' | 'Facebook' | 'Apple') => {
+  const handleOAuthSignUp = async (
+    provider: "Google" | "Facebook" | "Apple",
+  ) => {
     try {
       setLoading(true);
-      setError('');
+      setError("");
 
       const signInUrl = getOAuthSignInUrl(provider);
       window.location.href = signInUrl;
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to initiate sign-up');
+      setError(
+        err instanceof Error ? err.message : "Failed to initiate sign-up",
+      );
       setLoading(false);
     }
   };
@@ -50,24 +54,28 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
       const hostedUIUrl = getHostedUIUrl();
       window.location.href = hostedUIUrl;
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to redirect to Hosted UI');
+      setError(
+        err instanceof Error ? err.message : "Failed to redirect to Hosted UI",
+      );
       setLoading(false);
     }
   };
 
-  const handleEmailPasswordSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleEmailPasswordSignUp = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setStatusMessage('');
+    setError("");
+    setStatusMessage("");
 
     const formData = new FormData(e.currentTarget);
-    const userEmail = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    const name = formData.get('name') as string;
+    const userEmail = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const name = formData.get("name") as string;
 
     try {
-      const { signUp } = await import('aws-amplify/auth');
+      const { signUp } = await import("aws-amplify/auth");
       const result = await signUp({
         username: userEmail,
         password,
@@ -82,14 +90,14 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
       setEmail(userEmail);
 
       // Check if email verification is required
-      if (result.nextStep.signUpStep === 'CONFIRM_SIGN_UP') {
+      if (result.nextStep.signUpStep === "CONFIRM_SIGN_UP") {
         setVerificationRequired(true);
       } else {
         // Sign up complete, redirect to sign in
-        window.location.href = resolveTenantPath('/sign-in');
+        window.location.href = resolveTenantPath("/sign-in");
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Sign up failed');
+      setError(err instanceof Error ? err.message : "Sign up failed");
     } finally {
       setLoading(false);
     }
@@ -98,23 +106,23 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
   const handleVerification = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setStatusMessage('');
+    setError("");
+    setStatusMessage("");
 
     const formData = new FormData(e.currentTarget);
-    const code = formData.get('code') as string;
+    const code = formData.get("code") as string;
 
     try {
-      const { confirmSignUp } = await import('aws-amplify/auth');
+      const { confirmSignUp } = await import("aws-amplify/auth");
       await confirmSignUp({
         username: email,
         confirmationCode: code,
       });
 
       // Verification successful, redirect to sign in
-      window.location.href = resolveTenantPath('/sign-in?verified=true');
+      window.location.href = resolveTenantPath("/sign-in?verified=true");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Verification failed');
+      setError(err instanceof Error ? err.message : "Verification failed");
     } finally {
       setLoading(false);
     }
@@ -122,15 +130,15 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
 
   const resendVerificationCode = async () => {
     setLoading(true);
-    setError('');
-    setStatusMessage('');
+    setError("");
+    setStatusMessage("");
 
     try {
-      const { resendSignUpCode } = await import('aws-amplify/auth');
+      const { resendSignUpCode } = await import("aws-amplify/auth");
       await resendSignUpCode({ username: email });
-      setStatusMessage('Verification code resent! Check your email.');
+      setStatusMessage("Verification code resent! Check your email.");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to resend code');
+      setError(err instanceof Error ? err.message : "Failed to resend code");
     } finally {
       setLoading(false);
     }
@@ -143,7 +151,8 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
           <div className="rounded-lg bg-red-50 p-4">
             <p className="font-semibold text-red-800">Configuration Error</p>
             <p className="mt-1 text-sm text-red-600">
-              AWS Cognito is not configured. Please set the required environment variables.
+              AWS Cognito is not configured. Please set the required environment
+              variables.
             </p>
           </div>
         </div>
@@ -159,21 +168,29 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
           <div className="rounded-lg bg-white p-8 shadow-md">
             <div className="mb-8 text-center">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-                <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                <svg
+                  className="h-6 w-6 text-blue-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
                 </svg>
               </div>
-              <h1 className="text-3xl font-bold text-gray-900">Verify Your Email</h1>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Verify Your Email
+              </h1>
               <p className="mt-2 text-gray-600">
-                We sent a verification code to
-                {' '}
-                <strong>{email}</strong>
-                . Enter it below to complete your sign up.
+                We sent a verification code to <strong>{email}</strong>. Enter
+                it below to complete your sign up.
               </p>
               {statusMessage && (
-                <p className="mt-2 text-sm text-blue-600">
-                  {statusMessage}
-                </p>
+                <p className="mt-2 text-sm text-blue-600">{statusMessage}</p>
               )}
             </div>
 
@@ -185,7 +202,10 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
 
             <form onSubmit={handleVerification} className="space-y-4">
               <div>
-                <label htmlFor="code" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="code"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Verification Code
                 </label>
                 <input
@@ -204,13 +224,12 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
                 disabled={loading}
                 className="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? 'Verifying...' : 'Verify Email'}
+                {loading ? "Verifying..." : "Verify Email"}
               </button>
             </form>
 
             <div className="mt-4 text-center text-sm text-gray-600">
-              Didn't receive the code?
-              {' '}
+              Didn't receive the code?{" "}
               <button
                 type="button"
                 onClick={resendVerificationCode}
@@ -233,7 +252,9 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
         <div className="rounded-lg bg-white p-8 shadow-md">
           <div className="mb-8 text-center">
             <h1 className="text-3xl font-bold text-gray-900">Create Account</h1>
-            <p className="mt-2 text-gray-600">Get started with your free account</p>
+            <p className="mt-2 text-gray-600">
+              Get started with your free account
+            </p>
           </div>
 
           {error && (
@@ -284,7 +305,7 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
               disabled={loading}
               className="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? 'Redirecting...' : 'Sign up with Cognito Hosted UI'}
+              {loading ? "Redirecting..." : "Sign up with Cognito Hosted UI"}
             </button>
           )}
 
@@ -292,7 +313,10 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
           {!useHostedUI && (
             <form onSubmit={handleEmailPasswordSignUp} className="space-y-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Full Name
                 </label>
                 <input
@@ -306,7 +330,10 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Email address
                 </label>
                 <input
@@ -320,7 +347,10 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Password
                 </label>
                 <input
@@ -333,7 +363,8 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
                   placeholder="••••••••"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  Must be at least 8 characters with uppercase, lowercase, and numbers
+                  Must be at least 8 characters with uppercase, lowercase, and
+                  numbers
                 </p>
               </div>
 
@@ -342,15 +373,17 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
                 disabled={loading}
                 className="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? 'Creating account...' : 'Create account'}
+                {loading ? "Creating account..." : "Create account"}
               </button>
             </form>
           )}
 
           <div className="mt-6 text-center text-sm text-gray-600">
-            Already have an account?
-            {' '}
-            <TenantLink href="/sign-in" className="font-medium text-blue-600 hover:underline">
+            Already have an account?{" "}
+            <TenantLink
+              href="/sign-in"
+              className="font-medium text-blue-600 hover:underline"
+            >
               Sign in
             </TenantLink>
           </div>

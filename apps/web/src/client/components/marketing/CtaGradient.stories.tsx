@@ -1,21 +1,21 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { CtaGradient } from './CtaGradient';
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { CtaGradient } from "./CtaGradient";
 
 const meta = {
-  title: 'Marketing/CtaGradient',
+  title: "Marketing/CtaGradient",
   component: CtaGradient,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
     a11y: {
       config: {
         rules: [
           {
-            id: 'color-contrast',
+            id: "color-contrast",
             enabled: true,
           },
           {
-            id: 'link-name',
+            id: "link-name",
             enabled: true,
           },
         ],
@@ -32,16 +32,16 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {
   args: {
-    title: 'Ready to get started?',
+    title: "Ready to get started?",
     description:
-      'Join thousands of developers who are already building amazing applications with our platform. Start your journey today.',
+      "Join thousands of developers who are already building amazing applications with our platform. Start your journey today.",
     primaryCta: {
-      text: 'Get started for free',
-      href: '/sign-up',
+      text: "Get started for free",
+      href: "/sign-up",
     },
     secondaryCta: {
-      text: 'View documentation',
-      href: '/docs',
+      text: "View documentation",
+      href: "/docs",
     },
   },
 };
@@ -51,19 +51,19 @@ export const Default: Story = {
  */
 export const BlueToPurple: Story = {
   args: {
-    title: 'Experience the future of development',
+    title: "Experience the future of development",
     description:
-      'Our cutting-edge tools and AI-powered features will transform how you build applications. Join the revolution.',
+      "Our cutting-edge tools and AI-powered features will transform how you build applications. Join the revolution.",
     primaryCta: {
-      text: 'Start free trial',
-      href: '/trial',
+      text: "Start free trial",
+      href: "/trial",
     },
     secondaryCta: {
-      text: 'Watch demo',
-      href: '/demo',
+      text: "Watch demo",
+      href: "/demo",
     },
-    gradientFrom: 'from-blue-600',
-    gradientTo: 'to-purple-600',
+    gradientFrom: "from-blue-600",
+    gradientTo: "to-purple-600",
   },
 };
 
@@ -72,19 +72,19 @@ export const BlueToPurple: Story = {
  */
 export const GreenToTeal: Story = {
   args: {
-    title: 'Build a sustainable future',
+    title: "Build a sustainable future",
     description:
-      'Reduce your carbon footprint while building powerful applications. Join us in creating a greener tomorrow.',
+      "Reduce your carbon footprint while building powerful applications. Join us in creating a greener tomorrow.",
     primaryCta: {
-      text: 'Get started',
-      href: '/start',
+      text: "Get started",
+      href: "/start",
     },
     secondaryCta: {
-      text: 'Learn more',
-      href: '/about',
+      text: "Learn more",
+      href: "/about",
     },
-    gradientFrom: 'from-green-600',
-    gradientTo: 'to-teal-600',
+    gradientFrom: "from-green-600",
+    gradientTo: "to-teal-600",
   },
 };
 
@@ -93,19 +93,19 @@ export const GreenToTeal: Story = {
  */
 export const OrangeToRed: Story = {
   args: {
-    title: 'Limited time offer - 50% off',
+    title: "Limited time offer - 50% off",
     description:
-      'Don\'t miss out on our biggest sale of the year. Upgrade your plan today and save big on all premium features.',
+      "Don't miss out on our biggest sale of the year. Upgrade your plan today and save big on all premium features.",
     primaryCta: {
-      text: 'Claim your discount',
-      href: '/pricing',
+      text: "Claim your discount",
+      href: "/pricing",
     },
     secondaryCta: {
-      text: 'View plans',
-      href: '/plans',
+      text: "View plans",
+      href: "/plans",
     },
-    gradientFrom: 'from-orange-600',
-    gradientTo: 'to-red-600',
+    gradientFrom: "from-orange-600",
+    gradientTo: "to-red-600",
   },
 };
 
@@ -114,19 +114,19 @@ export const OrangeToRed: Story = {
  */
 export const PinkToRose: Story = {
   args: {
-    title: 'Unleash your creativity',
+    title: "Unleash your creativity",
     description:
-      'Create stunning designs with our intuitive tools and templates. Perfect for designers, marketers, and creators.',
+      "Create stunning designs with our intuitive tools and templates. Perfect for designers, marketers, and creators.",
     primaryCta: {
-      text: 'Start creating',
-      href: '/create',
+      text: "Start creating",
+      href: "/create",
     },
     secondaryCta: {
-      text: 'Browse templates',
-      href: '/templates',
+      text: "Browse templates",
+      href: "/templates",
     },
-    gradientFrom: 'from-pink-600',
-    gradientTo: 'to-rose-600',
+    gradientFrom: "from-pink-600",
+    gradientTo: "to-rose-600",
   },
 };
 
@@ -135,15 +135,15 @@ export const PinkToRose: Story = {
  */
 export const SingleButton: Story = {
   args: {
-    title: 'Join our community',
+    title: "Join our community",
     description:
-      'Connect with developers worldwide, share your knowledge, and learn from the best in the industry.',
+      "Connect with developers worldwide, share your knowledge, and learn from the best in the industry.",
     primaryCta: {
-      text: 'Join now',
-      href: '/community',
+      text: "Join now",
+      href: "/community",
     },
-    gradientFrom: 'from-indigo-600',
-    gradientTo: 'to-blue-600',
+    gradientFrom: "from-indigo-600",
+    gradientTo: "to-blue-600",
   },
 };
 
@@ -152,15 +152,15 @@ export const SingleButton: Story = {
  */
 export const ShortCopy: Story = {
   args: {
-    title: 'Ship faster',
-    description: 'Deploy production-ready apps in minutes, not weeks.',
+    title: "Ship faster",
+    description: "Deploy production-ready apps in minutes, not weeks.",
     primaryCta: {
-      text: 'Get started',
-      href: '/start',
+      text: "Get started",
+      href: "/start",
     },
     secondaryCta: {
-      text: 'Learn how',
-      href: '/how-it-works',
+      text: "Learn how",
+      href: "/how-it-works",
     },
   },
 };
@@ -170,16 +170,16 @@ export const ShortCopy: Story = {
  */
 export const LongCopy: Story = {
   args: {
-    title: 'Everything you need to build modern web applications',
+    title: "Everything you need to build modern web applications",
     description:
-      'From authentication to database management, from real-time features to analytics integration, our comprehensive platform provides all the tools and services you need to build, deploy, and scale your applications with confidence. Start building today and focus on what matters most - your product.',
+      "From authentication to database management, from real-time features to analytics integration, our comprehensive platform provides all the tools and services you need to build, deploy, and scale your applications with confidence. Start building today and focus on what matters most - your product.",
     primaryCta: {
-      text: 'Explore features',
-      href: '/features',
+      text: "Explore features",
+      href: "/features",
     },
     secondaryCta: {
-      text: 'View pricing',
-      href: '/pricing',
+      text: "View pricing",
+      href: "/pricing",
     },
   },
 };
@@ -189,21 +189,21 @@ export const LongCopy: Story = {
  */
 export const MobileView: Story = {
   args: {
-    title: 'Ready to get started?',
+    title: "Ready to get started?",
     description:
-      'Join thousands of developers who are already building amazing applications with our platform.',
+      "Join thousands of developers who are already building amazing applications with our platform.",
     primaryCta: {
-      text: 'Get started',
-      href: '/start',
+      text: "Get started",
+      href: "/start",
     },
     secondaryCta: {
-      text: 'Learn more',
-      href: '/learn',
+      text: "Learn more",
+      href: "/learn",
     },
   },
   parameters: {
     viewport: {
-      defaultViewport: 'mobile1',
+      defaultViewport: "mobile1",
     },
   },
 };
@@ -213,21 +213,21 @@ export const MobileView: Story = {
  */
 export const TabletView: Story = {
   args: {
-    title: 'Ready to get started?',
+    title: "Ready to get started?",
     description:
-      'Join thousands of developers who are already building amazing applications with our platform.',
+      "Join thousands of developers who are already building amazing applications with our platform.",
     primaryCta: {
-      text: 'Get started',
-      href: '/start',
+      text: "Get started",
+      href: "/start",
     },
     secondaryCta: {
-      text: 'Learn more',
-      href: '/learn',
+      text: "Learn more",
+      href: "/learn",
     },
   },
   parameters: {
     viewport: {
-      defaultViewport: 'tablet',
+      defaultViewport: "tablet",
     },
   },
 };
@@ -237,18 +237,18 @@ export const TabletView: Story = {
  */
 export const ProductLaunch: Story = {
   args: {
-    title: '🚀 Now live: AI-powered code generation',
+    title: "🚀 Now live: AI-powered code generation",
     description:
-      'Generate production-ready code in seconds using our new AI assistant. Write less code, ship faster, and focus on innovation.',
+      "Generate production-ready code in seconds using our new AI assistant. Write less code, ship faster, and focus on innovation.",
     primaryCta: {
-      text: 'Try AI assistant',
-      href: '/ai',
+      text: "Try AI assistant",
+      href: "/ai",
     },
     secondaryCta: {
-      text: 'See examples',
-      href: '/examples',
+      text: "See examples",
+      href: "/examples",
     },
-    gradientFrom: 'from-purple-600',
-    gradientTo: 'to-pink-600',
+    gradientFrom: "from-purple-600",
+    gradientTo: "to-pink-600",
   },
 };

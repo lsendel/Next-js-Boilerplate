@@ -4,9 +4,9 @@
  * Data access layer for session management
  */
 
-import { and, count, eq, gt, lt, ne } from 'drizzle-orm';
-import { db } from '@/server/db/DB';
-import { sessions } from '@/server/db/models/Schema';
+import { and, count, eq, gt, lt, ne } from "drizzle-orm";
+import { db } from "@/server/db/DB";
+import { sessions } from "@/server/db/models/Schema";
 
 /**
  * Session type based on database schema
@@ -26,7 +26,9 @@ export async function createSession(data: NewSession): Promise<Session> {
 /**
  * Find session by token
  */
-export async function findSessionByToken(token: string): Promise<Session | null> {
+export async function findSessionByToken(
+  token: string,
+): Promise<Session | null> {
   const result = await db
     .select()
     .from(sessions)
@@ -53,10 +55,7 @@ export async function findSessionById(id: number): Promise<Session | null> {
  * Find all sessions for a user
  */
 export async function findSessionsByUserId(userId: number): Promise<Session[]> {
-  return await db
-    .select()
-    .from(sessions)
-    .where(eq(sessions.userId, userId));
+  return await db.select().from(sessions).where(eq(sessions.userId, userId));
 }
 
 /**
@@ -68,12 +67,7 @@ export async function getActiveSessions(userId: number): Promise<Session[]> {
   return await db
     .select()
     .from(sessions)
-    .where(
-      and(
-        eq(sessions.userId, userId),
-        gt(sessions.expiresAt, now),
-      ),
-    );
+    .where(and(eq(sessions.userId, userId), gt(sessions.expiresAt, now)));
 }
 
 /**
@@ -162,12 +156,7 @@ export async function isSessionValid(token: string): Promise<boolean> {
   const result = await db
     .select({ count: count() })
     .from(sessions)
-    .where(
-      and(
-        eq(sessions.sessionToken, token),
-        gt(sessions.expiresAt, now),
-      ),
-    );
+    .where(and(eq(sessions.sessionToken, token), gt(sessions.expiresAt, now)));
 
   return (result[0]?.count || 0) > 0;
 }
@@ -192,9 +181,7 @@ export async function extendSession(
  * Get total session count
  */
 export async function getSessionCount(): Promise<number> {
-  const result = await db
-    .select({ count: count() })
-    .from(sessions);
+  const result = await db.select({ count: count() }).from(sessions);
 
   return result[0]?.count || 0;
 }

@@ -35,26 +35,26 @@ NEXT_PUBLIC_AUTH_PROVIDER=test
 ### Playwright Example
 
 ```typescript
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test('should sign up and sign in', async ({ page }) => {
+test("should sign up and sign in", async ({ page }) => {
   // Sign up
-  await page.goto('/sign-up');
-  await page.fill('input[name="email"]', 'test@example.com');
-  await page.fill('input[name="password"]', 'password123');
-  await page.fill('input[name="confirm-password"]', 'password123');
+  await page.goto("/sign-up");
+  await page.fill('input[name="email"]', "test@example.com");
+  await page.fill('input[name="password"]', "password123");
+  await page.fill('input[name="confirm-password"]', "password123");
   await page.click('button[type="submit"]');
 
   // Should redirect to dashboard
   await expect(page).toHaveURL(/\/dashboard/);
 
   // Sign out
-  await page.click('text=Sign Out');
+  await page.click("text=Sign Out");
 
   // Sign in
-  await page.goto('/sign-in');
-  await page.fill('input[name="email"]', 'test@example.com');
-  await page.fill('input[name="password"]', 'password123');
+  await page.goto("/sign-in");
+  await page.fill('input[name="email"]', "test@example.com");
+  await page.fill('input[name="password"]', "password123");
   await page.click('button[type="submit"]');
 
   // Should redirect to dashboard

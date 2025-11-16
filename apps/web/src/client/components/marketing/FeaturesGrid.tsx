@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 export type Feature = {
   icon: ReactNode;
@@ -26,9 +26,9 @@ export function FeaturesGrid({
   columns = 3,
 }: FeaturesGridProps) {
   const gridCols = {
-    2: 'sm:grid-cols-2',
-    3: 'sm:grid-cols-2 lg:grid-cols-3',
-    4: 'sm:grid-cols-2 lg:grid-cols-4',
+    2: "sm:grid-cols-2",
+    3: "sm:grid-cols-2 lg:grid-cols-3",
+    4: "sm:grid-cols-2 lg:grid-cols-4",
   }[columns];
 
   return (
@@ -51,8 +51,10 @@ export function FeaturesGrid({
         )}
 
         {/* Features Grid */}
-        <div className={`mx-auto mt-16 grid max-w-7xl grid-cols-1 gap-8 ${gridCols}`}>
-          {features.map(feature => (
+        <div
+          className={`mx-auto mt-16 grid max-w-7xl grid-cols-1 gap-8 ${gridCols}`}
+        >
+          {features.map((feature) => (
             <div
               key={feature.title}
               className="group relative rounded-2xl border border-gray-200 bg-white p-8 transition-all hover:border-blue-500 hover:shadow-lg"

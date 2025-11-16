@@ -1,23 +1,23 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { NextIntlClientProvider } from 'next-intl';
-import messages from '@/locales/en.json';
-import { LocaleSwitcher } from './LocaleSwitcher';
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { NextIntlClientProvider } from "next-intl";
+import messages from "@/locales/en.json";
+import { LocaleSwitcher } from "./LocaleSwitcher";
 
 const meta = {
-  title: 'UI/LocaleSwitcher',
+  title: "UI/LocaleSwitcher",
   component: LocaleSwitcher,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   parameters: {
-    layout: 'centered',
+    layout: "centered",
     a11y: {
       config: {
         rules: [
           {
-            id: 'color-contrast',
+            id: "color-contrast",
             enabled: true,
           },
           {
-            id: 'label',
+            id: "label",
             enabled: true,
           },
         ],
@@ -25,7 +25,7 @@ const meta = {
     },
   },
   decorators: [
-    Story => (
+    (Story) => (
       <NextIntlClientProvider locale="en" messages={messages}>
         <Story />
       </NextIntlClientProvider>
@@ -40,7 +40,7 @@ export const Default: Story = {};
 
 export const EnglishLocale: Story = {
   decorators: [
-    Story => (
+    (Story) => (
       <NextIntlClientProvider locale="en" messages={messages}>
         <Story />
       </NextIntlClientProvider>
@@ -50,7 +50,7 @@ export const EnglishLocale: Story = {
 
 export const FrenchLocale: Story = {
   decorators: [
-    Story => (
+    (Story) => (
       <NextIntlClientProvider locale="fr" messages={messages}>
         <Story />
       </NextIntlClientProvider>
@@ -60,7 +60,7 @@ export const FrenchLocale: Story = {
 
 export const InHeader: Story = {
   decorators: [
-    Story => (
+    (Story) => (
       <NextIntlClientProvider locale="en" messages={messages}>
         <header className="flex items-center justify-between bg-gray-900 p-4 text-white">
           <h1 className="text-xl font-bold">My Website</h1>
@@ -70,18 +70,24 @@ export const InHeader: Story = {
     ),
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
   },
 };
 
 export const InNavigation: Story = {
   decorators: [
-    Story => (
+    (Story) => (
       <NextIntlClientProvider locale="en" messages={messages}>
         <nav className="flex items-center space-x-4 border-b border-gray-200 p-4">
-          <a href="#" className="text-blue-600 hover:underline">Home</a>
-          <a href="#" className="text-blue-600 hover:underline">About</a>
-          <a href="#" className="text-blue-600 hover:underline">Contact</a>
+          <a href="#" className="text-blue-600 hover:underline">
+            Home
+          </a>
+          <a href="#" className="text-blue-600 hover:underline">
+            About
+          </a>
+          <a href="#" className="text-blue-600 hover:underline">
+            Contact
+          </a>
           <div className="ml-auto">
             <Story />
           </div>
@@ -90,6 +96,6 @@ export const InNavigation: Story = {
     ),
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
   },
 };

@@ -24,13 +24,15 @@ export function CtaGradient({
   description,
   primaryCta,
   secondaryCta,
-  gradientFrom = 'from-blue-600',
-  gradientTo = 'to-purple-600',
+  gradientFrom = "from-blue-600",
+  gradientTo = "to-purple-600",
 }: CtaGradientProps) {
   return (
     <section className="relative overflow-hidden px-6 py-24 sm:py-32 lg:px-8">
       {/* Gradient Background */}
-      <div className={`absolute inset-0 -z-10 bg-gradient-to-br ${gradientFrom} ${gradientTo}`} />
+      <div
+        className={`absolute inset-0 -z-10 bg-gradient-to-br ${gradientFrom} ${gradientTo}`}
+      />
 
       {/* Decorative Elements */}
       <div className="absolute inset-0 -z-10 overflow-hidden">

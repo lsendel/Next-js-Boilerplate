@@ -97,17 +97,20 @@ import {
 ### Middleware
 
 ```typescript
-import { executeAuthMiddleware } from '@/libs/auth/middleware';
+import { executeAuthMiddleware } from "@/libs/auth/middleware";
 
-export default async function middleware(request: NextRequest, event: NextFetchEvent) {
+export default async function middleware(
+  request: NextRequest,
+  event: NextFetchEvent,
+) {
   const authResponse = await executeAuthMiddleware(request, event, {
-    protectedRoutes: ['/dashboard'],
-    publicRoutes: ['/'],
-    signInUrl: '/sign-in',
-    signUpUrl: '/sign-up',
-    afterSignInUrl: '/dashboard',
-    afterSignUpUrl: '/dashboard',
-    afterSignOutUrl: '/',
+    protectedRoutes: ["/dashboard"],
+    publicRoutes: ["/"],
+    signInUrl: "/sign-in",
+    signUpUrl: "/sign-up",
+    afterSignInUrl: "/dashboard",
+    afterSignUpUrl: "/dashboard",
+    afterSignOutUrl: "/",
   });
 
   if (authResponse) {
@@ -123,6 +126,7 @@ export default async function middleware(request: NextRequest, event: NextFetchE
 ### Clerk (Fully Implemented ✅)
 
 1. Set environment variables in `.env.local`:
+
 ```bash
 NEXT_PUBLIC_AUTH_PROVIDER=clerk
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
@@ -132,6 +136,7 @@ CLERK_SECRET_KEY=sk_test_...
 2. That's it! Clerk is fully integrated.
 
 **Features:**
+
 - ✅ Pre-built UI components
 - ✅ Multi-language support
 - ✅ Social auth, MFA, passkeys
@@ -140,6 +145,7 @@ CLERK_SECRET_KEY=sk_test_...
 ### Cloudflare Access (Fully Implemented ✅)
 
 1. Set environment variables:
+
 ```bash
 NEXT_PUBLIC_AUTH_PROVIDER=cloudflare
 NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN=https://your-team.cloudflareaccess.com
@@ -150,6 +156,7 @@ NEXT_PUBLIC_CLOUDFLARE_VERIFY_JWT=true  # Optional: Enable JWT verification
 2. Configure Cloudflare Access in your Cloudflare dashboard
 
 **Current Implementation:**
+
 - ✅ Reads user from request headers
 - ✅ Full middleware integration with route protection
 - ✅ JWT token verification (optional)
@@ -159,6 +166,7 @@ NEXT_PUBLIC_CLOUDFLARE_VERIFY_JWT=true  # Optional: Enable JWT verification
 - ✅ Utility functions for Cloudflare Access operations
 
 **Features:**
+
 - Automatic redirect to Cloudflare login
 - JWT token validation (when enabled)
 - User profile management
@@ -167,11 +175,13 @@ NEXT_PUBLIC_CLOUDFLARE_VERIFY_JWT=true  # Optional: Enable JWT verification
 ### AWS Cognito (Stub Implementation ⚠️)
 
 1. Install dependencies:
+
 ```bash
 npm install aws-amplify @aws-amplify/ui-react
 ```
 
 2. Set environment variables:
+
 ```bash
 NEXT_PUBLIC_AUTH_PROVIDER=cognito
 NEXT_PUBLIC_COGNITO_REGION=us-east-1
@@ -182,10 +192,12 @@ NEXT_PUBLIC_COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxx
 3. Configure Amplify (see `adapters/CognitoAdapter.tsx` comments)
 
 **Current Implementation:**
+
 - ⚠️ Stub only - displays "not implemented" messages
 - ⚠️ All methods need to be implemented
 
 **To Complete:**
+
 - Configure AWS Amplify
 - Implement all IAuthAdapter methods
 - Add Authenticator UI components
@@ -196,7 +208,7 @@ NEXT_PUBLIC_COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxx
 
 ```typescript
 // adapters/MyAuthAdapter.tsx
-import type { AuthUser, IAuthAdapter } from '../types';
+import type { AuthUser, IAuthAdapter } from "../types";
 
 export class MyAuthAdapter implements IAuthAdapter {
   async getCurrentUser(): Promise<AuthUser | null> {
@@ -221,6 +233,7 @@ case 'myauth':
 ## Type Definitions
 
 ### AuthUser
+
 ```typescript
 type AuthUser = {
   id: string;
@@ -232,6 +245,7 @@ type AuthUser = {
 ```
 
 ### IAuthAdapter
+
 See `types.ts` for the complete interface that all adapters must implement.
 
 ## Benefits
@@ -253,13 +267,13 @@ See `types.ts` for the complete interface that all adapters must implement.
 If you need provider-specific features:
 
 ```typescript
-import { getAuthAdapter, getAuthProvider } from '@/libs/auth';
-import { ClerkAdapter } from '@/libs/auth/adapters/ClerkAdapter';
+import { getAuthAdapter, getAuthProvider } from "@/libs/auth";
+import { ClerkAdapter } from "@/libs/auth/adapters/ClerkAdapter";
 
 const adapter = getAuthAdapter();
 const provider = getAuthProvider(); // 'clerk' | 'cloudflare' | 'cognito'
 
-if (provider === 'clerk') {
+if (provider === "clerk") {
   // Type-safe access to Clerk-specific features
   const clerkAdapter = adapter as ClerkAdapter;
   // Use Clerk-specific methods
@@ -269,20 +283,24 @@ if (provider === 'clerk') {
 ## Troubleshooting
 
 **Issue: Changes not reflected after switching provider**
+
 - Restart your Next.js dev server
 - Clear `.next` cache: `npm run clean && npm run dev`
 
 **Issue: TypeScript errors after adding adapter**
+
 - Ensure your adapter implements all `IAuthAdapter` methods
 - Check return types match the interface
 
 **Issue: Middleware not working**
+
 - Verify your adapter's `createMiddleware` static method
 - Check middleware is registered in `middleware.ts`
 
 ## Contributing
 
 When adding or updating adapters:
+
 1. Implement the complete `IAuthAdapter` interface
 2. Add tests (if test infrastructure exists)
 3. Update this README

@@ -1,17 +1,17 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { DemoBadge } from './DemoBadge';
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { DemoBadge } from "./DemoBadge";
 
 const meta = {
-  title: 'UI/DemoBadge',
+  title: "UI/DemoBadge",
   component: DemoBadge,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
     a11y: {
       config: {
         rules: [
           {
-            id: 'color-contrast',
+            id: "color-contrast",
             enabled: true,
           },
         ],
@@ -28,14 +28,14 @@ export const Default: Story = {};
 export const WithCustomViewport: Story = {
   parameters: {
     viewport: {
-      defaultViewport: 'mobile1',
+      defaultViewport: "mobile1",
     },
   },
 };
 
 export const InContext: Story = {
   decorators: [
-    Story => (
+    (Story) => (
       <div className="relative min-h-screen bg-gray-100">
         <div className="p-8">
           <h1 className="text-2xl font-bold">Sample Page Content</h1>

@@ -17,18 +17,24 @@
  * - 'test' - Simple form-based auth for E2E testing (DO NOT USE IN PRODUCTION)
  */
 
-import { AuthFactory } from './factory';
+import { AuthFactory } from "./factory";
 
 // Export adapters for direct use if needed
-export { ClerkAdapter } from './adapters/ClerkAdapter';
-export { CloudflareAdapter } from './adapters/CloudflareAdapter';
-export { CognitoAdapter } from './adapters/CognitoAdapter';
-export { TestAdapter } from './adapters/TestAdapter';
+export { ClerkAdapter } from "./adapters/ClerkAdapter";
+export { CloudflareAdapter } from "./adapters/CloudflareAdapter";
+export { CognitoAdapter } from "./adapters/CognitoAdapter";
+export { TestAdapter } from "./adapters/TestAdapter";
 // Export factory
-export { AuthFactory } from './factory';
+export { AuthFactory } from "./factory";
 
 // Export types
-export type { AuthMiddlewareConfig, AuthProvider, AuthSession, AuthUser, IAuthAdapter } from './types';
+export type {
+  AuthMiddlewareConfig,
+  AuthProvider,
+  AuthSession,
+  AuthUser,
+  IAuthAdapter,
+} from "./types";
 
 /**
  * Get the current auth adapter instance

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 type UserInfo = {
   email: string;
@@ -25,8 +25,8 @@ export function CloudflareUserProfile() {
   useEffect(() => {
     // Fetch user info from an API endpoint
     // This endpoint would read from Cloudflare Access headers
-    fetch('/api/auth/user')
-      .then(res => res.json())
+    fetch("/api/auth/user")
+      .then((res) => res.json())
       .then((data) => {
         setUserInfo(data);
         setLoading(false);
@@ -48,9 +48,7 @@ export function CloudflareUserProfile() {
     <div className="mx-auto max-w-4xl p-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">User Profile</h1>
-        <p className="mt-2 text-gray-600">
-          Manage your profile information
-        </p>
+        <p className="mt-2 text-gray-600">Manage your profile information</p>
       </div>
 
       <div className="space-y-6">
@@ -66,7 +64,7 @@ export function CloudflareUserProfile() {
                 Email Address
               </p>
               <div className="mt-1 rounded-md bg-gray-50 p-3 text-gray-900">
-                {userInfo?.email || 'Not available'}
+                {userInfo?.email || "Not available"}
               </div>
               <p className="mt-1 text-sm text-gray-500">
                 Managed by Cloudflare Access
@@ -74,11 +72,9 @@ export function CloudflareUserProfile() {
             </div>
 
             <div>
-              <p className="block text-sm font-medium text-gray-700">
-                User ID
-              </p>
+              <p className="block text-sm font-medium text-gray-700">User ID</p>
               <div className="mt-1 rounded-md bg-gray-50 p-3 font-mono text-sm text-gray-900">
-                {userInfo?.id || 'Not available'}
+                {userInfo?.id || "Not available"}
               </div>
             </div>
           </div>
@@ -93,9 +89,7 @@ export function CloudflareUserProfile() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-gray-900">
-                  Cloudflare Access
-                </p>
+                <p className="font-medium text-gray-900">Cloudflare Access</p>
                 <p className="text-sm text-gray-500">
                   Your account is secured by Cloudflare Access
                 </p>
@@ -136,7 +130,8 @@ export function CloudflareUserProfile() {
                   <div className="mt-2 text-sm text-blue-700">
                     <p>
                       Profile settings like password, two-factor authentication,
-                      and security preferences are managed through Cloudflare Access.
+                      and security preferences are managed through Cloudflare
+                      Access.
                     </p>
                   </div>
                   <div className="mt-4">

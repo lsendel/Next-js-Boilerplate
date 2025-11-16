@@ -3,8 +3,8 @@
  * Helper functions for Cognito authentication, OAuth2, and MFA
  */
 
-import type { AuthUser } from '../../types';
-import { authLogger } from '@/libs/Logger';
+import type { AuthUser } from "../../types";
+import { authLogger } from "@/libs/Logger";
 
 /**
  * AWS Cognito User Type
@@ -36,8 +36,11 @@ export function cognitoUserToAuthUser(cognitoUser: CognitoUser): AuthUser {
   return {
     id: cognitoUser.userId || cognitoUser.username,
     email: attributes.email || null,
-    firstName: attributes.given_name || attributes.name?.split(' ')[0] || null,
-    lastName: attributes.family_name || attributes.name?.split(' ').slice(1).join(' ') || null,
+    firstName: attributes.given_name || attributes.name?.split(" ")[0] || null,
+    lastName:
+      attributes.family_name ||
+      attributes.name?.split(" ").slice(1).join(" ") ||
+      null,
     imageUrl: attributes.picture || null,
   };
 }
@@ -47,7 +50,7 @@ export function cognitoUserToAuthUser(cognitoUser: CognitoUser): AuthUser {
  */
 export type MFAStatus = {
   enabled: boolean;
-  preferred?: 'TOTP' | 'SMS';
+  preferred?: "TOTP" | "SMS";
   totpConfigured: boolean;
   smsConfigured: boolean;
 };
@@ -68,7 +71,7 @@ export async function getMFAStatus(): Promise<MFAStatus> {
       smsConfigured: false,
     };
   } catch (error) {
-    authLogger.error('Failed to get MFA status', { error });
+    authLogger.error("Failed to get MFA status", { error });
     return {
       enabled: false,
       totpConfigured: false,
@@ -94,10 +97,10 @@ export async function setupTOTPMFA(): Promise<{
     //   secret: totpSetup.sharedSecret,
     // };
 
-    authLogger.warn('setupTOTPMFA not yet implemented');
+    authLogger.warn("setupTOTPMFA not yet implemented");
     return null;
   } catch (error) {
-    authLogger.error('Failed to setup TOTP MFA', { error });
+    authLogger.error("Failed to setup TOTP MFA", { error });
     return null;
   }
 }
@@ -112,10 +115,10 @@ export async function verifyTOTPSetup(code: string): Promise<boolean> {
     // await verifyTOTPSetup({ code });
     // return true;
 
-    authLogger.warn('verifyTOTPSetup not yet implemented', { code });
+    authLogger.warn("verifyTOTPSetup not yet implemented", { code });
     return false;
   } catch (error) {
-    authLogger.error('Failed to verify TOTP', { error });
+    authLogger.error("Failed to verify TOTP", { error });
     return false;
   }
 }
@@ -130,10 +133,10 @@ export async function disableMFA(): Promise<boolean> {
     // await updateMFAPreference({ totp: 'DISABLED', sms: 'DISABLED' });
     // return true;
 
-    authLogger.warn('disableMFA not yet implemented');
+    authLogger.warn("disableMFA not yet implemented");
     return false;
   } catch (error) {
-    authLogger.error('Failed to disable MFA', { error });
+    authLogger.error("Failed to disable MFA", { error });
     return false;
   }
 }
@@ -141,17 +144,19 @@ export async function disableMFA(): Promise<boolean> {
 /**
  * Get available OAuth providers
  */
-export function getAvailableOAuthProviders(): Array<'Google' | 'Facebook' | 'Apple'> {
-  const providers: Array<'Google' | 'Facebook' | 'Apple'> = [];
+export function getAvailableOAuthProviders(): Array<
+  "Google" | "Facebook" | "Apple"
+> {
+  const providers: Array<"Google" | "Facebook" | "Apple"> = [];
 
-  if (process.env.NEXT_PUBLIC_COGNITO_OAUTH_GOOGLE === 'true') {
-    providers.push('Google');
+  if (process.env.NEXT_PUBLIC_COGNITO_OAUTH_GOOGLE === "true") {
+    providers.push("Google");
   }
-  if (process.env.NEXT_PUBLIC_COGNITO_OAUTH_FACEBOOK === 'true') {
-    providers.push('Facebook');
+  if (process.env.NEXT_PUBLIC_COGNITO_OAUTH_FACEBOOK === "true") {
+    providers.push("Facebook");
   }
-  if (process.env.NEXT_PUBLIC_COGNITO_OAUTH_APPLE === 'true') {
-    providers.push('Apple');
+  if (process.env.NEXT_PUBLIC_COGNITO_OAUTH_APPLE === "true") {
+    providers.push("Apple");
   }
 
   return providers;
@@ -160,26 +165,28 @@ export function getAvailableOAuthProviders(): Array<'Google' | 'Facebook' | 'App
 /**
  * Get OAuth provider display information
  */
-export function getOAuthProviderInfo(provider: 'Google' | 'Facebook' | 'Apple'): {
+export function getOAuthProviderInfo(
+  provider: "Google" | "Facebook" | "Apple",
+): {
   name: string;
   icon: string;
   color: string;
 } {
   const providers = {
     Google: {
-      name: 'Google',
-      icon: '🔍', // You can replace with actual icon/svg
-      color: '#4285F4',
+      name: "Google",
+      icon: "🔍", // You can replace with actual icon/svg
+      color: "#4285F4",
     },
     Facebook: {
-      name: 'Facebook',
-      icon: '📘',
-      color: '#1877F2',
+      name: "Facebook",
+      icon: "📘",
+      color: "#1877F2",
     },
     Apple: {
-      name: 'Apple',
-      icon: '',
-      color: '#000000',
+      name: "Apple",
+      icon: "",
+      color: "#000000",
     },
   };
 

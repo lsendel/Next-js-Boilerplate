@@ -4,22 +4,22 @@
  * Co-located test file for session.repository.ts
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import * as sessionRepo from './session.repository';
-import * as userRepo from './user.repository';
-import type { NewSession } from './session.repository';
-import type { NewUser } from './user.repository';
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import * as sessionRepo from "./session.repository";
+import * as userRepo from "./user.repository";
+import type { NewSession } from "./session.repository";
+import type { NewUser } from "./user.repository";
 
 // Test data
 let testUserId: number;
 
-describe('SessionRepository', () => {
+describe("SessionRepository", () => {
   beforeEach(async () => {
     // Create a test user for session tests
     const userData: NewUser = {
       email: `test-${Date.now()}@example.com`,
-      passwordHash: 'test-hash',
-      authProvider: 'local',
+      passwordHash: "test-hash",
+      authProvider: "local",
       isActive: true,
     };
     const user = await userRepo.createUser(userData);
@@ -34,43 +34,43 @@ describe('SessionRepository', () => {
     }
   });
 
-  describe('createSession', () => {
-    it('should create a new session', async () => {
+  describe("createSession", () => {
+    it("should create a new session", async () => {
       const sessionData: NewSession = {
         userId: testUserId,
-        sessionToken: 'test-token-123',
+        sessionToken: "test-token-123",
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       };
 
       const session = await sessionRepo.createSession(sessionData);
 
       expect(session).toBeDefined();
-      expect(session.id).toBeTypeOf('number');
+      expect(session.id).toBeTypeOf("number");
       expect(session.userId).toBe(testUserId);
-      expect(session.sessionToken).toBe('test-token-123');
+      expect(session.sessionToken).toBe("test-token-123");
       expect(session.expiresAt).toBeInstanceOf(Date);
     });
 
-    it('should create session with full client info', async () => {
+    it("should create session with full client info", async () => {
       const sessionData: NewSession = {
         userId: testUserId,
-        sessionToken: 'test-token-456',
+        sessionToken: "test-token-456",
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        ipAddress: '192.168.1.1',
-        userAgent: 'Mozilla/5.0',
-        deviceFingerprint: 'device-123',
+        ipAddress: "192.168.1.1",
+        userAgent: "Mozilla/5.0",
+        deviceFingerprint: "device-123",
       };
 
       const session = await sessionRepo.createSession(sessionData);
 
-      expect(session.ipAddress).toBe('192.168.1.1');
-      expect(session.userAgent).toBe('Mozilla/5.0');
-      expect(session.deviceFingerprint).toBe('device-123');
+      expect(session.ipAddress).toBe("192.168.1.1");
+      expect(session.userAgent).toBe("Mozilla/5.0");
+      expect(session.deviceFingerprint).toBe("device-123");
     });
   });
 
-  describe('findSessionByToken', () => {
-    it('should find session by token', async () => {
+  describe("findSessionByToken", () => {
+    it("should find session by token", async () => {
       const token = `test-token-${Date.now()}`;
       const sessionData: NewSession = {
         userId: testUserId,
@@ -85,14 +85,14 @@ describe('SessionRepository', () => {
       expect(found?.sessionToken).toBe(token);
     });
 
-    it('should return null for non-existent token', async () => {
-      const found = await sessionRepo.findSessionByToken('non-existent-token');
+    it("should return null for non-existent token", async () => {
+      const found = await sessionRepo.findSessionByToken("non-existent-token");
       expect(found).toBeNull();
     });
   });
 
-  describe('getActiveSessions', () => {
-    it('should return only non-expired sessions', async () => {
+  describe("getActiveSessions", () => {
+    it("should return only non-expired sessions", async () => {
       // Create expired session
       const expiredSession: NewSession = {
         userId: testUserId,
@@ -117,8 +117,8 @@ describe('SessionRepository', () => {
     });
   });
 
-  describe('updateActivity', () => {
-    it('should update last activity timestamp', async () => {
+  describe("updateActivity", () => {
+    it("should update last activity timestamp", async () => {
       const sessionData: NewSession = {
         userId: testUserId,
         sessionToken: `test-${Date.now()}`,
@@ -129,7 +129,7 @@ describe('SessionRepository', () => {
       const originalActivity = session.lastActivityAt;
 
       // Wait a bit to ensure timestamp difference
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       await sessionRepo.updateActivity(session.id);
 
@@ -140,8 +140,8 @@ describe('SessionRepository', () => {
     });
   });
 
-  describe('deleteSession', () => {
-    it('should delete session by ID', async () => {
+  describe("deleteSession", () => {
+    it("should delete session by ID", async () => {
       const sessionData: NewSession = {
         userId: testUserId,
         sessionToken: `test-${Date.now()}`,
@@ -157,14 +157,14 @@ describe('SessionRepository', () => {
       expect(found).toBeNull();
     });
 
-    it('should return false for non-existent session', async () => {
+    it("should return false for non-existent session", async () => {
       const deleted = await sessionRepo.deleteSession(999999);
       expect(deleted).toBe(false);
     });
   });
 
-  describe('deleteSessionByToken', () => {
-    it('should delete session by token', async () => {
+  describe("deleteSessionByToken", () => {
+    it("should delete session by token", async () => {
       const token = `test-${Date.now()}`;
       const sessionData: NewSession = {
         userId: testUserId,
@@ -182,8 +182,8 @@ describe('SessionRepository', () => {
     });
   });
 
-  describe('deleteSessionsByUserId', () => {
-    it('should delete all sessions for a user', async () => {
+  describe("deleteSessionsByUserId", () => {
+    it("should delete all sessions for a user", async () => {
       // Create multiple sessions
       const session1: NewSession = {
         userId: testUserId,
@@ -209,8 +209,8 @@ describe('SessionRepository', () => {
     });
   });
 
-  describe('deleteExpiredSessions', () => {
-    it('should delete only expired sessions', async () => {
+  describe("deleteExpiredSessions", () => {
+    it("should delete only expired sessions", async () => {
       // Create expired session
       const expiredSession: NewSession = {
         userId: testUserId,
@@ -244,8 +244,8 @@ describe('SessionRepository', () => {
     });
   });
 
-  describe('isSessionValid', () => {
-    it('should return true for valid non-expired session', async () => {
+  describe("isSessionValid", () => {
+    it("should return true for valid non-expired session", async () => {
       const token = `test-${Date.now()}`;
       const sessionData: NewSession = {
         userId: testUserId,
@@ -259,7 +259,7 @@ describe('SessionRepository', () => {
       expect(isValid).toBe(true);
     });
 
-    it('should return false for expired session', async () => {
+    it("should return false for expired session", async () => {
       const token = `test-${Date.now()}`;
       const sessionData: NewSession = {
         userId: testUserId,
@@ -273,14 +273,14 @@ describe('SessionRepository', () => {
       expect(isValid).toBe(false);
     });
 
-    it('should return false for non-existent session', async () => {
-      const isValid = await sessionRepo.isSessionValid('non-existent-token');
+    it("should return false for non-existent session", async () => {
+      const isValid = await sessionRepo.isSessionValid("non-existent-token");
       expect(isValid).toBe(false);
     });
   });
 
-  describe('extendSession', () => {
-    it('should extend session expiration', async () => {
+  describe("extendSession", () => {
+    it("should extend session expiration", async () => {
       const sessionData: NewSession = {
         userId: testUserId,
         sessionToken: `test-${Date.now()}`,
@@ -290,15 +290,18 @@ describe('SessionRepository', () => {
       const session = await sessionRepo.createSession(sessionData);
       const newExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
-      const extended = await sessionRepo.extendSession(session.id, newExpiresAt);
+      const extended = await sessionRepo.extendSession(
+        session.id,
+        newExpiresAt,
+      );
 
       expect(extended).toBeDefined();
       expect(extended?.expiresAt.getTime()).toBe(newExpiresAt.getTime());
     });
   });
 
-  describe('getSessionCount', () => {
-    it('should return total session count', async () => {
+  describe("getSessionCount", () => {
+    it("should return total session count", async () => {
       const before = await sessionRepo.getSessionCount();
 
       const sessionData: NewSession = {
@@ -315,8 +318,8 @@ describe('SessionRepository', () => {
     });
   });
 
-  describe('getActiveSessionCount', () => {
-    it('should return only active session count', async () => {
+  describe("getActiveSessionCount", () => {
+    it("should return only active session count", async () => {
       // Create expired session
       const expiredSession: NewSession = {
         userId: testUserId,

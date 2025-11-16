@@ -1,17 +1,17 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { DemoBanner } from './DemoBanner';
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { DemoBanner } from "./DemoBanner";
 
 const meta = {
-  title: 'UI/DemoBanner',
+  title: "UI/DemoBanner",
   component: DemoBanner,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
     a11y: {
       config: {
         rules: [
           {
-            id: 'color-contrast',
+            id: "color-contrast",
             enabled: true,
           },
         ],
@@ -27,15 +27,18 @@ export const Default: Story = {};
 
 export const Sticky: Story = {
   decorators: [
-    Story => (
+    (Story) => (
       <div>
         <Story />
         <div className="p-8">
           <h1 className="text-2xl font-bold">Sample Page Content</h1>
-          <p className="mt-4">Scroll down to see the banner stick to the top.</p>
+          <p className="mt-4">
+            Scroll down to see the banner stick to the top.
+          </p>
           {Array.from({ length: 50 }).map((_, i) => (
             <p key={i} className="mt-2">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Line {i + 1}
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Line{" "}
+              {i + 1}
             </p>
           ))}
         </div>
@@ -47,7 +50,7 @@ export const Sticky: Story = {
 export const WithMobileViewport: Story = {
   parameters: {
     viewport: {
-      defaultViewport: 'mobile1',
+      defaultViewport: "mobile1",
     },
   },
 };
@@ -55,7 +58,7 @@ export const WithMobileViewport: Story = {
 export const WithTabletViewport: Story = {
   parameters: {
     viewport: {
-      defaultViewport: 'tablet',
+      defaultViewport: "tablet",
     },
   },
 };

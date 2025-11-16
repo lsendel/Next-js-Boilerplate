@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useCallback } from 'react';
-import { useLocale } from 'next-intl';
-import { resolveTenantClientPath } from '@/shared/utils/tenant-client-path';
+import { useCallback } from "react";
+import { useLocale } from "next-intl";
+import { resolveTenantClientPath } from "@/shared/utils/tenant-client-path";
 
 type ResolveTenantPathOptions = {
   locale?: string;
@@ -11,9 +11,12 @@ type ResolveTenantPathOptions = {
 export const useTenantPath = () => {
   const locale = useLocale();
 
-  return useCallback((path: string, options: ResolveTenantPathOptions = {}) => {
-    return resolveTenantClientPath(path, {
-      locale: options.locale ?? locale,
-    });
-  }, [locale]);
+  return useCallback(
+    (path: string, options: ResolveTenantPathOptions = {}) => {
+      return resolveTenantClientPath(path, {
+        locale: options.locale ?? locale,
+      });
+    },
+    [locale],
+  );
 };

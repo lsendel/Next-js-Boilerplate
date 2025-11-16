@@ -4,9 +4,9 @@
  * Data access layer for user operations
  */
 
-import { and, count, desc, eq, isNull } from 'drizzle-orm';
-import { db } from '@/server/db/DB';
-import { users } from '@/server/db/models/Schema';
+import { and, count, desc, eq, isNull } from "drizzle-orm";
+import { db } from "@/server/db/DB";
+import { users } from "@/server/db/models/Schema";
 
 /**
  * User type based on database schema
@@ -163,7 +163,7 @@ export async function createUser(data: NewUser): Promise<User> {
   const result = await db.insert(users).values(data).returning();
 
   if (!result[0]) {
-    throw new Error('Failed to create user - no result returned from database');
+    throw new Error("Failed to create user - no result returned from database");
   }
 
   return result[0];
@@ -346,7 +346,9 @@ export async function findAllUsers(params: {
   const offset = (page - 1) * pageSize;
 
   // Build where clause
-  const whereClause = params.includeDeleted ? undefined : isNull(users.deletedAt);
+  const whereClause = params.includeDeleted
+    ? undefined
+    : isNull(users.deletedAt);
 
   // Get total count
   const totalResult = await db

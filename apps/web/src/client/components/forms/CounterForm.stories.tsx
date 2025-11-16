@@ -1,22 +1,22 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { expect, fn, userEvent, within } from '@storybook/test';
-import { CounterForm } from './CounterForm';
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { expect, fn, userEvent, within } from "@storybook/test";
+import { CounterForm } from "./CounterForm";
 
 const meta = {
-  title: 'Forms/CounterForm',
+  title: "Forms/CounterForm",
   component: CounterForm,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   parameters: {
-    layout: 'centered',
+    layout: "centered",
     a11y: {
       config: {
         rules: [
           {
-            id: 'color-contrast',
+            id: "color-contrast",
             enabled: true,
           },
           {
-            id: 'label',
+            id: "label",
             enabled: true,
           },
         ],
@@ -31,7 +31,7 @@ const meta = {
     },
   },
   decorators: [
-    Story => (
+    (Story) => (
       <div className="w-96 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <Story />
       </div>
@@ -51,7 +51,7 @@ export const Default: Story = {
 
     // Verify form elements are rendered
     const input = canvas.getByLabelText(/increment by/i);
-    const button = canvas.getByRole('button', { name: /increment/i });
+    const button = canvas.getByRole("button", { name: /increment/i });
 
     expect(input).toBeInTheDocument();
     expect(button).toBeInTheDocument();
@@ -69,7 +69,7 @@ export const MinimumValue: Story = {
     const input = canvas.getByLabelText(/increment by/i);
 
     await userEvent.clear(input);
-    await userEvent.type(input, '1');
+    await userEvent.type(input, "1");
 
     expect(input).toHaveValue(1);
   },
@@ -84,7 +84,7 @@ export const MaximumValue: Story = {
     const input = canvas.getByLabelText(/increment by/i);
 
     await userEvent.clear(input);
-    await userEvent.type(input, '3');
+    await userEvent.type(input, "3");
 
     expect(input).toHaveValue(3);
   },
@@ -97,11 +97,11 @@ export const ErrorBelowMinimum: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const input = canvas.getByLabelText(/increment by/i);
-    const button = canvas.getByRole('button', { name: /increment/i });
+    const button = canvas.getByRole("button", { name: /increment/i });
 
     // Clear and enter invalid value
     await userEvent.clear(input);
-    await userEvent.type(input, '0');
+    await userEvent.type(input, "0");
 
     // Try to submit
     await userEvent.click(button);
@@ -121,11 +121,11 @@ export const ErrorAboveMaximum: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const input = canvas.getByLabelText(/increment by/i);
-    const button = canvas.getByRole('button', { name: /increment/i });
+    const button = canvas.getByRole("button", { name: /increment/i });
 
     // Clear and enter invalid value
     await userEvent.clear(input);
-    await userEvent.type(input, '5');
+    await userEvent.type(input, "5");
 
     // Try to submit
     await userEvent.click(button);
@@ -147,7 +147,7 @@ export const TypicalUsage: Story = {
     const input = canvas.getByLabelText(/increment by/i);
 
     await userEvent.clear(input);
-    await userEvent.type(input, '2');
+    await userEvent.type(input, "2");
 
     expect(input).toHaveValue(2);
   },
@@ -158,10 +158,10 @@ export const TypicalUsage: Story = {
  */
 export const FullWidth: Story = {
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
   },
   decorators: [
-    Story => (
+    (Story) => (
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="mx-auto max-w-2xl rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-2xl font-bold">Counter Increment Form</h2>
@@ -178,7 +178,7 @@ export const FullWidth: Story = {
 export const MobileViewport: Story = {
   parameters: {
     viewport: {
-      defaultViewport: 'mobile1',
+      defaultViewport: "mobile1",
     },
   },
 };
@@ -189,7 +189,7 @@ export const MobileViewport: Story = {
 export const TabletViewport: Story = {
   parameters: {
     viewport: {
-      defaultViewport: 'tablet',
+      defaultViewport: "tablet",
     },
   },
 };
@@ -199,7 +199,7 @@ export const TabletViewport: Story = {
  */
 export const DarkMode: Story = {
   decorators: [
-    Story => (
+    (Story) => (
       <div className="min-h-screen bg-gray-900 p-8">
         <div className="mx-auto max-w-md">
           <Story />
@@ -208,9 +208,9 @@ export const DarkMode: Story = {
     ),
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
     backgrounds: {
-      default: 'dark',
+      default: "dark",
     },
   },
 };
@@ -222,17 +222,17 @@ export const KeyboardNavigation: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const input = canvas.getByLabelText(/increment by/i);
-    const button = canvas.getByRole('button', { name: /increment/i });
+    const button = canvas.getByRole("button", { name: /increment/i });
 
     // Tab to input
     await userEvent.tab();
     expect(input).toHaveFocus();
 
     // Use arrow keys to change value
-    await userEvent.keyboard('[ArrowUp]');
+    await userEvent.keyboard("[ArrowUp]");
     expect(input).toHaveValue(2);
 
-    await userEvent.keyboard('[ArrowDown]');
+    await userEvent.keyboard("[ArrowDown]");
     expect(input).toHaveValue(1);
 
     // Tab to button

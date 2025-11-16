@@ -26,7 +26,7 @@ export type Product = {
   offers?: {
     price: number;
     priceCurrency: string;
-    availability?: 'InStock' | 'OutOfStock' | 'PreOrder';
+    availability?: "InStock" | "OutOfStock" | "PreOrder";
     url?: string;
   };
   aggregateRating?: {
@@ -62,19 +62,19 @@ export type BreadcrumbItem = {
  */
 export function generateOrganizationSchema(org: Organization) {
   return {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    'name': org.name,
-    'url': org.url,
-    'logo': org.logo,
-    'description': org.description,
-    'sameAs': org.sameAs,
-    'contactPoint': org.contactPoint
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: org.name,
+    url: org.url,
+    logo: org.logo,
+    description: org.description,
+    sameAs: org.sameAs,
+    contactPoint: org.contactPoint
       ? {
-          '@type': 'ContactPoint',
-          'telephone': org.contactPoint.telephone,
-          'contactType': org.contactPoint.contactType,
-          'email': org.contactPoint.email,
+          "@type": "ContactPoint",
+          telephone: org.contactPoint.telephone,
+          contactType: org.contactPoint.contactType,
+          email: org.contactPoint.email,
         }
       : undefined,
   };
@@ -85,31 +85,33 @@ export function generateOrganizationSchema(org: Organization) {
  */
 export function generateProductSchema(product: Product) {
   return {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    'name': product.name,
-    'description': product.description,
-    'image': product.image,
-    'brand': product.brand
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.description,
+    image: product.image,
+    brand: product.brand
       ? {
-          '@type': 'Brand',
-          'name': product.brand,
+          "@type": "Brand",
+          name: product.brand,
         }
       : undefined,
-    'offers': product.offers
+    offers: product.offers
       ? {
-          '@type': 'Offer',
-          'price': product.offers.price,
-          'priceCurrency': product.offers.priceCurrency,
-          'availability': product.offers.availability ? `https://schema.org/${product.offers.availability}` : undefined,
-          'url': product.offers.url,
+          "@type": "Offer",
+          price: product.offers.price,
+          priceCurrency: product.offers.priceCurrency,
+          availability: product.offers.availability
+            ? `https://schema.org/${product.offers.availability}`
+            : undefined,
+          url: product.offers.url,
         }
       : undefined,
-    'aggregateRating': product.aggregateRating
+    aggregateRating: product.aggregateRating
       ? {
-          '@type': 'AggregateRating',
-          'ratingValue': product.aggregateRating.ratingValue,
-          'reviewCount': product.aggregateRating.reviewCount,
+          "@type": "AggregateRating",
+          ratingValue: product.aggregateRating.ratingValue,
+          reviewCount: product.aggregateRating.reviewCount,
         }
       : undefined,
   };
@@ -120,14 +122,14 @@ export function generateProductSchema(product: Product) {
  */
 export function generateFAQPageSchema(faq: FAQPage) {
   return {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    'mainEntity': faq.questions.map(item => ({
-      '@type': 'Question',
-      'name': item.question,
-      'acceptedAnswer': {
-        '@type': 'Answer',
-        'text': item.answer,
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faq.questions.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
       },
     })),
   };
@@ -138,13 +140,13 @@ export function generateFAQPageSchema(faq: FAQPage) {
  */
 export function generateBreadcrumbSchema(items: BreadcrumbItem[]) {
   return {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    'itemListElement': items.map((item, index) => ({
-      '@type': 'ListItem',
-      'position': index + 1,
-      'name': item.name,
-      'item': item.url,
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: item.url,
     })),
   };
 }
@@ -167,24 +169,24 @@ export function generateSoftwareApplicationSchema(app: {
   };
 }) {
   return {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    'name': app.name,
-    'description': app.description,
-    'applicationCategory': app.applicationCategory,
-    'operatingSystem': app.operatingSystem,
-    'offers': app.offers
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: app.name,
+    description: app.description,
+    applicationCategory: app.applicationCategory,
+    operatingSystem: app.operatingSystem,
+    offers: app.offers
       ? {
-          '@type': 'Offer',
-          'price': app.offers.price,
-          'priceCurrency': app.offers.priceCurrency,
+          "@type": "Offer",
+          price: app.offers.price,
+          priceCurrency: app.offers.priceCurrency,
         }
       : undefined,
-    'aggregateRating': app.aggregateRating
+    aggregateRating: app.aggregateRating
       ? {
-          '@type': 'AggregateRating',
-          'ratingValue': app.aggregateRating.ratingValue,
-          'reviewCount': app.aggregateRating.reviewCount,
+          "@type": "AggregateRating",
+          ratingValue: app.aggregateRating.ratingValue,
+          reviewCount: app.aggregateRating.reviewCount,
         }
       : undefined,
   };

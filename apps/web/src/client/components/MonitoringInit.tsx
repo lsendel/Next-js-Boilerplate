@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { logger } from '@/libs/Logger';
+import { useEffect } from "react";
+import { logger } from "@/libs/Logger";
+import { isServiceEnabled } from "@/utils/MonitoringConfig";
 
 /**
  * Monitoring Initialization Component
@@ -14,10 +15,14 @@ import { logger } from '@/libs/Logger';
  */
 export function MonitoringInit() {
   useEffect(() => {
+    if (!isServiceEnabled("sentry")) {
+      return;
+    }
+
     // Dynamically import the lazy monitoring module
     // This ensures it only loads client-side and after React hydration
-    import('@/libs/LazyMonitoring').catch((error) => {
-      logger.error('MonitoringInit failed to load lazy monitoring', { error });
+    import("@/libs/LazyMonitoring").catch((error) => {
+      logger.error("MonitoringInit failed to load lazy monitoring", { error });
     });
   }, []);
 

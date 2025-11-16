@@ -4,9 +4,9 @@
  * Handles email sending functionality
  */
 
-import { logger } from '@/libs/Logger';
+import { logger } from "@/libs/Logger";
 
-export type EmailTemplate = 'welcome' | 'password-reset' | 'verification';
+export type EmailTemplate = "welcome" | "password-reset" | "verification";
 
 export type EmailOptions = {
   to: string;
@@ -18,12 +18,15 @@ export type EmailOptions = {
 /**
  * Generate HTML content for email templates
  */
-function generateEmailHtml(template: EmailTemplate, data: Record<string, unknown>): string {
-  const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Next.js Boilerplate';
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+function generateEmailHtml(
+  template: EmailTemplate,
+  data: Record<string, unknown>,
+): string {
+  const appName = process.env.NEXT_PUBLIC_APP_NAME || "Next.js Boilerplate";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
   switch (template) {
-    case 'welcome':
+    case "welcome":
       return `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1>Welcome to ${appName}!</h1>
@@ -35,7 +38,7 @@ function generateEmailHtml(template: EmailTemplate, data: Record<string, unknown
           <p>Best regards,<br>The ${appName} Team</p>
         </div>
       `;
-    case 'password-reset':
+    case "password-reset":
       return `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1>Password Reset Request</h1>
@@ -47,7 +50,7 @@ function generateEmailHtml(template: EmailTemplate, data: Record<string, unknown
           <p>Best regards,<br>The ${appName} Team</p>
         </div>
       `;
-    case 'verification':
+    case "verification":
       return `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1>Verify Your Email</h1>
@@ -70,11 +73,11 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
   const { to, subject, template, data } = options;
 
   const apiKey = process.env.RESEND_API_KEY;
-  const fromEmail = process.env.RESEND_FROM_EMAIL || 'noreply@example.com';
+  const fromEmail = process.env.RESEND_FROM_EMAIL || "noreply@example.com";
 
   // Development mode: just log the email
-  if (!apiKey || process.env.NODE_ENV === 'development') {
-    logger.info('Email would be sent (development mode)', {
+  if (!apiKey || process.env.NODE_ENV === "development") {
+    logger.info("Email would be sent (development mode)", {
       template,
       to,
       subject,
@@ -89,10 +92,10 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     let Resend;
     try {
       // @ts-expect-error - Optional dependency, install with: npm install resend
-      const resendModule = await import('resend');
+      const resendModule = await import("resend");
       Resend = resendModule.Resend;
     } catch {
-      logger.warn('Resend package not installed. Email will be logged only.', {
+      logger.warn("Resend package not installed. Email will be logged only.", {
         template,
         to,
         subject,
@@ -110,10 +113,10 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       html: htmlContent,
     });
 
-    logger.info('Email sent successfully', { template, to, subject });
+    logger.info("Email sent successfully", { template, to, subject });
     return true;
   } catch (error) {
-    logger.error('Failed to send email', { template, to, subject, error });
+    logger.error("Failed to send email", { template, to, subject, error });
     return false;
   }
 }
@@ -127,8 +130,8 @@ export async function sendWelcomeEmail(
 ): Promise<boolean> {
   return sendEmail({
     to: email,
-    subject: 'Welcome to Our Platform!',
-    template: 'welcome',
+    subject: "Welcome to Our Platform!",
+    template: "welcome",
     data: { name },
   });
 }
@@ -142,8 +145,8 @@ export async function sendPasswordResetEmail(
 ): Promise<boolean> {
   return sendEmail({
     to: email,
-    subject: 'Reset Your Password',
-    template: 'password-reset',
+    subject: "Reset Your Password",
+    template: "password-reset",
     data: { resetToken },
   });
 }
@@ -157,8 +160,8 @@ export async function sendVerificationEmail(
 ): Promise<boolean> {
   return sendEmail({
     to: email,
-    subject: 'Verify Your Email',
-    template: 'verification',
+    subject: "Verify Your Email",
+    template: "verification",
     data: { verificationToken },
   });
 }

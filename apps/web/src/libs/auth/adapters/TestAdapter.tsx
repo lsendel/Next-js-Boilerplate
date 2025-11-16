@@ -1,10 +1,15 @@
-import type { NextRequest } from 'next/server';
-import type { AuthMiddlewareConfig, AuthSession, AuthUser, IAuthAdapter } from '../types';
-import React from 'react';
-import { TestSignInForm } from './TestSignInForm';
-import { TestSignUpForm } from './TestSignUpForm';
-import { TestSignOutButton } from './TestSignOutButton';
-import { TestUserProfile } from './TestUserProfile';
+import type { NextRequest } from "next/server";
+import type {
+  AuthMiddlewareConfig,
+  AuthSession,
+  AuthUser,
+  IAuthAdapter,
+} from "../types";
+import React from "react";
+import { TestSignInForm } from "./TestSignInForm";
+import { TestSignUpForm } from "./TestSignUpForm";
+import { TestSignOutButton } from "./TestSignOutButton";
+import { TestUserProfile } from "./TestUserProfile";
 
 /**
  * Test Authentication Adapter
@@ -14,11 +19,11 @@ import { TestUserProfile } from './TestUserProfile';
  * Do NOT use in production - it stores passwords in memory without proper hashing
  */
 export class TestAdapter implements IAuthAdapter {
-  private static readonly SESSION_COOKIE = 'test-auth-session';
+  private static readonly SESSION_COOKIE = "test-auth-session";
 
   async getCurrentUser(): Promise<AuthUser | null> {
     // Import server-side modules
-    const { cookies } = await import('next/headers');
+    const { cookies } = await import("next/headers");
 
     const cookieStore = await cookies();
     // Parse user data from cookie (stored as JSON)
@@ -44,7 +49,7 @@ export class TestAdapter implements IAuthAdapter {
 
   async getSession(): Promise<AuthSession | null> {
     // Import server-side modules
-    const { cookies } = await import('next/headers');
+    const { cookies } = await import("next/headers");
 
     const cookieStore = await cookies();
     // Parse user data from cookie (stored as JSON)
@@ -91,7 +96,10 @@ export class TestAdapter implements IAuthAdapter {
     }
   }
 
-  renderProvider(props: { children: React.ReactNode; locale: string }): React.ReactElement {
+  renderProvider(props: {
+    children: React.ReactNode;
+    locale: string;
+  }): React.ReactElement {
     // Test auth doesn't need a provider wrapper
     return <>{props.children}</>;
   }
@@ -104,7 +112,9 @@ export class TestAdapter implements IAuthAdapter {
     return <TestSignUpForm path={props.path} locale={props.locale} />;
   }
 
-  renderSignOutButton(props: { children: React.ReactNode }): React.ReactElement {
+  renderSignOutButton(props: {
+    children: React.ReactNode;
+  }): React.ReactElement {
     return <TestSignOutButton>{props.children}</TestSignOutButton>;
   }
 
@@ -118,7 +128,7 @@ export class TestAdapter implements IAuthAdapter {
    */
   static createMiddleware(config: AuthMiddlewareConfig) {
     return async (request: NextRequest) => {
-      const isProtectedRoute = config.protectedRoutes.some(route =>
+      const isProtectedRoute = config.protectedRoutes.some((route) =>
         request.nextUrl.pathname.includes(route),
       );
 
@@ -141,7 +151,8 @@ export class TestAdapter implements IAuthAdapter {
 
       if (!userId) {
         // User not authenticated, redirect to sign-in
-        const locale = request.nextUrl.pathname.match(/(\/.*)\/dashboard/)?.at(1) ?? '';
+        const locale =
+          request.nextUrl.pathname.match(/(\/.*)\/dashboard/)?.at(1) ?? "";
         const signInUrl = new URL(`${locale}${config.signInUrl}`, request.url);
         return Response.redirect(signInUrl.toString(), 302);
       }

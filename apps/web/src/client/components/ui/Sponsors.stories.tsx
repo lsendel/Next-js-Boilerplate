@@ -1,21 +1,21 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { Sponsors } from './Sponsors';
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { Sponsors } from "./Sponsors";
 
 const meta = {
-  title: 'UI/Sponsors',
+  title: "UI/Sponsors",
   component: Sponsors,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   parameters: {
-    layout: 'centered',
+    layout: "centered",
     a11y: {
       config: {
         rules: [
           {
-            id: 'color-contrast',
+            id: "color-contrast",
             enabled: true,
           },
           {
-            id: 'image-alt',
+            id: "image-alt",
             enabled: true,
           },
         ],
@@ -31,10 +31,10 @@ export const Default: Story = {};
 
 export const FullWidth: Story = {
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
   },
   decorators: [
-    Story => (
+    (Story) => (
       <div className="p-8">
         <Story />
       </div>
@@ -44,7 +44,7 @@ export const FullWidth: Story = {
 
 export const InSection: Story = {
   decorators: [
-    Story => (
+    (Story) => (
       <section className="bg-gray-50 py-12">
         <div className="container mx-auto">
           <h2 className="mb-8 text-center text-3xl font-bold">Our Sponsors</h2>
@@ -56,14 +56,14 @@ export const InSection: Story = {
     ),
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
   },
 };
 
 export const MobileViewport: Story = {
   parameters: {
     viewport: {
-      defaultViewport: 'mobile1',
+      defaultViewport: "mobile1",
     },
   },
 };
@@ -71,7 +71,7 @@ export const MobileViewport: Story = {
 export const TabletViewport: Story = {
   parameters: {
     viewport: {
-      defaultViewport: 'tablet',
+      defaultViewport: "tablet",
     },
   },
 };

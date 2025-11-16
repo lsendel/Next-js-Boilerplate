@@ -5,17 +5,17 @@
  * Tests session management, validation, and security features
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { AuthService } from './auth.service';
-import * as userRepo from '@/server/db/repositories/user.repository';
-import * as sessionRepo from '@/server/db/repositories/session.repository';
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { AuthService } from "./auth.service";
+import * as userRepo from "@/server/db/repositories/user.repository";
+import * as sessionRepo from "@/server/db/repositories/session.repository";
 
 // Test data
 let authService: AuthService;
 let testUserIds: number[] = [];
 let testSessionIds: number[] = [];
 
-describe('AuthService', () => {
+describe("AuthService", () => {
   beforeEach(() => {
     authService = new AuthService();
   });
@@ -33,21 +33,21 @@ describe('AuthService', () => {
     testSessionIds = [];
   });
 
-  describe('createSession', () => {
+  describe("createSession", () => {
     let testUserId: number;
 
     beforeEach(async () => {
       const user = await userRepo.createUser({
         email: `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`,
-        passwordHash: 'hash',
-        authProvider: 'local',
+        passwordHash: "hash",
+        authProvider: "local",
         isActive: true,
       });
       testUserId = user.id;
       testUserIds.push(testUserId);
     });
 
-    it('should create a new session for user', async () => {
+    it("should create a new session for user", async () => {
       const session = await authService.createSession(testUserId);
       testSessionIds.push(session.id);
 
@@ -59,7 +59,7 @@ describe('AuthService', () => {
       expect(session.expiresAt.getTime()).toBeGreaterThan(Date.now());
     });
 
-    it('should create session with 30-day expiration by default', async () => {
+    it("should create session with 30-day expiration by default", async () => {
       const session = await authService.createSession(testUserId);
       testSessionIds.push(session.id);
 
@@ -74,22 +74,22 @@ describe('AuthService', () => {
       );
     });
 
-    it('should store client information when provided', async () => {
+    it("should store client information when provided", async () => {
       const clientInfo = {
-        ipAddress: '192.168.1.1',
-        userAgent: 'Mozilla/5.0 (Test Browser)',
-        deviceFingerprint: 'test-device-123',
+        ipAddress: "192.168.1.1",
+        userAgent: "Mozilla/5.0 (Test Browser)",
+        deviceFingerprint: "test-device-123",
       };
 
       const session = await authService.createSession(testUserId, clientInfo);
       testSessionIds.push(session.id);
 
-      expect(session.ipAddress).toBe('192.168.1.1');
-      expect(session.userAgent).toBe('Mozilla/5.0 (Test Browser)');
-      expect(session.deviceFingerprint).toBe('test-device-123');
+      expect(session.ipAddress).toBe("192.168.1.1");
+      expect(session.userAgent).toBe("Mozilla/5.0 (Test Browser)");
+      expect(session.deviceFingerprint).toBe("test-device-123");
     });
 
-    it('should create session without client information', async () => {
+    it("should create session without client information", async () => {
       const session = await authService.createSession(testUserId, {});
       testSessionIds.push(session.id);
 
@@ -99,15 +99,15 @@ describe('AuthService', () => {
     });
   });
 
-  describe('validateSession', () => {
+  describe("validateSession", () => {
     let testUserId: number;
     let testSessionToken: string;
 
     beforeEach(async () => {
       const user = await userRepo.createUser({
         email: `validate-${Date.now()}@example.com`,
-        passwordHash: 'hash',
-        authProvider: 'local',
+        passwordHash: "hash",
+        authProvider: "local",
         isActive: true,
       });
       testUserId = user.id;
@@ -118,7 +118,7 @@ describe('AuthService', () => {
       testSessionIds.push(session.id);
     });
 
-    it('should return user for valid session token', async () => {
+    it("should return user for valid session token", async () => {
       const user = await authService.validateSession(testSessionToken);
 
       expect(user).toBeDefined();
@@ -126,31 +126,31 @@ describe('AuthService', () => {
       expect(user?.isActive).toBe(true);
     });
 
-    it('should return null for non-existent session token', async () => {
-      const user = await authService.validateSession('nonexistent-token');
+    it("should return null for non-existent session token", async () => {
+      const user = await authService.validateSession("nonexistent-token");
 
       expect(user).toBeNull();
     });
 
-    it('should return null for expired session', async () => {
+    it("should return null for expired session", async () => {
       // Create an expired session
       const expiredSession = await sessionRepo.createSession({
         userId: testUserId,
-        sessionToken: 'expired-token',
+        sessionToken: "expired-token",
         expiresAt: new Date(Date.now() - 1000), // Already expired
       });
       testSessionIds.push(expiredSession.id);
 
-      const user = await authService.validateSession('expired-token');
+      const user = await authService.validateSession("expired-token");
 
       expect(user).toBeNull();
 
       // Verify session was cleaned up
-      const session = await sessionRepo.findSessionByToken('expired-token');
+      const session = await sessionRepo.findSessionByToken("expired-token");
       expect(session).toBeNull();
     });
 
-    it('should return null for inactive user', async () => {
+    it("should return null for inactive user", async () => {
       await userRepo.deactivateUser(testUserId);
 
       const user = await authService.validateSession(testSessionToken);
@@ -158,20 +158,18 @@ describe('AuthService', () => {
       expect(user).toBeNull();
     });
 
-    it('should update session activity on validation', async () => {
-      const sessionBefore = await sessionRepo.findSessionByToken(
-        testSessionToken,
-      );
+    it("should update session activity on validation", async () => {
+      const sessionBefore =
+        await sessionRepo.findSessionByToken(testSessionToken);
       const activityBefore = sessionBefore?.lastActivityAt;
 
       // Wait a bit to ensure timestamp difference
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       await authService.validateSession(testSessionToken);
 
-      const sessionAfter = await sessionRepo.findSessionByToken(
-        testSessionToken,
-      );
+      const sessionAfter =
+        await sessionRepo.findSessionByToken(testSessionToken);
       const activityAfter = sessionAfter?.lastActivityAt;
 
       expect(activityAfter).not.toBeNull();
@@ -183,15 +181,15 @@ describe('AuthService', () => {
     });
   });
 
-  describe('refreshSession', () => {
+  describe("refreshSession", () => {
     let testUserId: number;
     let testSessionToken: string;
 
     beforeEach(async () => {
       const user = await userRepo.createUser({
         email: `refresh-${Date.now()}@example.com`,
-        passwordHash: 'hash',
-        authProvider: 'local',
+        passwordHash: "hash",
+        authProvider: "local",
         isActive: true,
       });
       testUserId = user.id;
@@ -202,17 +200,15 @@ describe('AuthService', () => {
       testSessionIds.push(session.id);
     });
 
-    it('should extend session expiration', async () => {
-      const sessionBefore = await sessionRepo.findSessionByToken(
-        testSessionToken,
-      );
+    it("should extend session expiration", async () => {
+      const sessionBefore =
+        await sessionRepo.findSessionByToken(testSessionToken);
       const expiryBefore = sessionBefore?.expiresAt.getTime();
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const refreshedSession = await authService.refreshSession(
-        testSessionToken,
-      );
+      const refreshedSession =
+        await authService.refreshSession(testSessionToken);
 
       expect(refreshedSession).not.toBeNull();
       expect(refreshedSession?.expiresAt.getTime()).toBeGreaterThan(
@@ -220,35 +216,35 @@ describe('AuthService', () => {
       );
     });
 
-    it('should return null for non-existent session', async () => {
-      const refreshed = await authService.refreshSession('nonexistent-token');
+    it("should return null for non-existent session", async () => {
+      const refreshed = await authService.refreshSession("nonexistent-token");
 
       expect(refreshed).toBeNull();
     });
 
-    it('should return null and clean up expired session', async () => {
+    it("should return null and clean up expired session", async () => {
       // Create expired session
       const expiredSession = await sessionRepo.createSession({
         userId: testUserId,
-        sessionToken: 'expired-refresh-token',
+        sessionToken: "expired-refresh-token",
         expiresAt: new Date(Date.now() - 1000),
       });
       testSessionIds.push(expiredSession.id);
 
       const refreshed = await authService.refreshSession(
-        'expired-refresh-token',
+        "expired-refresh-token",
       );
 
       expect(refreshed).toBeNull();
 
       // Verify session was deleted
       const found = await sessionRepo.findSessionByToken(
-        'expired-refresh-token',
+        "expired-refresh-token",
       );
       expect(found).toBeNull();
     });
 
-    it('should extend by 30 days from current time', async () => {
+    it("should extend by 30 days from current time", async () => {
       const refreshed = await authService.refreshSession(testSessionToken);
 
       const thirtyDays = 30 * 24 * 60 * 60 * 1000;
@@ -263,15 +259,15 @@ describe('AuthService', () => {
     });
   });
 
-  describe('destroySession', () => {
+  describe("destroySession", () => {
     let testUserId: number;
     let testSessionToken: string;
 
     beforeEach(async () => {
       const user = await userRepo.createUser({
         email: `destroy-${Date.now()}@example.com`,
-        passwordHash: 'hash',
-        authProvider: 'local',
+        passwordHash: "hash",
+        authProvider: "local",
         isActive: true,
       });
       testUserId = user.id;
@@ -282,7 +278,7 @@ describe('AuthService', () => {
       testSessionIds.push(session.id);
     });
 
-    it('should destroy session by token', async () => {
+    it("should destroy session by token", async () => {
       const destroyed = await authService.destroySession(testSessionToken);
 
       expect(destroyed).toBe(true);
@@ -292,28 +288,28 @@ describe('AuthService', () => {
       expect(found).toBeNull();
     });
 
-    it('should return false for non-existent session', async () => {
-      const destroyed = await authService.destroySession('nonexistent-token');
+    it("should return false for non-existent session", async () => {
+      const destroyed = await authService.destroySession("nonexistent-token");
 
       expect(destroyed).toBe(false);
     });
   });
 
-  describe('destroyAllSessions', () => {
+  describe("destroyAllSessions", () => {
     let testUserId: number;
 
     beforeEach(async () => {
       const user = await userRepo.createUser({
         email: `destroyall-${Date.now()}@example.com`,
-        passwordHash: 'hash',
-        authProvider: 'local',
+        passwordHash: "hash",
+        authProvider: "local",
         isActive: true,
       });
       testUserId = user.id;
       testUserIds.push(testUserId);
     });
 
-    it('should destroy all sessions for a user', async () => {
+    it("should destroy all sessions for a user", async () => {
       // Create multiple sessions
       const session1 = await authService.createSession(testUserId);
       const session2 = await authService.createSession(testUserId);
@@ -341,28 +337,28 @@ describe('AuthService', () => {
       expect(found3).toBeNull();
     });
 
-    it('should return 0 for user with no sessions', async () => {
+    it("should return 0 for user with no sessions", async () => {
       const count = await authService.destroyAllSessions(testUserId);
 
       expect(count).toBe(0);
     });
   });
 
-  describe('getUserSessions', () => {
+  describe("getUserSessions", () => {
     let testUserId: number;
 
     beforeEach(async () => {
       const user = await userRepo.createUser({
         email: `getsessions-${Date.now()}@example.com`,
-        passwordHash: 'hash',
-        authProvider: 'local',
+        passwordHash: "hash",
+        authProvider: "local",
         isActive: true,
       });
       testUserId = user.id;
       testUserIds.push(testUserId);
     });
 
-    it('should return all active sessions for user', async () => {
+    it("should return all active sessions for user", async () => {
       // Create active sessions
       const session1 = await authService.createSession(testUserId);
       const session2 = await authService.createSession(testUserId);
@@ -375,7 +371,7 @@ describe('AuthService', () => {
       expect(sessions[1]?.userId).toBe(testUserId);
     });
 
-    it('should not return expired sessions', async () => {
+    it("should not return expired sessions", async () => {
       // Create active session
       const activeSession = await authService.createSession(testUserId);
       testSessionIds.push(activeSession.id);
@@ -383,7 +379,7 @@ describe('AuthService', () => {
       // Create expired session
       const expiredSession = await sessionRepo.createSession({
         userId: testUserId,
-        sessionToken: 'expired-getsessions',
+        sessionToken: "expired-getsessions",
         expiresAt: new Date(Date.now() - 1000),
       });
       testSessionIds.push(expiredSession.id);
@@ -394,22 +390,22 @@ describe('AuthService', () => {
       expect(sessions[0]?.sessionToken).toBe(activeSession.sessionToken);
     });
 
-    it('should return empty array for user with no sessions', async () => {
+    it("should return empty array for user with no sessions", async () => {
       const sessions = await authService.getUserSessions(testUserId);
 
       expect(sessions).toEqual([]);
     });
   });
 
-  describe('destroyOtherSessions', () => {
+  describe("destroyOtherSessions", () => {
     let testUserId: number;
     let currentSessionId: number;
 
     beforeEach(async () => {
       const user = await userRepo.createUser({
         email: `destroyother-${Date.now()}@example.com`,
-        passwordHash: 'hash',
-        authProvider: 'local',
+        passwordHash: "hash",
+        authProvider: "local",
         isActive: true,
       });
       testUserId = user.id;
@@ -420,7 +416,7 @@ describe('AuthService', () => {
       testSessionIds.push(currentSessionId);
     });
 
-    it('should destroy all sessions except current one', async () => {
+    it("should destroy all sessions except current one", async () => {
       // Create other sessions
       const session2 = await authService.createSession(testUserId);
       const session3 = await authService.createSession(testUserId);
@@ -444,7 +440,7 @@ describe('AuthService', () => {
       expect(session3Exists).toBeNull();
     });
 
-    it('should return 0 if only current session exists', async () => {
+    it("should return 0 if only current session exists", async () => {
       const count = await authService.destroyOtherSessions(
         testUserId,
         currentSessionId,
@@ -454,15 +450,15 @@ describe('AuthService', () => {
     });
   });
 
-  describe('isSessionValid', () => {
+  describe("isSessionValid", () => {
     let testUserId: number;
     let testSessionToken: string;
 
     beforeEach(async () => {
       const user = await userRepo.createUser({
         email: `isvalid-${Date.now()}@example.com`,
-        passwordHash: 'hash',
-        authProvider: 'local',
+        passwordHash: "hash",
+        authProvider: "local",
         isActive: true,
       });
       testUserId = user.id;
@@ -473,41 +469,41 @@ describe('AuthService', () => {
       testSessionIds.push(session.id);
     });
 
-    it('should return true for valid session', async () => {
+    it("should return true for valid session", async () => {
       const isValid = await authService.isSessionValid(testSessionToken);
 
       expect(isValid).toBe(true);
     });
 
-    it('should return false for non-existent session', async () => {
-      const isValid = await authService.isSessionValid('nonexistent-token');
+    it("should return false for non-existent session", async () => {
+      const isValid = await authService.isSessionValid("nonexistent-token");
 
       expect(isValid).toBe(false);
     });
 
-    it('should return false for expired session', async () => {
+    it("should return false for expired session", async () => {
       const expiredSession = await sessionRepo.createSession({
         userId: testUserId,
-        sessionToken: 'expired-isvalid',
+        sessionToken: "expired-isvalid",
         expiresAt: new Date(Date.now() - 1000),
       });
       testSessionIds.push(expiredSession.id);
 
-      const isValid = await authService.isSessionValid('expired-isvalid');
+      const isValid = await authService.isSessionValid("expired-isvalid");
 
       expect(isValid).toBe(false);
     });
   });
 
-  describe('getSession', () => {
+  describe("getSession", () => {
     let testUserId: number;
     let testSessionToken: string;
 
     beforeEach(async () => {
       const user = await userRepo.createUser({
         email: `getsession-${Date.now()}@example.com`,
-        passwordHash: 'hash',
-        authProvider: 'local',
+        passwordHash: "hash",
+        authProvider: "local",
         isActive: true,
       });
       testUserId = user.id;
@@ -518,7 +514,7 @@ describe('AuthService', () => {
       testSessionIds.push(session.id);
     });
 
-    it('should return session by token', async () => {
+    it("should return session by token", async () => {
       const session = await authService.getSession(testSessionToken);
 
       expect(session).not.toBeNull();
@@ -526,37 +522,37 @@ describe('AuthService', () => {
       expect(session?.userId).toBe(testUserId);
     });
 
-    it('should return null for non-existent token', async () => {
-      const session = await authService.getSession('nonexistent-token');
+    it("should return null for non-existent token", async () => {
+      const session = await authService.getSession("nonexistent-token");
 
       expect(session).toBeNull();
     });
   });
 
-  describe('cleanupExpiredSessions', () => {
+  describe("cleanupExpiredSessions", () => {
     let testUserId: number;
 
     beforeEach(async () => {
       const user = await userRepo.createUser({
         email: `cleanup-${Date.now()}@example.com`,
-        passwordHash: 'hash',
-        authProvider: 'local',
+        passwordHash: "hash",
+        authProvider: "local",
         isActive: true,
       });
       testUserId = user.id;
       testUserIds.push(testUserId);
     });
 
-    it('should delete expired sessions', async () => {
+    it("should delete expired sessions", async () => {
       // Create expired sessions
       const expired1 = await sessionRepo.createSession({
         userId: testUserId,
-        sessionToken: 'cleanup-expired-1',
+        sessionToken: "cleanup-expired-1",
         expiresAt: new Date(Date.now() - 1000),
       });
       const expired2 = await sessionRepo.createSession({
         userId: testUserId,
-        sessionToken: 'cleanup-expired-2',
+        sessionToken: "cleanup-expired-2",
         expiresAt: new Date(Date.now() - 2000),
       });
 
@@ -570,8 +566,8 @@ describe('AuthService', () => {
       expect(count).toBeGreaterThanOrEqual(2);
 
       // Verify expired sessions are gone
-      const found1 = await sessionRepo.findSessionByToken('cleanup-expired-1');
-      const found2 = await sessionRepo.findSessionByToken('cleanup-expired-2');
+      const found1 = await sessionRepo.findSessionByToken("cleanup-expired-1");
+      const found2 = await sessionRepo.findSessionByToken("cleanup-expired-2");
       expect(found1).toBeNull();
       expect(found2).toBeNull();
 
@@ -582,7 +578,7 @@ describe('AuthService', () => {
       expect(foundActive).not.toBeNull();
     });
 
-    it('should return 0 if no expired sessions', async () => {
+    it("should return 0 if no expired sessions", async () => {
       // Create only active sessions
       const active1 = await authService.createSession(testUserId);
       const active2 = await authService.createSession(testUserId);
@@ -594,21 +590,21 @@ describe('AuthService', () => {
     });
   });
 
-  describe('getSessionStats', () => {
+  describe("getSessionStats", () => {
     let testUserId: number;
 
     beforeEach(async () => {
       const user = await userRepo.createUser({
         email: `stats-${Date.now()}@example.com`,
-        passwordHash: 'hash',
-        authProvider: 'local',
+        passwordHash: "hash",
+        authProvider: "local",
         isActive: true,
       });
       testUserId = user.id;
       testUserIds.push(testUserId);
     });
 
-    it('should return session statistics', async () => {
+    it("should return session statistics", async () => {
       // Create active sessions
       const active1 = await authService.createSession(testUserId);
       const active2 = await authService.createSession(testUserId);
@@ -616,7 +612,7 @@ describe('AuthService', () => {
       // Create expired session
       const expired = await sessionRepo.createSession({
         userId: testUserId,
-        sessionToken: 'stats-expired',
+        sessionToken: "stats-expired",
         expiresAt: new Date(Date.now() - 1000),
       });
 
@@ -630,7 +626,7 @@ describe('AuthService', () => {
     });
   });
 
-  describe('Account Locking (Sprint 1)', () => {
+  describe("Account Locking (Sprint 1)", () => {
     let testEmail: string;
     let testUserId: number;
 
@@ -638,27 +634,27 @@ describe('AuthService', () => {
       testEmail = `locktest-${Date.now()}@example.com`;
       const user = await userRepo.createUser({
         email: testEmail,
-        passwordHash: 'hash',
-        authProvider: 'local',
+        passwordHash: "hash",
+        authProvider: "local",
         isActive: true,
       });
       testUserId = user.id;
       testUserIds.push(testUserId);
     });
 
-    describe('recordFailedLogin', () => {
-      it('should increment failed login attempts', async () => {
-        await authService.recordFailedLogin(testEmail, '192.168.1.1');
+    describe("recordFailedLogin", () => {
+      it("should increment failed login attempts", async () => {
+        await authService.recordFailedLogin(testEmail, "192.168.1.1");
 
         const user = await userRepo.findUserByEmail(testEmail);
         expect(user?.failedLoginAttempts).toBe(1);
         expect(user?.lastFailedLogin).toBeInstanceOf(Date);
       });
 
-      it('should lock account after 5 failed attempts', async () => {
+      it("should lock account after 5 failed attempts", async () => {
         // Record 5 failed login attempts
         for (let i = 0; i < 5; i++) {
-          await authService.recordFailedLogin(testEmail, '192.168.1.1');
+          await authService.recordFailedLogin(testEmail, "192.168.1.1");
         }
 
         const user = await userRepo.findUserByEmail(testEmail);
@@ -667,38 +663,41 @@ describe('AuthService', () => {
         expect(user?.lockedUntil!.getTime()).toBeGreaterThan(Date.now());
       });
 
-      it('should not reveal if user exists', async () => {
+      it("should not reveal if user exists", async () => {
         // Should not throw error for non-existent user
         await expect(
-          authService.recordFailedLogin('nonexistent@example.com', '192.168.1.1'),
+          authService.recordFailedLogin(
+            "nonexistent@example.com",
+            "192.168.1.1",
+          ),
         ).resolves.not.toThrow();
       });
     });
 
-    describe('checkAccountLocked', () => {
-      it('should return false for unlocked account', async () => {
+    describe("checkAccountLocked", () => {
+      it("should return false for unlocked account", async () => {
         const isLocked = await authService.checkAccountLocked(testEmail);
         expect(isLocked).toBe(false);
       });
 
-      it('should return true for locked account', async () => {
+      it("should return true for locked account", async () => {
         // Lock the account
         for (let i = 0; i < 5; i++) {
-          await authService.recordFailedLogin(testEmail, '192.168.1.1');
+          await authService.recordFailedLogin(testEmail, "192.168.1.1");
         }
 
         const isLocked = await authService.checkAccountLocked(testEmail);
         expect(isLocked).toBe(true);
       });
 
-      it('should return true for inactive account', async () => {
+      it("should return true for inactive account", async () => {
         await userRepo.deactivateUser(testUserId);
 
         const isLocked = await authService.checkAccountLocked(testEmail);
         expect(isLocked).toBe(true);
       });
 
-      it('should auto-unlock after timeout', async () => {
+      it("should auto-unlock after timeout", async () => {
         // Manually set lock with past expiration
         await userRepo.updateUser(testUserId, {
           failedLoginAttempts: 5,
@@ -714,19 +713,19 @@ describe('AuthService', () => {
         expect(user?.lockedUntil).toBeNull();
       });
 
-      it('should return false for non-existent user', async () => {
+      it("should return false for non-existent user", async () => {
         const isLocked = await authService.checkAccountLocked(
-          'nonexistent@example.com',
+          "nonexistent@example.com",
         );
         expect(isLocked).toBe(false);
       });
     });
 
-    describe('resetFailedLoginAttempts', () => {
-      it('should reset failed login attempts', async () => {
+    describe("resetFailedLoginAttempts", () => {
+      it("should reset failed login attempts", async () => {
         // Record failed attempts
         for (let i = 0; i < 3; i++) {
-          await authService.recordFailedLogin(testEmail, '192.168.1.1');
+          await authService.recordFailedLogin(testEmail, "192.168.1.1");
         }
 
         await authService.resetFailedLoginAttempts(testUserId);
@@ -737,10 +736,10 @@ describe('AuthService', () => {
         expect(user?.lastFailedLogin).toBeNull();
       });
 
-      it('should unlock account if locked', async () => {
+      it("should unlock account if locked", async () => {
         // Lock the account
         for (let i = 0; i < 5; i++) {
-          await authService.recordFailedLogin(testEmail, '192.168.1.1');
+          await authService.recordFailedLogin(testEmail, "192.168.1.1");
         }
 
         await authService.resetFailedLoginAttempts(testUserId);

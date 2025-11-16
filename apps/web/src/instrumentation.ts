@@ -1,21 +1,22 @@
-import * as Sentry from '@sentry/nextjs';
+import * as Sentry from "@sentry/nextjs";
+import { getServiceConfig, isServiceEnabled } from "@/utils/MonitoringConfig";
+
+const sentryConfig = getServiceConfig("sentry");
 
 const sentryOptions: Sentry.NodeOptions | Sentry.EdgeOptions = {
   // Sentry DSN
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  dsn: sentryConfig.dsn,
 
   // Enable Spotlight in development
-  spotlight: process.env.NODE_ENV === 'development',
+  spotlight: process.env.NODE_ENV === "development",
 
-  integrations: [
-    Sentry.consoleLoggingIntegration(),
-  ],
+  integrations: [Sentry.consoleLoggingIntegration()],
 
   // Adds request headers and IP for users, for more info visit
   sendDefaultPii: true,
 
   // Adjust this value in production, or use tracesSampler for greater control
-  tracesSampleRate: 1,
+  tracesSampleRate: sentryConfig.tracesSampleRate,
 
   // Enable logs to be sent to Sentry
   enableLogs: true,
@@ -25,16 +26,25 @@ const sentryOptions: Sentry.NodeOptions | Sentry.EdgeOptions = {
 };
 
 export async function register() {
-  if (!process.env.NEXT_PUBLIC_SENTRY_DISABLED) {
-    if (process.env.NEXT_RUNTIME === 'nodejs') {
-      // Node.js Sentry configuration
-      Sentry.init(sentryOptions);
-    }
+  if (!isServiceEnabled("sentry")) {
+    return;
+  }
 
-    if (process.env.NEXT_RUNTIME === 'edge') {
-      // Edge Sentry configuration
-      Sentry.init(sentryOptions);
-    }
+  if (!sentryConfig.dsn) {
+    console.warn(
+      "Sentry is enabled but DSN is not configured. Skipping initialization.",
+    );
+    return;
+  }
+
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    // Node.js Sentry configuration
+    Sentry.init(sentryOptions);
+  }
+
+  if (process.env.NEXT_RUNTIME === "edge") {
+    // Edge Sentry configuration
+    Sentry.init(sentryOptions);
   }
 }
 

@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useTranslations } from 'next-intl';
+import { useTranslations } from "next-intl";
 
 export const CurrentCount = (props: { count: number }) => {
-  const t = useTranslations('CurrentCount');
+  const t = useTranslations("CurrentCount");
 
-  return <div>{t('count', { count: props.count })}</div>;
+  return <div>{t("count", { count: props.count })}</div>;
 };

@@ -1,18 +1,18 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { expect, within } from '@storybook/test';
-import { CurrentCount } from './CurrentCount';
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { expect, within } from "@storybook/test";
+import { CurrentCount } from "./CurrentCount";
 
 const meta = {
-  title: 'Forms/CurrentCount',
+  title: "Forms/CurrentCount",
   component: CurrentCount,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   parameters: {
-    layout: 'centered',
+    layout: "centered",
     a11y: {
       config: {
         rules: [
           {
-            id: 'color-contrast',
+            id: "color-contrast",
             enabled: true,
           },
         ],
@@ -21,12 +21,12 @@ const meta = {
   },
   argTypes: {
     count: {
-      control: { type: 'number' },
-      description: 'The current count value to display',
+      control: { type: "number" },
+      description: "The current count value to display",
     },
   },
   decorators: [
-    Story => (
+    (Story) => (
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <Story />
       </div>
@@ -115,7 +115,7 @@ export const InDashboard: Story = {
     count: 42,
   },
   decorators: [
-    Story => (
+    (Story) => (
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="mx-auto max-w-4xl">
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-md">
@@ -154,7 +154,7 @@ export const InDashboard: Story = {
     ),
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
   },
 };
 
@@ -166,7 +166,7 @@ export const LargeText: Story = {
     count: 100,
   },
   decorators: [
-    Story => (
+    (Story) => (
       <div className="rounded-lg border border-gray-200 bg-white p-8 text-center shadow-sm">
         <div className="text-4xl font-bold text-blue-600">
           <Story />
@@ -184,7 +184,7 @@ export const WithIcon: Story = {
     count: 78,
   },
   decorators: [
-    Story => (
+    (Story) => (
       <div className="w-64 rounded-lg border border-gray-200 bg-white p-6 shadow-md">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-700">Counter Value</h3>
@@ -220,7 +220,7 @@ export const MobileViewport: Story = {
   },
   parameters: {
     viewport: {
-      defaultViewport: 'mobile1',
+      defaultViewport: "mobile1",
     },
   },
 };
@@ -234,7 +234,7 @@ export const TabletViewport: Story = {
   },
   parameters: {
     viewport: {
-      defaultViewport: 'tablet',
+      defaultViewport: "tablet",
     },
   },
 };
@@ -247,7 +247,7 @@ export const DarkMode: Story = {
     count: 33,
   },
   decorators: [
-    Story => (
+    (Story) => (
       <div className="min-h-screen bg-gray-900 p-8">
         <div className="mx-auto max-w-md rounded-lg border border-gray-700 bg-gray-800 p-6 shadow-lg">
           <h3 className="mb-2 text-sm font-semibold uppercase text-gray-400">
@@ -261,9 +261,9 @@ export const DarkMode: Story = {
     ),
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
     backgrounds: {
-      default: 'dark',
+      default: "dark",
     },
   },
 };
@@ -276,7 +276,7 @@ export const ComparisonView: Story = {
     count: 150,
   },
   decorators: [
-    Story => (
+    (Story) => (
       <div className="grid grid-cols-3 gap-4">
         <div className="rounded-lg border border-gray-200 bg-white p-4 text-center">
           <div className="mb-1 text-xs font-semibold uppercase text-gray-500">
@@ -311,7 +311,7 @@ export const AnimatedTransition: Story = {
     count: 88,
   },
   decorators: [
-    Story => (
+    (Story) => (
       <div className="rounded-lg border border-gray-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-8 text-center shadow-lg">
         <h3 className="mb-4 text-xl font-semibold text-gray-700">
           Live Counter

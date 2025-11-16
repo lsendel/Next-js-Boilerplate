@@ -1,25 +1,25 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import Script from 'next/script';
-import { isServiceEnabled, getServiceConfig } from '@/utils/MonitoringConfig';
+import { useEffect } from "react";
+import Script from "next/script";
+import { isServiceEnabled, getServiceConfig } from "@/utils/MonitoringConfig";
 
 /**
  * Cloudflare Web Analytics Component
- * 
+ *
  * Privacy-friendly analytics without cookies or personal data collection.
  * Complies with GDPR, CCPA, and other privacy regulations.
- * 
+ *
  * Enable via environment variable:
  * NEXT_PUBLIC_ENABLE_CF_ANALYTICS=true
  * NEXT_PUBLIC_CF_ANALYTICS_TOKEN=your_token
- * 
+ *
  * Get your token from:
  * Cloudflare Dashboard > Analytics > Web Analytics
  */
 export function CloudflareAnalytics() {
-  const enabled = isServiceEnabled('cloudflare');
-  const config = getServiceConfig('cloudflare');
+  const enabled = isServiceEnabled("cloudflare");
+  const config = getServiceConfig("cloudflare");
 
   useEffect(() => {
     if (enabled && config.token) {
@@ -37,7 +37,7 @@ export function CloudflareAnalytics() {
                 url: window.location.href,
                 referrer: document.referrer,
               });
-              navigator.sendBeacon('/api/analytics', data);
+              navigator.sendBeacon("/api/analytics", data);
             }
           },
         };
@@ -63,24 +63,24 @@ export function CloudflareAnalytics() {
 
 /**
  * Hook to track custom events with Cloudflare Analytics
- * 
+ *
  * @example
  * ```tsx
  * import { useCloudflareAnalytics } from '@/components/CloudflareAnalytics';
- * 
+ *
  * function MyComponent() {
  *   const { track } = useCloudflareAnalytics();
- *   
+ *
  *   const handleClick = () => {
  *     track('button_click', { button: 'signup' });
  *   };
- *   
+ *
  *   return <button onClick={handleClick}>Sign Up</button>;
  * }
  * ```
  */
 export function useCloudflareAnalytics() {
-  const enabled = isServiceEnabled('cloudflare');
+  const enabled = isServiceEnabled("cloudflare");
 
   const track = (eventName: string, properties?: Record<string, unknown>) => {
     if (!enabled) return;
@@ -93,4 +93,3 @@ export function useCloudflareAnalytics() {
 
   return { track, enabled };
 }
-

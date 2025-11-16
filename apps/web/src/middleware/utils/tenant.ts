@@ -1,8 +1,8 @@
-import type { NextRequest, NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
-import { routing } from '@/libs/I18nRouting';
-import { db } from '@/server/db/DB';
-import { tenantDomains, tenants } from '@/server/db/models/Schema';
+import type { NextRequest, NextResponse } from "next/server";
+import { eq } from "drizzle-orm";
+import { routing } from "@/libs/I18nRouting";
+import { db } from "@/server/db/DB";
+import { tenantDomains, tenants } from "@/server/db/models/Schema";
 import {
   DEFAULT_TENANT_SLUG,
   TENANT_CACHE_TTL_MS,
@@ -13,8 +13,8 @@ import {
   TENANT_SLUG_COOKIE,
   TENANT_SLUG_HEADER,
   TENANT_SOURCE_HEADER,
-} from '@/shared/constants/tenant';
-import type { TenantResolutionSource } from '@/shared/constants/tenant';
+} from "@/shared/constants/tenant";
+import type { TenantResolutionSource } from "@/shared/constants/tenant";
 
 type TenantRecord = {
   id?: number;
@@ -43,12 +43,13 @@ const globalObject = globalThis as unknown as {
   __tenant_cache__?: Map<string, CacheEntry>;
 };
 
-const tenantCache = globalObject.__tenant_cache__ ?? new Map<string, CacheEntry>();
+const tenantCache =
+  globalObject.__tenant_cache__ ?? new Map<string, CacheEntry>();
 if (!globalObject.__tenant_cache__) {
   globalObject.__tenant_cache__ = tenantCache;
 }
 
-const makeCacheKey = (type: 'slug' | 'domain', value: string) => {
+const makeCacheKey = (type: "slug" | "domain", value: string) => {
   return `${type}:${value.toLowerCase()}`;
 };
 
@@ -84,7 +85,7 @@ const mapTenantRecord = (record: typeof tenants.$inferSelect): TenantRecord => {
 
 const getTenantBySlug = async (slug: string) => {
   const normalized = slug.toLowerCase();
-  const cacheKey = makeCacheKey('slug', normalized);
+  const cacheKey = makeCacheKey("slug", normalized);
   const cached = getCachedTenant(cacheKey);
   if (cached !== undefined) {
     return cached;
@@ -102,7 +103,7 @@ const getTenantBySlug = async (slug: string) => {
   } catch (error: any) {
     // Gracefully handle missing tenant tables (e.g., during migrations or in test environments)
     // Check both error.code and error.cause.code for PostgreSQL error codes
-    if (error.code === '42P01' || error.cause?.code === '42P01') {
+    if (error.code === "42P01" || error.cause?.code === "42P01") {
       // PostgreSQL error code for "relation does not exist"
       // Return null - default tenant will be used
       return null;
@@ -114,7 +115,7 @@ const getTenantBySlug = async (slug: string) => {
 
 const getTenantByDomain = async (domain: string) => {
   const normalized = domain.toLowerCase();
-  const cacheKey = makeCacheKey('domain', normalized);
+  const cacheKey = makeCacheKey("domain", normalized);
   const cached = getCachedTenant(cacheKey);
   if (cached !== undefined) {
     return cached;
@@ -132,14 +133,14 @@ const getTenantByDomain = async (domain: string) => {
     setCachedTenant(cacheKey, tenant);
 
     if (tenant) {
-      setCachedTenant(makeCacheKey('slug', tenant.slug), tenant);
+      setCachedTenant(makeCacheKey("slug", tenant.slug), tenant);
     }
 
     return tenant;
   } catch (error: any) {
     // Gracefully handle missing tenant tables (e.g., during migrations or in test environments)
     // Check both error.code and error.cause.code for PostgreSQL error codes
-    if (error.code === '42P01' || error.cause?.code === '42P01') {
+    if (error.code === "42P01" || error.cause?.code === "42P01") {
       // PostgreSQL error code for "relation does not exist"
       // Return null - default tenant will be used
       return null;
@@ -152,18 +153,18 @@ const getTenantByDomain = async (domain: string) => {
 const createDefaultTenant = (): TenantRecord => ({
   slug: DEFAULT_TENANT_SLUG,
   defaultLocale: routing.defaultLocale,
-  status: 'active',
+  status: "active",
 });
 
 const splitPathname = (pathname: string) => {
-  return pathname.split('/').filter(Boolean);
+  return pathname.split("/").filter(Boolean);
 };
 
 const buildLocalizedPath = (segments: string[], locale: string) => {
-  const rest = segments.filter(Boolean).join('/');
+  const rest = segments.filter(Boolean).join("/");
 
   if (locale === routing.defaultLocale) {
-    return rest ? `/${rest}` : '/';
+    return rest ? `/${rest}` : "/";
   }
 
   return rest ? `/${locale}/${rest}` : `/${locale}`;
@@ -174,7 +175,7 @@ const getDomainFromHost = (hostHeader: string | null) => {
     return null;
   }
 
-  return hostHeader.split(':')[0]?.toLowerCase() ?? null;
+  return hostHeader.split(":")[0]?.toLowerCase() ?? null;
 };
 
 const resolveTenantFromPath = async (segments: string[]) => {
@@ -194,14 +195,16 @@ const resolveTenantFromPath = async (segments: string[]) => {
   };
 };
 
-export const resolveTenantContext = async (request: NextRequest): Promise<TenantResolution> => {
-  const originalPath = request.nextUrl.pathname || '/';
+export const resolveTenantContext = async (
+  request: NextRequest,
+): Promise<TenantResolution> => {
+  const originalPath = request.nextUrl.pathname || "/";
   const segments = splitPathname(originalPath);
   const cookieSlug = request.cookies.get(TENANT_SLUG_COOKIE)?.value;
   const cookieLocale = request.cookies.get(TENANT_LOCALE_COOKIE)?.value;
 
   let tenant: TenantRecord | null = null;
-  let source: TenantResolutionSource = 'default';
+  let source: TenantResolutionSource = "default";
   let domainMatched: string | undefined;
   let slugMatchedFromPath = false;
 
@@ -209,27 +212,27 @@ export const resolveTenantContext = async (request: NextRequest): Promise<Tenant
     const cookieTenant = await getTenantBySlug(cookieSlug);
     if (cookieTenant) {
       tenant = cookieTenant;
-      source = 'cookie';
+      source = "cookie";
     }
   }
 
-  const domain = getDomainFromHost(request.headers.get('host'));
+  const domain = getDomainFromHost(request.headers.get("host"));
   if (domain) {
     const domainTenant = await getTenantByDomain(domain);
     if (domainTenant) {
       tenant = domainTenant;
-      source = 'domain';
+      source = "domain";
       domainMatched = domain;
     }
   }
 
   let workingSegments = [...segments];
-  if (source !== 'domain') {
+  if (source !== "domain") {
     const pathTenant = await resolveTenantFromPath(segments);
     if (pathTenant) {
       tenant = pathTenant.tenant;
       workingSegments = pathTenant.remainingSegments;
-      source = 'path';
+      source = "path";
       slugMatchedFromPath = true;
     }
   }
@@ -278,12 +281,12 @@ export const applyTenantContextToResponse = (
     response.headers.set(TENANT_DOMAIN_HEADER, context.domainMatched);
   }
 
-  const secureCookie = process.env.NODE_ENV === 'production';
+  const secureCookie = process.env.NODE_ENV === "production";
   const slugCookie = request.cookies.get(TENANT_SLUG_COOKIE)?.value;
   if (slugCookie !== context.tenant.slug) {
     response.cookies.set(TENANT_SLUG_COOKIE, context.tenant.slug, {
-      path: '/',
-      sameSite: 'lax',
+      path: "/",
+      sameSite: "lax",
       httpOnly: true,
       secure: secureCookie,
     });
@@ -292,8 +295,8 @@ export const applyTenantContextToResponse = (
   const localeCookie = request.cookies.get(TENANT_LOCALE_COOKIE)?.value;
   if (localeCookie !== context.locale) {
     response.cookies.set(TENANT_LOCALE_COOKIE, context.locale, {
-      path: '/',
-      sameSite: 'lax',
+      path: "/",
+      sameSite: "lax",
       httpOnly: true,
       secure: secureCookie,
     });
@@ -303,8 +306,8 @@ export const applyTenantContextToResponse = (
   if (context.domainMatched) {
     if (domainCookie !== context.domainMatched) {
       response.cookies.set(TENANT_DOMAIN_COOKIE, context.domainMatched, {
-        path: '/',
-        sameSite: 'lax',
+        path: "/",
+        sameSite: "lax",
         httpOnly: true,
         secure: secureCookie,
       });

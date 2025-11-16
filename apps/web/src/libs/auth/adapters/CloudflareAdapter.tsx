@@ -1,16 +1,21 @@
-import type { NextRequest } from 'next/server';
-import type { AuthMiddlewareConfig, AuthSession, AuthUser, IAuthAdapter } from '../types';
-import { headers } from 'next/headers';
-import { CloudflareUserProfile } from './cloudflare/UserProfile';
+import type { NextRequest } from "next/server";
+import type {
+  AuthMiddlewareConfig,
+  AuthSession,
+  AuthUser,
+  IAuthAdapter,
+} from "../types";
+import { headers } from "next/headers";
+import { CloudflareUserProfile } from "./cloudflare/UserProfile";
 import {
   getCloudflareAccessToken,
   getCloudflareLoginUrl,
   getCloudflareLogoutUrl,
   isCloudflareAuthenticated,
   verifyCloudflareAccessToken,
-} from './cloudflare/utils';
-import { resolveTenantClientPath } from '@/shared/utils/tenant-client-path';
-import { authLogger } from '@/libs/Logger';
+} from "./cloudflare/utils";
+import { resolveTenantClientPath } from "@/shared/utils/tenant-client-path";
+import { authLogger } from "@/libs/Logger";
 
 /**
  * Cloudflare Access Authentication Adapter
@@ -26,15 +31,15 @@ import { authLogger } from '@/libs/Logger';
  */
 export class CloudflareAdapter implements IAuthAdapter {
   private getTeamDomain(): string {
-    return process.env.NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN || '';
+    return process.env.NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN || "";
   }
 
   async getCurrentUser(): Promise<AuthUser | null> {
     const headersList = await headers();
 
     // Cloudflare Access passes user info via headers
-    const email = headersList.get('Cf-Access-Authenticated-User-Email');
-    const userId = headersList.get('Cf-Access-Authenticated-User-Id');
+    const email = headersList.get("Cf-Access-Authenticated-User-Email");
+    const userId = headersList.get("Cf-Access-Authenticated-User-Id");
 
     if (!email) {
       return null;
@@ -76,7 +81,7 @@ export class CloudflareAdapter implements IAuthAdapter {
   ): Promise<{ isAuthenticated: boolean; redirectUrl?: string }> {
     // Cloudflare Access handles protection at the edge
     // If the request reaches here, the user is already authenticated
-    const email = request.headers.get('Cf-Access-Authenticated-User-Email');
+    const email = request.headers.get("Cf-Access-Authenticated-User-Email");
 
     return {
       isAuthenticated: !!email,
@@ -84,7 +89,10 @@ export class CloudflareAdapter implements IAuthAdapter {
     };
   }
 
-  renderProvider(props: { children: React.ReactNode; locale: string }): React.ReactElement {
+  renderProvider(props: {
+    children: React.ReactNode;
+    locale: string;
+  }): React.ReactElement {
     // Cloudflare Access doesn't need a provider wrapper
     // Return a simple fragment
     return <>{props.children}</>;
@@ -93,11 +101,14 @@ export class CloudflareAdapter implements IAuthAdapter {
   renderSignIn(_props: { path: string; locale: string }): React.ReactElement {
     const teamDomain = this.getTeamDomain();
     const loginUrl = teamDomain
-      ? getCloudflareLoginUrl(teamDomain, typeof window !== 'undefined' ? window.location.href : undefined)
-      : '/';
+      ? getCloudflareLoginUrl(
+          teamDomain,
+          typeof window !== "undefined" ? window.location.href : undefined,
+        )
+      : "/";
 
     // Auto-redirect on mount
-    if (typeof window !== 'undefined' && teamDomain) {
+    if (typeof window !== "undefined" && teamDomain) {
       window.location.href = loginUrl;
     }
 
@@ -149,22 +160,24 @@ export class CloudflareAdapter implements IAuthAdapter {
     return this.renderSignIn(props);
   }
 
-  renderSignOutButton(props: { children: React.ReactNode }): React.ReactElement {
+  renderSignOutButton(props: {
+    children: React.ReactNode;
+  }): React.ReactElement {
     const teamDomain = this.getTeamDomain();
 
     const handleSignOut = () => {
       if (!teamDomain) {
-        authLogger.error('NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN not configured');
+        authLogger.error("NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN not configured");
         return;
       }
 
-      if (typeof window === 'undefined') {
+      if (typeof window === "undefined") {
         return;
       }
 
-      const tenantHomePath = resolveTenantClientPath('/');
+      const tenantHomePath = resolveTenantClientPath("/");
       const redirectTarget = new URL(
-        tenantHomePath === '/' ? '' : tenantHomePath,
+        tenantHomePath === "/" ? "" : tenantHomePath,
         window.location.origin,
       ).toString();
 
@@ -190,10 +203,11 @@ export class CloudflareAdapter implements IAuthAdapter {
     return async (request: NextRequest) => {
       const teamDomain = process.env.NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN;
       const audience = process.env.NEXT_PUBLIC_CLOUDFLARE_AUDIENCE;
-      const verifyJWT = process.env.NEXT_PUBLIC_CLOUDFLARE_VERIFY_JWT === 'true';
+      const verifyJWT =
+        process.env.NEXT_PUBLIC_CLOUDFLARE_VERIFY_JWT === "true";
 
       // Check if this is a protected route
-      const isProtectedRoute = config.protectedRoutes.some(route =>
+      const isProtectedRoute = config.protectedRoutes.some((route) =>
         request.nextUrl.pathname.includes(route),
       );
 
@@ -213,7 +227,10 @@ export class CloudflareAdapter implements IAuthAdapter {
 
         // Fallback if domain not configured
         return Response.json(
-          { error: 'Authentication required. Please configure NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN.' },
+          {
+            error:
+              "Authentication required. Please configure NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN.",
+          },
           { status: 401 },
         );
       }
@@ -226,19 +243,19 @@ export class CloudflareAdapter implements IAuthAdapter {
           const payload = await verifyCloudflareAccessToken(
             token,
             teamDomain,
-            audience || '',
+            audience || "",
           );
 
           if (!payload) {
             // JWT verification failed
-            authLogger.warn('Cloudflare Access JWT verification failed');
+            authLogger.warn("Cloudflare Access JWT verification failed");
             const loginUrl = getCloudflareLoginUrl(teamDomain, request.url);
             return Response.redirect(loginUrl, 302);
           }
 
           // Token is valid, continue
         } else {
-          authLogger.warn('Cloudflare Access JWT token not found');
+          authLogger.warn("Cloudflare Access JWT token not found");
         }
       }
 

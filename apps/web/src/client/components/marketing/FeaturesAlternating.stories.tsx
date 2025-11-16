@@ -1,21 +1,21 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { FeaturesAlternating } from './FeaturesAlternating';
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { FeaturesAlternating } from "./FeaturesAlternating";
 
 const meta = {
-  title: 'Marketing/FeaturesAlternating',
+  title: "Marketing/FeaturesAlternating",
   component: FeaturesAlternating,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
     a11y: {
       config: {
         rules: [
           {
-            id: 'color-contrast',
+            id: "color-contrast",
             enabled: true,
           },
           {
-            id: 'image-alt',
+            id: "image-alt",
             enabled: true,
           },
         ],
@@ -29,18 +29,18 @@ type Story = StoryObj<typeof meta>;
 
 const sampleFeatures = [
   {
-    title: 'Authentication built-in',
+    title: "Authentication built-in",
     description:
-      'Pre-configured authentication with Clerk, Cloudflare Access, or AWS Cognito. Support for social logins, MFA, and passwordless authentication out of the box.',
+      "Pre-configured authentication with Clerk, Cloudflare Access, or AWS Cognito. Support for social logins, MFA, and passwordless authentication out of the box.",
     image: {
-      src: 'https://images.unsplash.com/photo-1633265486064-086b219458ec?w=1600&h=1000&fit=crop',
-      alt: 'Secure authentication interface with login screen',
+      src: "https://images.unsplash.com/photo-1633265486064-086b219458ec?w=1600&h=1000&fit=crop",
+      alt: "Secure authentication interface with login screen",
     },
     benefits: [
-      'Multiple authentication providers',
-      'Social login (Google, GitHub, etc.)',
-      'Two-factor authentication',
-      'Session management',
+      "Multiple authentication providers",
+      "Social login (Google, GitHub, etc.)",
+      "Two-factor authentication",
+      "Session management",
     ],
     icon: (
       <svg
@@ -59,18 +59,18 @@ const sampleFeatures = [
     ),
   },
   {
-    title: 'Database with ORM',
+    title: "Database with ORM",
     description:
-      'Drizzle ORM with PostgreSQL for type-safe database queries. Automatic migrations, seed data, and local development with PGlite - no Docker required.',
+      "Drizzle ORM with PostgreSQL for type-safe database queries. Automatic migrations, seed data, and local development with PGlite - no Docker required.",
     image: {
-      src: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=1600&h=1000&fit=crop',
-      alt: 'Database schema visualization',
+      src: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=1600&h=1000&fit=crop",
+      alt: "Database schema visualization",
     },
     benefits: [
-      'Type-safe queries with Drizzle ORM',
-      'Automatic migration generation',
-      'Local development with PGlite',
-      'Production-ready PostgreSQL',
+      "Type-safe queries with Drizzle ORM",
+      "Automatic migration generation",
+      "Local development with PGlite",
+      "Production-ready PostgreSQL",
     ],
     icon: (
       <svg
@@ -89,18 +89,18 @@ const sampleFeatures = [
     ),
   },
   {
-    title: 'Testing infrastructure',
+    title: "Testing infrastructure",
     description:
-      'Comprehensive testing setup with Vitest for unit tests, Playwright for E2E, and Storybook for component testing. Achieve high code coverage with minimal effort.',
+      "Comprehensive testing setup with Vitest for unit tests, Playwright for E2E, and Storybook for component testing. Achieve high code coverage with minimal effort.",
     image: {
-      src: 'https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=1600&h=1000&fit=crop',
-      alt: 'Testing dashboard with passing test results',
+      src: "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=1600&h=1000&fit=crop",
+      alt: "Testing dashboard with passing test results",
     },
     benefits: [
-      'Unit tests with Vitest',
-      'E2E tests with Playwright',
-      'Component stories with Storybook',
-      'Coverage reports included',
+      "Unit tests with Vitest",
+      "E2E tests with Playwright",
+      "Component stories with Storybook",
+      "Coverage reports included",
     ],
     icon: (
       <svg
@@ -125,9 +125,9 @@ const sampleFeatures = [
  */
 export const Default: Story = {
   args: {
-    title: 'Everything you need to ship fast',
+    title: "Everything you need to ship fast",
     description:
-      'All the tools, integrations, and best practices you need to build production-ready applications. Stop configuring, start building.',
+      "All the tools, integrations, and best practices you need to build production-ready applications. Stop configuring, start building.",
     features: sampleFeatures,
   },
 };
@@ -146,8 +146,8 @@ export const NoHeader: Story = {
  */
 export const SingleFeature: Story = {
   args: {
-    title: 'Built-in authentication',
-    description: 'Secure, scalable authentication ready to use.',
+    title: "Built-in authentication",
+    description: "Secure, scalable authentication ready to use.",
     features: [sampleFeatures[0]!],
   },
 };
@@ -157,8 +157,8 @@ export const SingleFeature: Story = {
  */
 export const TwoFeatures: Story = {
   args: {
-    title: 'Core features',
-    description: 'Authentication and database, pre-configured.',
+    title: "Core features",
+    description: "Authentication and database, pre-configured.",
     features: sampleFeatures.slice(0, 2),
   },
 };
@@ -168,16 +168,16 @@ export const TwoFeatures: Story = {
  */
 export const NoBenefits: Story = {
   args: {
-    title: 'Platform capabilities',
-    description: 'Powerful features to accelerate development.',
+    title: "Platform capabilities",
+    description: "Powerful features to accelerate development.",
     features: [
       {
-        title: 'Internationalization',
+        title: "Internationalization",
         description:
-          'Built-in i18n with next-intl. Support multiple languages, automatic locale detection, and translation management with Crowdin.',
+          "Built-in i18n with next-intl. Support multiple languages, automatic locale detection, and translation management with Crowdin.",
         image: {
-          src: 'https://images.unsplash.com/photo-1526256262350-7da7584cf5eb?w=1600&h=1000&fit=crop',
-          alt: 'World map showing global reach',
+          src: "https://images.unsplash.com/photo-1526256262350-7da7584cf5eb?w=1600&h=1000&fit=crop",
+          alt: "World map showing global reach",
         },
         icon: (
           <svg
@@ -196,12 +196,12 @@ export const NoBenefits: Story = {
         ),
       },
       {
-        title: 'Monitoring & Analytics',
+        title: "Monitoring & Analytics",
         description:
-          'Integrated error tracking with Sentry, logging with LogTape, and user analytics with PostHog. Full observability from day one.',
+          "Integrated error tracking with Sentry, logging with LogTape, and user analytics with PostHog. Full observability from day one.",
         image: {
-          src: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1600&h=1000&fit=crop',
-          alt: 'Analytics dashboard with charts',
+          src: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1600&h=1000&fit=crop",
+          alt: "Analytics dashboard with charts",
         },
         icon: (
           <svg
@@ -228,8 +228,8 @@ export const NoBenefits: Story = {
  */
 export const NoIcons: Story = {
   args: {
-    title: 'Platform features',
-    description: 'Everything you need in one place.',
+    title: "Platform features",
+    description: "Everything you need in one place.",
     features: sampleFeatures.map(({ icon, ...rest }) => rest),
   },
 };
@@ -239,24 +239,24 @@ export const NoIcons: Story = {
  */
 export const ProductShowcase: Story = {
   args: {
-    title: 'See how it works',
+    title: "See how it works",
     description:
-      'Walk through the key features that make our platform the best choice for developers.',
+      "Walk through the key features that make our platform the best choice for developers.",
     features: [
       {
-        title: 'Instant deployment',
+        title: "Instant deployment",
         description:
-          'Deploy to production with a single command. Automatic builds, zero-downtime deployments, and instant rollbacks. Your code goes live in seconds, not hours.',
+          "Deploy to production with a single command. Automatic builds, zero-downtime deployments, and instant rollbacks. Your code goes live in seconds, not hours.",
         image: {
-          src: 'https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?w=1600&h=1000&fit=crop',
-          alt: 'Deployment pipeline visualization',
+          src: "https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?w=1600&h=1000&fit=crop",
+          alt: "Deployment pipeline visualization",
         },
         benefits: [
-          'One-command deployment',
-          'Zero-downtime updates',
-          'Automatic SSL certificates',
-          'Global CDN distribution',
-          'Instant rollback capability',
+          "One-command deployment",
+          "Zero-downtime updates",
+          "Automatic SSL certificates",
+          "Global CDN distribution",
+          "Instant rollback capability",
         ],
         icon: (
           <svg
@@ -275,19 +275,19 @@ export const ProductShowcase: Story = {
         ),
       },
       {
-        title: 'Real-time collaboration',
+        title: "Real-time collaboration",
         description:
-          'Work together seamlessly with your team. See changes as they happen, comment on code, and ship features faster with built-in collaboration tools.',
+          "Work together seamlessly with your team. See changes as they happen, comment on code, and ship features faster with built-in collaboration tools.",
         image: {
-          src: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1600&h=1000&fit=crop',
-          alt: 'Team collaborating on project',
+          src: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1600&h=1000&fit=crop",
+          alt: "Team collaborating on project",
         },
         benefits: [
-          'Live code sharing',
-          'In-line comments',
-          'Team notifications',
-          'Version history',
-          'Conflict resolution',
+          "Live code sharing",
+          "In-line comments",
+          "Team notifications",
+          "Version history",
+          "Conflict resolution",
         ],
         icon: (
           <svg
@@ -306,19 +306,19 @@ export const ProductShowcase: Story = {
         ),
       },
       {
-        title: 'Enterprise security',
+        title: "Enterprise security",
         description:
-          'Bank-level security for your applications. SOC 2 Type II compliant, encrypted at rest and in transit, with comprehensive audit logs and access controls.',
+          "Bank-level security for your applications. SOC 2 Type II compliant, encrypted at rest and in transit, with comprehensive audit logs and access controls.",
         image: {
-          src: 'https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=1600&h=1000&fit=crop',
-          alt: 'Security shield and lock',
+          src: "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=1600&h=1000&fit=crop",
+          alt: "Security shield and lock",
         },
         benefits: [
-          'SOC 2 Type II certified',
-          'End-to-end encryption',
-          'Role-based access control',
-          'Audit logging',
-          'Compliance reporting',
+          "SOC 2 Type II certified",
+          "End-to-end encryption",
+          "Role-based access control",
+          "Audit logging",
+          "Compliance reporting",
         ],
         icon: (
           <svg
@@ -345,13 +345,13 @@ export const ProductShowcase: Story = {
  */
 export const MobileView: Story = {
   args: {
-    title: 'Everything you need',
-    description: 'All the tools to build fast.',
+    title: "Everything you need",
+    description: "All the tools to build fast.",
     features: sampleFeatures.slice(0, 2),
   },
   parameters: {
     viewport: {
-      defaultViewport: 'mobile1',
+      defaultViewport: "mobile1",
     },
   },
 };
@@ -361,13 +361,14 @@ export const MobileView: Story = {
  */
 export const TabletView: Story = {
   args: {
-    title: 'Everything you need to ship fast',
-    description: 'All the tools you need to build production-ready applications.',
+    title: "Everything you need to ship fast",
+    description:
+      "All the tools you need to build production-ready applications.",
     features: sampleFeatures,
   },
   parameters: {
     viewport: {
-      defaultViewport: 'tablet',
+      defaultViewport: "tablet",
     },
   },
 };
@@ -377,27 +378,27 @@ export const TabletView: Story = {
  */
 export const LongContent: Story = {
   args: {
-    title: 'Comprehensive platform features',
+    title: "Comprehensive platform features",
     description:
-      'A complete development platform with everything you need to build, test, deploy, and scale modern web applications.',
+      "A complete development platform with everything you need to build, test, deploy, and scale modern web applications.",
     features: [
       {
-        title: 'Advanced authentication and authorization system',
+        title: "Advanced authentication and authorization system",
         description:
-          'Implement enterprise-grade authentication with support for multiple providers, including traditional email/password, social logins (Google, GitHub, Facebook), SAML for enterprise SSO, and passwordless options via magic links or biometric authentication. Features include role-based access control (RBAC), attribute-based access control (ABAC), multi-factor authentication (MFA) with SMS, authenticator apps, or hardware tokens, session management with configurable timeouts, and comprehensive audit logging for compliance requirements.',
+          "Implement enterprise-grade authentication with support for multiple providers, including traditional email/password, social logins (Google, GitHub, Facebook), SAML for enterprise SSO, and passwordless options via magic links or biometric authentication. Features include role-based access control (RBAC), attribute-based access control (ABAC), multi-factor authentication (MFA) with SMS, authenticator apps, or hardware tokens, session management with configurable timeouts, and comprehensive audit logging for compliance requirements.",
         image: {
-          src: 'https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=1600&h=1000&fit=crop',
-          alt: 'Advanced security interface',
+          src: "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=1600&h=1000&fit=crop",
+          alt: "Advanced security interface",
         },
         benefits: [
-          'Email/password and passwordless authentication',
-          'Social login with 20+ providers',
-          'Enterprise SSO with SAML 2.0 and OpenID Connect',
-          'Multi-factor authentication (SMS, TOTP, WebAuthn)',
-          'Role-based and attribute-based access control',
-          'Session management with device tracking',
-          'Comprehensive audit logs for compliance (SOC 2, GDPR, HIPAA)',
-          'Custom authentication flows and webhooks',
+          "Email/password and passwordless authentication",
+          "Social login with 20+ providers",
+          "Enterprise SSO with SAML 2.0 and OpenID Connect",
+          "Multi-factor authentication (SMS, TOTP, WebAuthn)",
+          "Role-based and attribute-based access control",
+          "Session management with device tracking",
+          "Comprehensive audit logs for compliance (SOC 2, GDPR, HIPAA)",
+          "Custom authentication flows and webhooks",
         ],
         icon: (
           <svg

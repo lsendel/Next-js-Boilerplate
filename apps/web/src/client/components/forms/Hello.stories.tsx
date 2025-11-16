@@ -1,25 +1,25 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { expect, within } from '@storybook/test';
-import { Hello } from './Hello';
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { expect, within } from "@storybook/test";
+import { Hello } from "./Hello";
 
 // Note: Hello is an async server component, so we need to handle it specially in Storybook
 // We create a wrapper that resolves the component
 
 const meta = {
-  title: 'Forms/Hello',
+  title: "Forms/Hello",
   component: Hello,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   parameters: {
-    layout: 'centered',
+    layout: "centered",
     a11y: {
       config: {
         rules: [
           {
-            id: 'color-contrast',
+            id: "color-contrast",
             enabled: true,
           },
           {
-            id: 'link-name',
+            id: "link-name",
             enabled: true,
           },
         ],
@@ -30,7 +30,7 @@ const meta = {
     },
   },
   decorators: [
-    Story => (
+    (Story) => (
       <div className="max-w-2xl rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <Story />
       </div>
@@ -54,13 +54,13 @@ export const Default: Story = {
     expect(greetingText).toBeInTheDocument();
 
     // Check for the link to Pro version
-    const proLink = canvas.getByRole('link', {
+    const proLink = canvas.getByRole("link", {
       name: /Next\.js Boilerplate Pro/i,
     });
     expect(proLink).toBeInTheDocument();
     expect(proLink).toHaveAttribute(
-      'href',
-      'https://nextjs-boilerplate.com/pro-saas-starter-kit',
+      "href",
+      "https://nextjs-boilerplate.com/pro-saas-starter-kit",
     );
   },
 };
@@ -70,7 +70,7 @@ export const Default: Story = {
  */
 export const InDashboard: Story = {
   decorators: [
-    Story => (
+    (Story) => (
       <div className="min-h-screen bg-gray-50">
         <div className="mx-auto max-w-7xl p-8">
           <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-md">
@@ -98,7 +98,7 @@ export const InDashboard: Story = {
     ),
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
   },
 };
 
@@ -107,7 +107,7 @@ export const InDashboard: Story = {
  */
 export const Compact: Story = {
   decorators: [
-    Story => (
+    (Story) => (
       <div className="w-80 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
         <div className="text-sm">
           <Story />
@@ -122,7 +122,7 @@ export const Compact: Story = {
  */
 export const HeroSection: Story = {
   decorators: [
-    Story => (
+    (Story) => (
       <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-12 text-white">
         <div className="mx-auto max-w-4xl text-center">
           <div className="mb-6 text-4xl font-bold">
@@ -136,7 +136,7 @@ export const HeroSection: Story = {
     ),
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
   },
 };
 
@@ -145,7 +145,7 @@ export const HeroSection: Story = {
  */
 export const DarkMode: Story = {
   decorators: [
-    Story => (
+    (Story) => (
       <div className="min-h-screen bg-gray-900 p-8">
         <div className="mx-auto max-w-2xl rounded-lg border border-gray-700 bg-gray-800 p-6 shadow-lg">
           <div className="text-white">
@@ -156,9 +156,9 @@ export const DarkMode: Story = {
     ),
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
     backgrounds: {
-      default: 'dark',
+      default: "dark",
     },
   },
 };
@@ -169,7 +169,7 @@ export const DarkMode: Story = {
 export const MobileViewport: Story = {
   parameters: {
     viewport: {
-      defaultViewport: 'mobile1',
+      defaultViewport: "mobile1",
     },
   },
 };
@@ -180,7 +180,7 @@ export const MobileViewport: Story = {
 export const TabletViewport: Story = {
   parameters: {
     viewport: {
-      defaultViewport: 'tablet',
+      defaultViewport: "tablet",
     },
   },
 };
@@ -190,7 +190,7 @@ export const TabletViewport: Story = {
  */
 export const WelcomeCard: Story = {
   decorators: [
-    Story => (
+    (Story) => (
       <div className="w-96 rounded-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-8 shadow-lg">
         <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-blue-100">
           <span className="text-3xl">👋</span>
@@ -214,7 +214,7 @@ export const WelcomeCard: Story = {
  */
 export const ProfileHeader: Story = {
   decorators: [
-    Story => (
+    (Story) => (
       <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
         <div className="relative h-32 bg-gradient-to-r from-blue-400 to-indigo-500" />
         <div className="relative px-6 pb-6">
@@ -261,7 +261,7 @@ export const ProfileHeader: Story = {
  */
 export const MinimalText: Story = {
   decorators: [
-    Story => (
+    (Story) => (
       <div className="border-l-4 border-blue-500 bg-blue-50 p-4">
         <Story />
       </div>
@@ -274,7 +274,7 @@ export const MinimalText: Story = {
  */
 export const BannerVariant: Story = {
   decorators: [
-    Story => (
+    (Story) => (
       <div className="bg-blue-600 px-8 py-4 text-white">
         <div className="mx-auto max-w-7xl">
           <Story />
@@ -283,7 +283,7 @@ export const BannerVariant: Story = {
     ),
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
   },
 };
 
@@ -292,7 +292,7 @@ export const BannerVariant: Story = {
  */
 export const WithActions: Story = {
   decorators: [
-    Story => (
+    (Story) => (
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <div className="mb-6">
           <Story />
@@ -321,7 +321,7 @@ export const WithActions: Story = {
  */
 export const SidebarWidget: Story = {
   decorators: [
-    Story => (
+    (Story) => (
       <div className="w-64 space-y-4">
         <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
           <h3 className="mb-3 text-sm font-semibold uppercase text-gray-500">

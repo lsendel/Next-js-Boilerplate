@@ -1,9 +1,9 @@
-import { createEnv } from '@t3-oss/env-nextjs';
-import * as z from 'zod';
+import { createEnv } from "@t3-oss/env-nextjs";
+import * as z from "zod";
 
 export const Env = createEnv({
   server: {
-    ARCJET_KEY: z.string().startsWith('ajkey_').optional(),
+    ARCJET_KEY: z.string().startsWith("ajkey_").optional(),
     CLERK_SECRET_KEY: z.string().min(1).optional(), // Optional - only required when using Clerk auth
     DATABASE_URL: z.string().min(1),
     // Security
@@ -34,13 +34,15 @@ export const Env = createEnv({
     NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE: z.string().optional(),
     NEXT_PUBLIC_SENTRY_REPLAYS_ERROR_SAMPLE_RATE: z.string().optional(),
     // Auth provider
-    NEXT_PUBLIC_AUTH_PROVIDER: z.enum(['clerk', 'cloudflare', 'cognito', 'test']).optional(),
+    NEXT_PUBLIC_AUTH_PROVIDER: z
+      .enum(["clerk", "cloudflare", "cognito", "test"])
+      .optional(),
     NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN: z.string().optional(),
     NEXT_PUBLIC_CLOUDFLARE_AUDIENCE: z.string().optional(),
     NEXT_PUBLIC_CLOUDFLARE_VERIFY_JWT: z.string().optional(),
   },
   shared: {
-    NODE_ENV: z.enum(['test', 'development', 'production']).optional(),
+    NODE_ENV: z.enum(["test", "development", "production"]).optional(),
   },
   // You need to destructure all the keys manually
   runtimeEnv: {
@@ -55,22 +57,32 @@ export const Env = createEnv({
     D1_DATABASE_ID: process.env.D1_DATABASE_ID,
     SENTRY_DSN: process.env.SENTRY_DSN,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-    NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN: process.env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN,
-    NEXT_PUBLIC_BETTER_STACK_INGESTING_HOST: process.env.NEXT_PUBLIC_BETTER_STACK_INGESTING_HOST,
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN:
+      process.env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN,
+    NEXT_PUBLIC_BETTER_STACK_INGESTING_HOST:
+      process.env.NEXT_PUBLIC_BETTER_STACK_INGESTING_HOST,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
     NEXT_PUBLIC_ENABLE_SENTRY: process.env.NEXT_PUBLIC_ENABLE_SENTRY,
     NEXT_PUBLIC_ENABLE_POSTHOG: process.env.NEXT_PUBLIC_ENABLE_POSTHOG,
-    NEXT_PUBLIC_ENABLE_CF_ANALYTICS: process.env.NEXT_PUBLIC_ENABLE_CF_ANALYTICS,
+    NEXT_PUBLIC_ENABLE_CF_ANALYTICS:
+      process.env.NEXT_PUBLIC_ENABLE_CF_ANALYTICS,
     NEXT_PUBLIC_CF_ANALYTICS_TOKEN: process.env.NEXT_PUBLIC_CF_ANALYTICS_TOKEN,
-    NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE: process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE,
-    NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE: process.env.NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE,
-    NEXT_PUBLIC_SENTRY_REPLAYS_ERROR_SAMPLE_RATE: process.env.NEXT_PUBLIC_SENTRY_REPLAYS_ERROR_SAMPLE_RATE,
+    NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE:
+      process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE,
+    NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE:
+      process.env.NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE,
+    NEXT_PUBLIC_SENTRY_REPLAYS_ERROR_SAMPLE_RATE:
+      process.env.NEXT_PUBLIC_SENTRY_REPLAYS_ERROR_SAMPLE_RATE,
     NEXT_PUBLIC_AUTH_PROVIDER: process.env.NEXT_PUBLIC_AUTH_PROVIDER,
-    NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN: process.env.NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN,
-    NEXT_PUBLIC_CLOUDFLARE_AUDIENCE: process.env.NEXT_PUBLIC_CLOUDFLARE_AUDIENCE,
-    NEXT_PUBLIC_CLOUDFLARE_VERIFY_JWT: process.env.NEXT_PUBLIC_CLOUDFLARE_VERIFY_JWT,
+    NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN:
+      process.env.NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN,
+    NEXT_PUBLIC_CLOUDFLARE_AUDIENCE:
+      process.env.NEXT_PUBLIC_CLOUDFLARE_AUDIENCE,
+    NEXT_PUBLIC_CLOUDFLARE_VERIFY_JWT:
+      process.env.NEXT_PUBLIC_CLOUDFLARE_VERIFY_JWT,
     NODE_ENV: process.env.NODE_ENV,
   },
 });

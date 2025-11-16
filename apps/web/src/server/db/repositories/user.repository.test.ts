@@ -5,10 +5,10 @@
  * Tests cover all CRUD operations, edge cases, soft deletes, and pagination.
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { cleanupTestUsers } from '../../../../tests/utils/db-test-helpers';
-import { UserFactory } from '../../../../tests/utils/test-factories';
-import type { NewUser } from './user.repository';
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { cleanupTestUsers } from "../../../../tests/utils/db-test-helpers";
+import { UserFactory } from "../../../../tests/utils/test-factories";
+import type { NewUser } from "./user.repository";
 import {
   createUser,
   deleteUser,
@@ -20,64 +20,64 @@ import {
   updateLastLogin,
   updateUser,
   verifyEmail,
-} from './user.repository';
+} from "./user.repository";
 
-describe('User Repository', () => {
+describe("User Repository", () => {
   // Clean up test data after each test
   afterEach(async () => {
     await cleanupTestUsers();
   });
 
-  describe('findUserByEmail', () => {
-    it('should find user by email when user exists', async () => {
+  describe("findUserByEmail", () => {
+    it("should find user by email when user exists", async () => {
       // Arrange
       const userData = UserFactory.build({
-        email: 'existing@example.com',
+        email: "existing@example.com",
       });
       const created = await createUser(userData);
 
       // Act
-      const result = await findUserByEmail('existing@example.com');
+      const result = await findUserByEmail("existing@example.com");
 
       // Assert
       expect(result).not.toBeNull();
       expect(result?.id).toBe(created.id);
-      expect(result?.email).toBe('existing@example.com');
+      expect(result?.email).toBe("existing@example.com");
     });
 
-    it('should return null when user does not exist', async () => {
+    it("should return null when user does not exist", async () => {
       // Act
-      const result = await findUserByEmail('nonexistent@example.com');
+      const result = await findUserByEmail("nonexistent@example.com");
 
       // Assert
       expect(result).toBeNull();
     });
 
-    it('should exclude soft-deleted users', async () => {
+    it("should exclude soft-deleted users", async () => {
       // Arrange
       const userData = UserFactory.build({
-        email: 'deleted@example.com',
+        email: "deleted@example.com",
       });
       const created = await createUser(userData);
       await deleteUser(created.id);
 
       // Act
-      const result = await findUserByEmail('deleted@example.com');
+      const result = await findUserByEmail("deleted@example.com");
 
       // Assert
       expect(result).toBeNull();
     });
 
-    it('should be case-sensitive for email lookup', async () => {
+    it("should be case-sensitive for email lookup", async () => {
       // Arrange
       const userData = UserFactory.build({
-        email: 'CaseSensitive@example.com',
+        email: "CaseSensitive@example.com",
       });
       await createUser(userData);
 
       // Act
-      const lowerCase = await findUserByEmail('casesensitive@example.com');
-      const exactCase = await findUserByEmail('CaseSensitive@example.com');
+      const lowerCase = await findUserByEmail("casesensitive@example.com");
+      const exactCase = await findUserByEmail("CaseSensitive@example.com");
 
       // Assert
       expect(lowerCase).toBeNull();
@@ -85,8 +85,8 @@ describe('User Repository', () => {
     });
   });
 
-  describe('findUserById', () => {
-    it('should find user by ID when user exists', async () => {
+  describe("findUserById", () => {
+    it("should find user by ID when user exists", async () => {
       // Arrange
       const userData = UserFactory.build();
       const created = await createUser(userData);
@@ -100,7 +100,7 @@ describe('User Repository', () => {
       expect(result?.email).toBe(created.email);
     });
 
-    it('should return null when user ID does not exist', async () => {
+    it("should return null when user ID does not exist", async () => {
       // Act
       const result = await findUserById(99999);
 
@@ -108,7 +108,7 @@ describe('User Repository', () => {
       expect(result).toBeNull();
     });
 
-    it('should exclude soft-deleted users by ID', async () => {
+    it("should exclude soft-deleted users by ID", async () => {
       // Arrange
       const userData = UserFactory.build();
       const created = await createUser(userData);
@@ -122,66 +122,69 @@ describe('User Repository', () => {
     });
   });
 
-  describe('findUserByExternalId', () => {
-    it('should find user by external ID and auth provider', async () => {
+  describe("findUserByExternalId", () => {
+    it("should find user by external ID and auth provider", async () => {
       // Arrange
       const userData = UserFactory.buildClerkUser({
-        externalId: 'clerk_external123',
-        authProvider: 'clerk',
+        externalId: "clerk_external123",
+        authProvider: "clerk",
       });
       const created = await createUser(userData);
 
       // Act
-      const result = await findUserByExternalId('clerk_external123', 'clerk');
+      const result = await findUserByExternalId("clerk_external123", "clerk");
 
       // Assert
       expect(result).not.toBeNull();
       expect(result?.id).toBe(created.id);
-      expect(result?.externalId).toBe('clerk_external123');
-      expect(result?.authProvider).toBe('clerk');
+      expect(result?.externalId).toBe("clerk_external123");
+      expect(result?.authProvider).toBe("clerk");
     });
 
-    it('should return null when auth provider does not match', async () => {
+    it("should return null when auth provider does not match", async () => {
       // Arrange
       const userData = UserFactory.buildClerkUser({
-        externalId: 'clerk_external456',
-        authProvider: 'clerk',
+        externalId: "clerk_external456",
+        authProvider: "clerk",
       });
       await createUser(userData);
 
       // Act
-      const result = await findUserByExternalId('clerk_external456', 'cloudflare');
+      const result = await findUserByExternalId(
+        "clerk_external456",
+        "cloudflare",
+      );
 
       // Assert
       expect(result).toBeNull();
     });
 
-    it('should exclude soft-deleted users by external ID', async () => {
+    it("should exclude soft-deleted users by external ID", async () => {
       // Arrange
       const userData = UserFactory.buildCloudflareUser({
-        externalId: 'cf_external789',
-        authProvider: 'cloudflare',
+        externalId: "cf_external789",
+        authProvider: "cloudflare",
       });
       const created = await createUser(userData);
       await deleteUser(created.id);
 
       // Act
-      const result = await findUserByExternalId('cf_external789', 'cloudflare');
+      const result = await findUserByExternalId("cf_external789", "cloudflare");
 
       // Assert
       expect(result).toBeNull();
     });
   });
 
-  describe('createUser', () => {
-    it('should create user with all fields populated', async () => {
+  describe("createUser", () => {
+    it("should create user with all fields populated", async () => {
       // Arrange
       const userData = UserFactory.build({
-        email: 'fulldata@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        displayName: 'John Doe',
-        authProvider: 'local',
+        email: "fulldata@example.com",
+        firstName: "John",
+        lastName: "Doe",
+        displayName: "John Doe",
+        authProvider: "local",
         isActive: true,
       });
 
@@ -191,24 +194,24 @@ describe('User Repository', () => {
       // Assert
       expect(result).toBeDefined();
       expect(result.id).toBeGreaterThan(0);
-      expect(result.email).toBe('fulldata@example.com');
-      expect(result.firstName).toBe('John');
-      expect(result.lastName).toBe('Doe');
-      expect(result.displayName).toBe('John Doe');
-      expect(result.authProvider).toBe('local');
+      expect(result.email).toBe("fulldata@example.com");
+      expect(result.firstName).toBe("John");
+      expect(result.lastName).toBe("Doe");
+      expect(result.displayName).toBe("John Doe");
+      expect(result.authProvider).toBe("local");
       expect(result.isActive).toBe(true);
       expect(result.createdAt).toBeInstanceOf(Date);
       expect(result.updatedAt).toBeInstanceOf(Date);
       expect(result.deletedAt).toBeNull();
     });
 
-    it('should create user with minimal required fields', async () => {
+    it("should create user with minimal required fields", async () => {
       // Arrange
       const minimalData: NewUser = {
-        email: 'minimal@example.com',
+        email: "minimal@example.com",
         isEmailVerified: false,
         isActive: true,
-        authProvider: 'local',
+        authProvider: "local",
       };
 
       // Act
@@ -217,16 +220,16 @@ describe('User Repository', () => {
       // Assert
       expect(result).toBeDefined();
       expect(result.id).toBeGreaterThan(0);
-      expect(result.email).toBe('minimal@example.com');
+      expect(result.email).toBe("minimal@example.com");
       expect(result.firstName).toBeNull();
       expect(result.lastName).toBeNull();
-      expect(result.authProvider).toBe('local');
+      expect(result.authProvider).toBe("local");
     });
 
-    it('should throw error when creating user with duplicate email', async () => {
+    it("should throw error when creating user with duplicate email", async () => {
       // Arrange
       const userData = UserFactory.build({
-        email: 'duplicate@example.com',
+        email: "duplicate@example.com",
       });
       await createUser(userData);
 
@@ -236,12 +239,12 @@ describe('User Repository', () => {
       }).rejects.toThrow();
     });
 
-    it('should set default values for boolean fields', async () => {
+    it("should set default values for boolean fields", async () => {
       // Arrange
       const userData: NewUser = {
-        email: 'defaults@example.com',
+        email: "defaults@example.com",
         isEmailVerified: false,
-        authProvider: 'local',
+        authProvider: "local",
         isActive: true,
       };
 
@@ -253,11 +256,11 @@ describe('User Repository', () => {
       expect(result.isEmailVerified).toBe(false);
     });
 
-    it('should automatically set timestamps on creation', async () => {
+    it("should automatically set timestamps on creation", async () => {
       // Arrange
       const beforeCreate = new Date();
       const userData = UserFactory.build({
-        email: 'timestamps@example.com',
+        email: "timestamps@example.com",
       });
 
       // Act
@@ -267,36 +270,44 @@ describe('User Repository', () => {
       // Assert
       expect(result.createdAt).toBeInstanceOf(Date);
       expect(result.updatedAt).toBeInstanceOf(Date);
-      expect(result.createdAt.getTime()).toBeGreaterThanOrEqual(beforeCreate.getTime());
-      expect(result.createdAt.getTime()).toBeLessThanOrEqual(afterCreate.getTime());
-      expect(result.updatedAt.getTime()).toBeGreaterThanOrEqual(beforeCreate.getTime());
-      expect(result.updatedAt.getTime()).toBeLessThanOrEqual(afterCreate.getTime());
+      expect(result.createdAt.getTime()).toBeGreaterThanOrEqual(
+        beforeCreate.getTime(),
+      );
+      expect(result.createdAt.getTime()).toBeLessThanOrEqual(
+        afterCreate.getTime(),
+      );
+      expect(result.updatedAt.getTime()).toBeGreaterThanOrEqual(
+        beforeCreate.getTime(),
+      );
+      expect(result.updatedAt.getTime()).toBeLessThanOrEqual(
+        afterCreate.getTime(),
+      );
     });
   });
 
-  describe('updateUser', () => {
-    it('should update user fields successfully', async () => {
+  describe("updateUser", () => {
+    it("should update user fields successfully", async () => {
       // Arrange
       const userData = UserFactory.build({
-        firstName: 'Original',
-        lastName: 'Name',
+        firstName: "Original",
+        lastName: "Name",
       });
       const created = await createUser(userData);
 
       // Act
       const result = await updateUser(created.id, {
-        firstName: 'Updated',
-        lastName: 'NewName',
+        firstName: "Updated",
+        lastName: "NewName",
       });
 
       // Assert
       expect(result).not.toBeNull();
-      expect(result?.firstName).toBe('Updated');
-      expect(result?.lastName).toBe('NewName');
+      expect(result?.firstName).toBe("Updated");
+      expect(result?.lastName).toBe("NewName");
       expect(result?.email).toBe(created.email); // Unchanged field
     });
 
-    it('should update updatedAt timestamp when updating user', async () => {
+    it("should update updatedAt timestamp when updating user", async () => {
       // Arrange
       const userData = UserFactory.build();
       const created = await createUser(userData);
@@ -309,15 +320,17 @@ describe('User Repository', () => {
 
       // Act
       const result = await updateUser(created.id, {
-        firstName: 'Changed',
+        firstName: "Changed",
       });
 
       // Assert
       expect(result).not.toBeNull();
-      expect(result!.updatedAt.getTime()).toBeGreaterThan(originalUpdatedAt.getTime());
+      expect(result!.updatedAt.getTime()).toBeGreaterThan(
+        originalUpdatedAt.getTime(),
+      );
     });
 
-    it('should return null when updating soft-deleted user', async () => {
+    it("should return null when updating soft-deleted user", async () => {
       // Arrange
       const userData = UserFactory.build();
       const created = await createUser(userData);
@@ -325,17 +338,17 @@ describe('User Repository', () => {
 
       // Act
       const result = await updateUser(created.id, {
-        firstName: 'ShouldNotUpdate',
+        firstName: "ShouldNotUpdate",
       });
 
       // Assert
       expect(result).toBeNull();
     });
 
-    it('should return null when updating non-existent user', async () => {
+    it("should return null when updating non-existent user", async () => {
       // Act
       const result = await updateUser(99999, {
-        firstName: 'NonExistent',
+        firstName: "NonExistent",
       });
 
       // Assert
@@ -343,8 +356,8 @@ describe('User Repository', () => {
     });
   });
 
-  describe('deleteUser', () => {
-    it('should soft delete user by setting deletedAt timestamp', async () => {
+  describe("deleteUser", () => {
+    it("should soft delete user by setting deletedAt timestamp", async () => {
       // Arrange
       const userData = UserFactory.build();
       const created = await createUser(userData);
@@ -364,11 +377,15 @@ describe('User Repository', () => {
       // Verify deletedAt is set (using raw query to bypass soft delete filter)
       const rawUser = await findUserByIdIncludingDeleted(created.id);
       expect(rawUser?.deletedAt).toBeInstanceOf(Date);
-      expect(rawUser!.deletedAt!.getTime()).toBeGreaterThanOrEqual(beforeDelete.getTime());
-      expect(rawUser!.deletedAt!.getTime()).toBeLessThanOrEqual(afterDelete.getTime());
+      expect(rawUser!.deletedAt!.getTime()).toBeGreaterThanOrEqual(
+        beforeDelete.getTime(),
+      );
+      expect(rawUser!.deletedAt!.getTime()).toBeLessThanOrEqual(
+        afterDelete.getTime(),
+      );
     });
 
-    it('should set isActive to false when soft deleting', async () => {
+    it("should set isActive to false when soft deleting", async () => {
       // Arrange
       const userData = UserFactory.build({
         isActive: true,
@@ -383,7 +400,7 @@ describe('User Repository', () => {
       expect(rawUser?.isActive).toBe(false);
     });
 
-    it('should preserve deletedAt timestamp when user is already deleted', async () => {
+    it("should preserve deletedAt timestamp when user is already deleted", async () => {
       // Arrange
       const userData = UserFactory.build();
       const created = await createUser(userData);
@@ -397,10 +414,12 @@ describe('User Repository', () => {
       // Assert
       expect(result).toBe(false); // Should return false as user is already deleted
       const secondDelete = await findUserByIdIncludingDeleted(created.id);
-      expect(secondDelete?.deletedAt?.getTime()).toBe(firstDeletedAt?.getTime());
+      expect(secondDelete?.deletedAt?.getTime()).toBe(
+        firstDeletedAt?.getTime(),
+      );
     });
 
-    it('should return false when deleting non-existent user', async () => {
+    it("should return false when deleting non-existent user", async () => {
       // Act
       const result = await deleteUser(99999);
 
@@ -408,7 +427,7 @@ describe('User Repository', () => {
       expect(result).toBe(false);
     });
 
-    it('should return false when user is already soft-deleted', async () => {
+    it("should return false when user is already soft-deleted", async () => {
       // Arrange
       const userData = UserFactory.build();
       const created = await createUser(userData);
@@ -422,8 +441,8 @@ describe('User Repository', () => {
     });
   });
 
-  describe('permanentlyDeleteUser', () => {
-    it('should permanently delete user from database', async () => {
+  describe("permanentlyDeleteUser", () => {
+    it("should permanently delete user from database", async () => {
       // Arrange
       const userData = UserFactory.build();
       const created = await createUser(userData);
@@ -439,7 +458,7 @@ describe('User Repository', () => {
       expect(deleted).toBeNull();
     });
 
-    it('should return false when permanently deleting non-existent user', async () => {
+    it("should return false when permanently deleting non-existent user", async () => {
       // Act
       const result = await permanentlyDeleteUser(99999);
 
@@ -447,7 +466,7 @@ describe('User Repository', () => {
       expect(result).toBe(false);
     });
 
-    it('should cascade delete user sessions when permanently deleting user', async () => {
+    it("should cascade delete user sessions when permanently deleting user", async () => {
       // Arrange
       const userData = UserFactory.build();
       const created = await createUser(userData);
@@ -464,17 +483,19 @@ describe('User Repository', () => {
     });
   });
 
-  describe('findAllUsers', () => {
+  describe("findAllUsers", () => {
     beforeEach(async () => {
       // Create 25 test users for pagination tests
       for (let i = 0; i < 25; i++) {
-        await createUser(UserFactory.build({
-          email: `user${i}@example.com`,
-        }));
+        await createUser(
+          UserFactory.build({
+            email: `user${i}@example.com`,
+          }),
+        );
       }
     });
 
-    it('should return first page with default page size', async () => {
+    it("should return first page with default page size", async () => {
       // Act
       const result = await findAllUsers({ page: 1 });
 
@@ -483,7 +504,7 @@ describe('User Repository', () => {
       expect(result.total).toBe(25);
     });
 
-    it('should return second page with correct offset', async () => {
+    it("should return second page with correct offset", async () => {
       // Act
       const result = await findAllUsers({ page: 2, pageSize: 10 });
 
@@ -492,9 +513,9 @@ describe('User Repository', () => {
       expect(result.total).toBe(25);
     });
 
-    it('should exclude soft-deleted users by default', async () => {
+    it("should exclude soft-deleted users by default", async () => {
       // Arrange
-      const userData = UserFactory.build({ email: 'todelete@example.com' });
+      const userData = UserFactory.build({ email: "todelete@example.com" });
       const created = await createUser(userData);
       await deleteUser(created.id);
 
@@ -503,13 +524,15 @@ describe('User Repository', () => {
 
       // Assert
       expect(result.total).toBe(25); // Should not include the deleted user
-      const deletedUser = result.users.find(u => u.id === created.id);
+      const deletedUser = result.users.find((u) => u.id === created.id);
       expect(deletedUser).toBeUndefined();
     });
 
-    it('should include soft-deleted users when includeDeleted is true', async () => {
+    it("should include soft-deleted users when includeDeleted is true", async () => {
       // Arrange
-      const userData = UserFactory.build({ email: 'includeDeleted@example.com' });
+      const userData = UserFactory.build({
+        email: "includeDeleted@example.com",
+      });
       const created = await createUser(userData);
       await deleteUser(created.id);
 
@@ -518,12 +541,12 @@ describe('User Repository', () => {
 
       // Assert
       expect(result.total).toBe(26); // Should include all users + deleted one
-      const deletedUser = result.users.find(u => u.id === created.id);
+      const deletedUser = result.users.find((u) => u.id === created.id);
       expect(deletedUser).toBeDefined();
       expect(deletedUser?.deletedAt).not.toBeNull();
     });
 
-    it('should return empty array when page exceeds available data', async () => {
+    it("should return empty array when page exceeds available data", async () => {
       // Act
       const result = await findAllUsers({ page: 100, pageSize: 20 });
 
@@ -532,7 +555,7 @@ describe('User Repository', () => {
       expect(result.total).toBe(25);
     });
 
-    it('should sort users by creation date in descending order', async () => {
+    it("should sort users by creation date in descending order", async () => {
       // Act
       const result = await findAllUsers({ page: 1, pageSize: 5 });
 
@@ -547,8 +570,8 @@ describe('User Repository', () => {
     });
   });
 
-  describe('updateLastLogin', () => {
-    it('should update lastLoginAt timestamp', async () => {
+  describe("updateLastLogin", () => {
+    it("should update lastLoginAt timestamp", async () => {
       // Arrange
       const userData = UserFactory.build({
         lastLoginAt: null,
@@ -563,15 +586,19 @@ describe('User Repository', () => {
       // Assert
       const updated = await findUserByIdIncludingDeleted(created.id);
       expect(updated?.lastLoginAt).toBeInstanceOf(Date);
-      expect(updated!.lastLoginAt!.getTime()).toBeGreaterThanOrEqual(beforeUpdate.getTime());
-      expect(updated!.lastLoginAt!.getTime()).toBeLessThanOrEqual(afterUpdate.getTime());
+      expect(updated!.lastLoginAt!.getTime()).toBeGreaterThanOrEqual(
+        beforeUpdate.getTime(),
+      );
+      expect(updated!.lastLoginAt!.getTime()).toBeLessThanOrEqual(
+        afterUpdate.getTime(),
+      );
     });
 
-    it('should not affect other user fields when updating last login', async () => {
+    it("should not affect other user fields when updating last login", async () => {
       // Arrange
       const userData = UserFactory.build({
-        firstName: 'Original',
-        email: 'lastlogin@example.com',
+        firstName: "Original",
+        email: "lastlogin@example.com",
       });
       const created = await createUser(userData);
 
@@ -580,17 +607,17 @@ describe('User Repository', () => {
 
       // Assert
       const updated = await findUserByIdIncludingDeleted(created.id);
-      expect(updated?.firstName).toBe('Original');
-      expect(updated?.email).toBe('lastlogin@example.com');
+      expect(updated?.firstName).toBe("Original");
+      expect(updated?.email).toBe("lastlogin@example.com");
       expect(updated?.isActive).toBe(created.isActive);
     });
   });
 
-  describe('verifyEmail', () => {
-    it('should set email verification flags to true', async () => {
+  describe("verifyEmail", () => {
+    it("should set email verification flags to true", async () => {
       // Arrange
       const userData = UserFactory.buildUnverified({
-        email: 'unverified@example.com',
+        email: "unverified@example.com",
       });
       const created = await createUser(userData);
 
@@ -603,7 +630,7 @@ describe('User Repository', () => {
       expect(result?.isEmailVerified).toBe(true);
     });
 
-    it('should update updatedAt timestamp when verifying email', async () => {
+    it("should update updatedAt timestamp when verifying email", async () => {
       // Arrange
       const userData = UserFactory.buildUnverified();
       const created = await createUser(userData);
@@ -619,14 +646,16 @@ describe('User Repository', () => {
 
       // Assert
       expect(result).not.toBeNull();
-      expect(result!.updatedAt.getTime()).toBeGreaterThan(originalUpdatedAt.getTime());
+      expect(result!.updatedAt.getTime()).toBeGreaterThan(
+        originalUpdatedAt.getTime(),
+      );
     });
 
-    it('should return updated user after email verification', async () => {
+    it("should return updated user after email verification", async () => {
       // Arrange
       const userData = UserFactory.buildUnverified({
-        email: 'verify@example.com',
-        firstName: 'Test',
+        email: "verify@example.com",
+        firstName: "Test",
       });
       const created = await createUser(userData);
 
@@ -636,15 +665,15 @@ describe('User Repository', () => {
       // Assert
       expect(result).not.toBeNull();
       expect(result?.id).toBe(created.id);
-      expect(result?.email).toBe('verify@example.com');
-      expect(result?.firstName).toBe('Test');
+      expect(result?.email).toBe("verify@example.com");
+      expect(result?.firstName).toBe("Test");
       expect(result?.isEmailVerified).toBe(true);
     });
 
-    it('should work even if email was already verified', async () => {
+    it("should work even if email was already verified", async () => {
       // Arrange
       const userData = UserFactory.build({
-        email: 'alreadyverified@example.com',
+        email: "alreadyverified@example.com",
         isEmailVerified: true,
       });
       const created = await createUser(userData);
@@ -658,61 +687,69 @@ describe('User Repository', () => {
     });
   });
 
-  describe('Edge Cases and Integration', () => {
-    it('should handle creating multiple users with different auth providers', async () => {
+  describe("Edge Cases and Integration", () => {
+    it("should handle creating multiple users with different auth providers", async () => {
       // Arrange & Act
-      const localUser = await createUser(UserFactory.build({
-        email: 'local@example.com',
-        authProvider: 'local',
-      }));
-      const clerkUser = await createUser(UserFactory.buildClerkUser({
-        email: 'clerk@example.com',
-      }));
-      const cloudflareUser = await createUser(UserFactory.buildCloudflareUser({
-        email: 'cloudflare@example.com',
-      }));
+      const localUser = await createUser(
+        UserFactory.build({
+          email: "local@example.com",
+          authProvider: "local",
+        }),
+      );
+      const clerkUser = await createUser(
+        UserFactory.buildClerkUser({
+          email: "clerk@example.com",
+        }),
+      );
+      const cloudflareUser = await createUser(
+        UserFactory.buildCloudflareUser({
+          email: "cloudflare@example.com",
+        }),
+      );
 
       // Assert
-      expect(localUser.authProvider).toBe('local');
-      expect(clerkUser.authProvider).toBe('clerk');
-      expect(cloudflareUser.authProvider).toBe('cloudflare');
+      expect(localUser.authProvider).toBe("local");
+      expect(clerkUser.authProvider).toBe("clerk");
+      expect(cloudflareUser.authProvider).toBe("cloudflare");
       expect(localUser.passwordHash).toBeTruthy();
       expect(clerkUser.passwordHash).toBeNull();
       expect(cloudflareUser.passwordHash).toBeNull();
     });
 
-    it('should maintain data integrity when updating multiple fields at once', async () => {
+    it("should maintain data integrity when updating multiple fields at once", async () => {
       // Arrange
       const userData = UserFactory.build({
-        firstName: 'John',
-        lastName: 'Doe',
+        firstName: "John",
+        lastName: "Doe",
         isActive: true,
       });
       const created = await createUser(userData);
 
       // Act
       const result = await updateUser(created.id, {
-        firstName: 'Jane',
-        lastName: 'Smith',
-        displayName: 'Jane Smith',
+        firstName: "Jane",
+        lastName: "Smith",
+        displayName: "Jane Smith",
         isActive: false,
       });
 
       // Assert
       expect(result).not.toBeNull();
-      expect(result?.firstName).toBe('Jane');
-      expect(result?.lastName).toBe('Smith');
-      expect(result?.displayName).toBe('Jane Smith');
+      expect(result?.firstName).toBe("Jane");
+      expect(result?.lastName).toBe("Smith");
+      expect(result?.displayName).toBe("Jane Smith");
       expect(result?.isActive).toBe(false);
       expect(result?.email).toBe(created.email); // Unchanged
     });
 
-    it('should handle pagination edge case with exact page size match', async () => {
+    it("should handle pagination edge case with exact page size match", async () => {
       // Arrange - Create exactly 20 users
       for (let i = 0; i < 20; i++) {
-        await createUser(UserFactory.build({
-          email: `exact${i}@example.com`,
-        }));
+        await createUser(
+          UserFactory.build({
+            email: `exact${i}@example.com`,
+          }),
+        );
       }
 
       // Act
@@ -733,15 +770,11 @@ describe('User Repository', () => {
  * Used for testing soft delete behavior
  */
 async function findUserByIdIncludingDeleted(id: number) {
-  const { db } = await import('@/server/db/DB');
-  const { users } = await import('@/server/db/models/Schema');
-  const { eq } = await import('drizzle-orm');
+  const { db } = await import("@/server/db/DB");
+  const { users } = await import("@/server/db/models/Schema");
+  const { eq } = await import("drizzle-orm");
 
-  const result = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, id))
-    .limit(1);
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
 
   return result[0] || null;
 }

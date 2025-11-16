@@ -1,19 +1,19 @@
-import type { MetadataRoute } from 'next';
-import { routing } from '@/libs/I18nRouting';
-import { getBaseUrl, getI18nPath } from '@/shared/utils/helpers';
+import type { MetadataRoute } from "next";
+import { routing } from "@/libs/I18nRouting";
+import { getBaseUrl, getI18nPath } from "@/shared/utils/helpers";
 
 const marketingPaths = [
-  '/',
-  '/about',
-  '/counter',
-  '/portfolio',
-  '/landing',
-  '/pricing',
-  '/features',
-  '/contact',
+  "/",
+  "/about",
+  "/counter",
+  "/portfolio",
+  "/landing",
+  "/pricing",
+  "/features",
+  "/contact",
 ];
 
-const authPaths = ['/sign-in', '/sign-up', '/dashboard'];
+const authPaths = ["/sign-in", "/sign-up", "/dashboard"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = await getBaseUrl();
@@ -24,10 +24,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const buildEntry = async (
         path: string,
         priority = 0.7,
-        changeFrequency: MetadataRoute.Sitemap[0]['changeFrequency'] = 'weekly',
+        changeFrequency: MetadataRoute.Sitemap[0]["changeFrequency"] = "weekly",
       ) => {
         const localizedPath = await getI18nPath(path, locale);
-        const relativePath = localizedPath === '/' ? '' : localizedPath;
+        const relativePath = localizedPath === "/" ? "" : localizedPath;
         return {
           url: new URL(relativePath, baseUrl).toString(),
           lastModified: now,
@@ -37,10 +37,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       };
 
       const marketingEntries = await Promise.all(
-        marketingPaths.map(path => buildEntry(path, path === '/' ? 1 : 0.7, 'weekly')),
+        marketingPaths.map((path) =>
+          buildEntry(path, path === "/" ? 1 : 0.7, "weekly"),
+        ),
       );
       const authEntries = await Promise.all(
-        authPaths.map(path => buildEntry(path, 0.3, 'monthly')),
+        authPaths.map((path) => buildEntry(path, 0.3, "monthly")),
       );
 
       return [...marketingEntries, ...authEntries];
