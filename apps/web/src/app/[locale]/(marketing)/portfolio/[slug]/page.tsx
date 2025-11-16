@@ -68,5 +68,3 @@ export default async function PortfolioDetail(props: IPortfolioDetailProps) {
     </>
   );
 }
-
-export const dynamicParams = false;

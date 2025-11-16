@@ -83,6 +83,22 @@ const mapTenantRecord = (record: typeof tenants.$inferSelect): TenantRecord => {
   };
 };
 
+const isMissingTenantTableError = (error: any) => {
+  const code = error?.code ?? error?.cause?.code;
+  if (code === "42P01") {
+    // PostgreSQL error code for "relation does not exist"
+    return true;
+  }
+
+  const message = (error?.message ?? error?.cause?.message ?? "")
+    .toString()
+    .toLowerCase();
+
+  // SQLite / D1 typically throws errors containing "no such table"
+  return message.includes("no such table");
+};
+
+
 const getTenantBySlug = async (slug: string) => {
   const normalized = slug.toLowerCase();
   const cacheKey = makeCacheKey("slug", normalized);
@@ -102,9 +118,7 @@ const getTenantBySlug = async (slug: string) => {
     return tenant;
   } catch (error: any) {
     // Gracefully handle missing tenant tables (e.g., during migrations or in test environments)
-    // Check both error.code and error.cause.code for PostgreSQL error codes
-    if (error.code === "42P01" || error.cause?.code === "42P01") {
-      // PostgreSQL error code for "relation does not exist"
+    if (isMissingTenantTableError(error)) {
       // Return null - default tenant will be used
       return null;
     }
@@ -139,9 +153,7 @@ const getTenantByDomain = async (domain: string) => {
     return tenant;
   } catch (error: any) {
     // Gracefully handle missing tenant tables (e.g., during migrations or in test environments)
-    // Check both error.code and error.cause.code for PostgreSQL error codes
-    if (error.code === "42P01" || error.cause?.code === "42P01") {
-      // PostgreSQL error code for "relation does not exist"
+    if (isMissingTenantTableError(error)) {
       // Return null - default tenant will be used
       return null;
     }

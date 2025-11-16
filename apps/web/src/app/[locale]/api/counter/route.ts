@@ -19,7 +19,7 @@ export const PUT = async (request: Request) => {
   // The default value is 0 when there is no `x-e2e-random-id` header
   const id = Number((await headers()).get("x-e2e-random-id")) || 0;
 
-  const count = await db
+  const count = await (db as any)
     .insert(counter)
     .values({ id, count: parse.data.increment })
     .onConflictDoUpdate({

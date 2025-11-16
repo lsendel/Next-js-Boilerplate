@@ -47,8 +47,8 @@ test.describe('Test Adapter Authentication', () => {
 
     await page.click('button[type="submit"]');
 
-    // Should show error message
-    const errorAlert = page.locator('div[role="alert"]');
+    // Should show error message (use .first() to handle multiple alerts)
+    const errorAlert = page.locator('div[role="alert"]').first();
     await expect(errorAlert).toBeVisible();
     await expect(errorAlert).toContainText('Password must be at least 8 characters');
   });
@@ -62,8 +62,8 @@ test.describe('Test Adapter Authentication', () => {
 
     await page.click('button[type="submit"]');
 
-    // Should show error message
-    const errorAlert = page.locator('div[role="alert"]');
+    // Should show error message (use .first() to handle multiple alerts)
+    const errorAlert = page.locator('div[role="alert"]').first();
     await expect(errorAlert).toBeVisible();
     await expect(errorAlert).toContainText('Passwords do not match');
   });
