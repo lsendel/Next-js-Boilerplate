@@ -1,0 +1,354 @@
+# Integrations
+
+The Next.js Boilerplate includes production-ready integrations with best-in-class services.
+
+## Overview
+
+Pre-integrated and configured:
+
+- 🐛 **[Sentry](/integrations/sentry)** - Error monitoring and performance tracking
+- 📊 **[PostHog](/integrations/posthog)** - Product analytics and feature flags
+- 🛡️ **[Arcjet](/integrations/arcjet)** - Security, bot detection, rate limiting
+- 📝 **[LogTape](/integrations/logtape)** - Structured logging
+- 📈 **[Better Stack](/integrations/better-stack)** - Log management and uptime monitoring
+- 🔍 **[Checkly](/integrations/checkly)** - Synthetic monitoring as code
+- 🌍 **[Crowdin](/integrations/crowdin)** - Translation management
+
+## Quick Setup
+
+Most integrations are already configured - you just need to add API keys:
+
+```bash
+# apps/web/.env.local
+SENTRY_DSN=https://your-sentry-dsn
+NEXT_PUBLIC_POSTHOG_KEY=phc_your_key
+ARCJET_KEY=your_arcjet_key
+NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN=your_token
+```
+
+## Integration Status
+
+| Service | Status | Setup Required | Documentation |
+|---------|--------|----------------|---------------|
+| **Sentry** | ✅ Configured | Add DSN | [Guide](/integrations/sentry) |
+| **PostHog** | ✅ Configured | Add API key | [Guide](/integrations/posthog) |
+| **Arcjet** | ✅ Configured | Add API key | [Guide](/integrations/arcjet) |
+| **LogTape** | ✅ Configured | Optional token | [Guide](/integrations/logtape) |
+| **Better Stack** | ✅ Configured | Add token | [Guide](/integrations/better-stack) |
+| **Checkly** | ✅ Configured | Add API key | [Guide](/integrations/checkly) |
+| **Crowdin** | ✅ Configured | Add project ID | [Guide](/integrations/crowdin) |
+
+## Error Monitoring & Performance
+
+### [Sentry](/integrations/sentry)
+
+**Error tracking and performance monitoring:**
+- Automatic error capture
+- Performance monitoring
+- Release tracking
+- Source map upload
+- Spotlight for local development
+
+```typescript
+import * as Sentry from '@sentry/nextjs'
+
+Sentry.captureException(error)
+Sentry.captureMessage('Custom event')
+```
+
+**Setup:** Add `SENTRY_DSN` to environment variables
+
+[Full Sentry guide →](/integrations/sentry)
+
+## Analytics
+
+### [PostHog](/integrations/posthog)
+
+**Product analytics and feature flags:**
+- Event tracking
+- User identification
+- Feature flags
+- A/B testing
+- Session replays
+
+```typescript
+import { usePostHog } from 'posthog-js/react'
+
+const posthog = usePostHog()
+posthog.capture('button_clicked', { location: 'header' })
+```
+
+**Setup:** Add `NEXT_PUBLIC_POSTHOG_KEY`
+
+[Full PostHog guide →](/integrations/posthog)
+
+## Security
+
+### [Arcjet](/integrations/arcjet)
+
+**Security, bot detection, and rate limiting:**
+- Shield WAF
+- Bot detection
+- Rate limiting (token bucket)
+- Email validation
+- Attack protection
+
+```typescript
+import { arcjet } from '@/libs/Arcjet'
+
+const decision = await arcjet.protect(request)
+if (decision.isDenied()) {
+  return new Response('Forbidden', { status: 403 })
+}
+```
+
+**Setup:** Add `ARCJET_KEY`
+
+[Full Arcjet guide →](/integrations/arcjet)
+
+## Logging & Monitoring
+
+### [LogTape](/integrations/logtape)
+
+**Structured logging:**
+- Multiple log levels
+- Context-aware logging
+- JSON formatting
+- Better Stack integration
+
+```typescript
+import { logger } from '@/libs/Logger'
+
+logger.info('User action', { userId, action: 'login' })
+logger.error('Payment failed', { error, userId, amount })
+```
+
+**Setup:** Pre-configured, optionally add Better Stack token
+
+[Full LogTape guide →](/integrations/logtape)
+
+### [Better Stack](/integrations/better-stack)
+
+**Log management and uptime monitoring:**
+- Log aggregation
+- Real-time search
+- Dashboards
+- Alerts
+- Uptime monitoring
+
+**Setup:** Add `NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN`
+
+[Full Better Stack guide →](/integrations/better-stack)
+
+### [Checkly](/integrations/checkly)
+
+**Synthetic monitoring as code:**
+- API monitoring
+- E2E test monitoring
+- Uptime checks
+- Alert configuration
+- Status pages
+
+```typescript
+// E2E tests with *.check.e2e.ts run as monitoring
+test('homepage loads', async ({ page }) => {
+  await page.goto('https://yourapp.com')
+  await expect(page.locator('h1')).toBeVisible()
+})
+```
+
+**Setup:** Add `CHECKLY_API_KEY`
+
+[Full Checkly guide →](/integrations/checkly)
+
+## Internationalization
+
+### [Crowdin](/integrations/crowdin)
+
+**Translation management:**
+- Auto-sync translations
+- Machine translation
+- Collaboration tools
+- Version control
+
+**Setup:** Add `CROWDIN_PROJECT_ID` and `CROWDIN_PERSONAL_TOKEN` to GitHub secrets
+
+[Full Crowdin guide →](/integrations/crowdin)
+
+## Environment Variables
+
+### Required for Production
+
+```bash
+# Error Monitoring
+SENTRY_DSN=https://your-sentry-dsn
+NEXT_PUBLIC_SENTRY_DSN=https://your-sentry-dsn
+SENTRY_AUTH_TOKEN=your_auth_token
+SENTRY_ORG=your-org
+SENTRY_PROJECT=your-project
+
+# Analytics
+NEXT_PUBLIC_POSTHOG_KEY=phc_your_key
+NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
+
+# Security
+ARCJET_KEY=your_arcjet_key
+ARCJET_MODE=LIVE
+
+# Logging
+NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN=your_token
+
+# Optional: Google Analytics
+NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
+```
+
+### Optional for CI/CD
+
+```bash
+# Checkly (synthetic monitoring)
+CHECKLY_API_KEY=your_checkly_key
+CHECKLY_ACCOUNT_ID=your_account_id
+
+# Crowdin (translations)
+CROWDIN_PROJECT_ID=your_project_id
+CROWDIN_PERSONAL_TOKEN=your_personal_token
+```
+
+## Best Practices
+
+### Error Monitoring
+
+✅ **DO:**
+- Set up error alerts
+- Configure release tracking
+- Use breadcrumbs for context
+- Filter out expected errors
+- Set up source maps
+
+❌ **DON'T:**
+- Log sensitive data
+- Ignore error thresholds
+- Skip production testing
+
+### Analytics
+
+✅ **DO:**
+- Identify users
+- Track key events
+- Use feature flags
+- Respect privacy (GDPR)
+- Test tracking locally
+
+❌ **DON'T:**
+- Track PII without consent
+- Create too many events
+- Forget to anonymize data
+
+### Logging
+
+✅ **DO:**
+- Use appropriate log levels
+- Include context (userId, etc.)
+- Structure logs (JSON)
+- Rotate log files
+- Set up alerts
+
+❌ **DON'T:**
+- Log passwords or secrets
+- Use console.log in production
+- Create excessive logs
+- Ignore log analysis
+
+## Cost Optimization
+
+### Free Tiers
+
+- **Sentry:** 5,000 errors/month
+- **PostHog:** 1M events/month
+- **Arcjet:** Generous free tier
+- **Better Stack:** 1GB logs/month
+- **Checkly:** 150 checks/month
+- **Crowdin:** Free for open source
+
+### Reduce Costs
+
+1. **Sample data** - Don't send everything
+2. **Filter noise** - Ignore known errors
+3. **Set retention** - Delete old data
+4. **Use environments** - Dev/staging separate
+
+## Testing Integrations Locally
+
+### Sentry Spotlight
+
+```bash
+pnpm --filter web dev:spotlight
+```
+
+Access at: http://localhost:3000/monitoring
+
+### PostHog (Test Mode)
+
+```bash
+# Use test API key
+NEXT_PUBLIC_POSTHOG_KEY=phc_test_key
+```
+
+### Arcjet (Dry Run Mode)
+
+```bash
+ARCJET_MODE=DRY_RUN
+```
+
+## Troubleshooting
+
+### Sentry Not Capturing Errors
+
+1. Check `SENTRY_DSN` is set
+2. Verify source maps uploaded
+3. Check error filters
+4. Test with `Sentry.captureException(new Error('Test'))`
+
+### PostHog Events Not Showing
+
+1. Check API key is valid
+2. Verify host URL correct
+3. Check browser console for errors
+4. Events may take a few minutes to appear
+
+### Arcjet Blocking Legitimate Traffic
+
+1. Check bot categories configured
+2. Verify rate limits appropriate
+3. Review decision logs
+4. Adjust rules in `apps/web/src/middleware.ts`
+
+## Migration from Other Services
+
+### From New Relic to Sentry
+
+Sentry provides similar error tracking with better Next.js integration.
+
+### From Mixpanel to PostHog
+
+PostHog offers similar analytics plus feature flags and session replay.
+
+### From CloudFlare to Arcjet
+
+Arcjet provides similar bot protection with better Next.js integration.
+
+## Next Steps
+
+- **[Sentry Setup](/integrations/sentry)** - Error monitoring
+- **[PostHog Setup](/integrations/posthog)** - Analytics
+- **[Arcjet Setup](/integrations/arcjet)** - Security
+- **[LogTape Setup](/integrations/logtape)** - Logging
+- **[Better Stack Setup](/integrations/better-stack)** - Log management
+- **[Checkly Setup](/integrations/checkly)** - Monitoring
+- **[Crowdin Setup](/integrations/crowdin)** - Translations
+
+## Resources
+
+- [Environment Variables Reference](/reference/environment-variables)
+- [Operations Guide](/operations)
+- [Security Guide](/guides/security)

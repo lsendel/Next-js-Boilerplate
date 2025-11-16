@@ -1,0 +1,104 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e6] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e7]:
+      - img [ref=e8]
+    - generic [ref=e11]:
+      - button "Open issues overlay" [ref=e12]:
+        - generic [ref=e13]:
+          - generic [ref=e14]: "2"
+          - generic [ref=e15]: "3"
+        - generic [ref=e16]:
+          - text: Issue
+          - generic [ref=e17]: s
+      - button "Collapse issues badge" [ref=e18]:
+        - img [ref=e19]
+  - generic [ref=e22]:
+    - banner [ref=e23]:
+      - generic [ref=e24]:
+        - heading "Next.js Production Boilerplate" [level=1] [ref=e25]
+        - heading "Starter code for your Nextjs Boilerplate with Tailwind CSS" [level=2] [ref=e26]
+      - generic [ref=e27]:
+        - navigation "Main navigation" [ref=e28]:
+          - list [ref=e29]:
+            - listitem [ref=e30]:
+              - link "Dashboard" [ref=e31] [cursor=pointer]:
+                - /url: /dashboard
+            - listitem [ref=e32]:
+              - link "Manage your account" [ref=e33] [cursor=pointer]:
+                - /url: /dashboard/user-profile
+        - navigation [ref=e34]:
+          - list [ref=e35]:
+            - listitem [ref=e36]:
+              - button "Sign out" [ref=e37]:
+                - button "Sign out" [ref=e38]
+            - listitem [ref=e39]:
+              - combobox "lang-switcher" [ref=e40]:
+                - option "EN" [selected]
+                - option "FR"
+    - main [ref=e41]:
+      - generic [ref=e42]:
+        - paragraph [ref=e43]: 👋 Hello test@example.com!
+        - paragraph [ref=e44]:
+          - text: Need advanced features? Multi-tenancy & Teams, Roles & Permissions, Shadcn UI, End-to-End Typesafety with oRPC, Stripe Payment, Light / Dark mode. Try
+          - link "Next.js Boilerplate Pro" [ref=e45] [cursor=pointer]:
+            - /url: https://nextjs-boilerplate.com/pro-saas-starter-kit
+          - text: .
+        - table [ref=e46]:
+          - rowgroup [ref=e47]:
+            - row "Clerk – Authentication & User Management for Next.js CodeRabbit Sentry" [ref=e48]:
+              - cell "Clerk – Authentication & User Management for Next.js" [ref=e49]:
+                - link "Clerk – Authentication & User Management for Next.js" [ref=e50] [cursor=pointer]:
+                  - /url: https://clerk.com?utm_source=github&utm_medium=sponsorship&utm_campaign=nextjs-boilerplate
+                  - img "Clerk – Authentication & User Management for Next.js" [ref=e51]
+              - cell "CodeRabbit" [ref=e52]:
+                - link "CodeRabbit" [ref=e53] [cursor=pointer]:
+                  - /url: https://www.coderabbit.ai?utm_source=next_js_starter&utm_medium=github&utm_campaign=next_js_starter_oss_2025
+                  - img "CodeRabbit" [ref=e54]
+              - cell "Sentry" [ref=e55]:
+                - link "Sentry" [ref=e56] [cursor=pointer]:
+                  - /url: https://sentry.io/for/nextjs/?utm_source=github&utm_medium=paid-community&utm_campaign=general-fy25q1-nextjs&utm_content=github-banner-nextjsboilerplate-logo
+                  - img "Sentry" [ref=e57]
+            - row "Arcjet Sevalla Crowdin" [ref=e58]:
+              - cell "Arcjet" [ref=e59]:
+                - link "Arcjet" [ref=e60] [cursor=pointer]:
+                  - /url: https://launch.arcjet.com/Q6eLbRE
+                  - img "Arcjet" [ref=e61]
+              - cell "Sevalla" [ref=e62]:
+                - link "Sevalla" [ref=e63] [cursor=pointer]:
+                  - /url: https://sevalla.com/
+                  - img "Sevalla" [ref=e64]
+              - cell "Crowdin" [ref=e65]:
+                - link "Crowdin" [ref=e66] [cursor=pointer]:
+                  - /url: https://l.crowdin.com/next-js
+                  - img "Crowdin" [ref=e67]
+            - row "Better Stack PostHog Checkly" [ref=e68]:
+              - cell "Better Stack" [ref=e69]:
+                - link "Better Stack" [ref=e70] [cursor=pointer]:
+                  - /url: https://betterstack.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=next-js-boilerplate
+                  - img "Better Stack" [ref=e71]
+              - cell "PostHog" [ref=e72]:
+                - link "PostHog" [ref=e73] [cursor=pointer]:
+                  - /url: https://posthog.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=next-js-boilerplate
+                  - img "PostHog" [ref=e74]
+              - cell "Checkly" [ref=e75]:
+                - link "Checkly" [ref=e76] [cursor=pointer]:
+                  - /url: https://www.checklyhq.com/?utm_source=github&utm_medium=sponsorship&utm_campaign=next-js-boilerplate
+                  - img "Checkly" [ref=e77]
+            - row "Next.js SaaS Boilerplate" [ref=e78]:
+              - cell "Next.js SaaS Boilerplate" [ref=e79]:
+                - link "Next.js SaaS Boilerplate" [ref=e80] [cursor=pointer]:
+                  - /url: https://nextjs-boilerplate.com/pro-saas-starter-kit
+                  - img "Next.js SaaS Boilerplate" [ref=e81]
+    - contentinfo [ref=e82]:
+      - text: © Copyright 2025 Next.js Production Boilerplate. Made with
+      - link "Next.js Boilerplate" [ref=e83] [cursor=pointer]:
+        - /url: https://nextjs-boilerplate.com
+      - text: .
+  - link "Demo of Next.js Boilerplate" [ref=e85] [cursor=pointer]:
+    - /url: https://github.com/ixartz/Next-js-Boilerplate
+    - generic [ref=e86]: Demo of Next.js Boilerplate
+  - alert [ref=e87]
+```

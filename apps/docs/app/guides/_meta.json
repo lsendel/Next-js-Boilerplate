@@ -1,0 +1,26 @@
+{
+  "authentication": {
+    "title": "Authentication",
+    "type": "page"
+  },
+  "database": {
+    "title": "Database",
+    "type": "page"
+  },
+  "testing": {
+    "title": "Testing",
+    "type": "page"
+  },
+  "deployment": {
+    "title": "Deployment",
+    "type": "page"
+  },
+  "i18n": {
+    "title": "Internationalization",
+    "type": "page"
+  },
+  "security": {
+    "title": "Security",
+    "type": "page"
+  }
+}

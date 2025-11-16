@@ -1,0 +1,18 @@
+{
+  "index": {
+    "title": "Overview",
+    "type": "page"
+  },
+  "setup": {
+    "title": "Setup",
+    "type": "page"
+  },
+  "translations": {
+    "title": "Managing Translations",
+    "type": "page"
+  },
+  "crowdin": {
+    "title": "Crowdin Workflow",
+    "type": "page"
+  }
+}

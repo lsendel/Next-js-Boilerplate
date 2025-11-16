@@ -1,0 +1,34 @@
+{
+  "index": {
+    "title": "Overview",
+    "type": "page"
+  },
+  "vercel": {
+    "title": "Vercel",
+    "type": "page"
+  },
+  "cloudflare": {
+    "title": "Cloudflare Pages",
+    "type": "page"
+  },
+  "aws": {
+    "title": "AWS",
+    "type": "page"
+  },
+  "azure": {
+    "title": "Azure",
+    "type": "page"
+  },
+  "gcp": {
+    "title": "Google Cloud",
+    "type": "page"
+  },
+  "docker": {
+    "title": "Docker",
+    "type": "page"
+  },
+  "checklist": {
+    "title": "Pre-Deploy Checklist",
+    "type": "page"
+  }
+}

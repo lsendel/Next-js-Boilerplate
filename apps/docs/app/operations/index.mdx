@@ -1,0 +1,275 @@
+# Operations
+
+Production operations guide covering CI/CD, monitoring, logging, and troubleshooting.
+
+## Overview
+
+The boilerplate includes comprehensive operational tooling:
+
+- 🚀 **CI/CD Pipeline** - Automated testing and deployment
+- 📊 **Monitoring** - Error tracking, uptime monitoring
+- 📝 **Logging** - Structured logging with aggregation
+- 🔍 **Observability** - Metrics, traces, and analytics
+- 🛠️ **Troubleshooting** - Common issues and solutions
+
+## Quick Links
+
+### [CI/CD Pipeline](/operations/ci-cd)
+
+**Comprehensive 2025 best practices guide (72KB!):**
+- Git branching strategy
+- Environment management
+- PR process and automation
+- Testing strategy
+- Deployment pipeline
+- Security and compliance
+- Monitoring and rollback
+
+### [Environments](/operations/environments)
+
+**Environment configuration:**
+- Development (local)
+- Staging (pre-production)
+- Production
+- Environment variables
+- Configuration management
+
+### [Monitoring](/operations/monitoring)
+
+**Error and uptime monitoring:**
+- Sentry error tracking
+- Checkly synthetic monitoring
+- Performance metrics
+- Alert configuration
+
+### [Logging](/operations/logging)
+
+**Structured logging:**
+- LogTape configuration
+- Better Stack integration
+- Log levels and formats
+- Query and analysis
+
+### [Observability](/operations/observability)
+
+**Full-stack visibility:**
+- Application metrics
+- Database performance
+- API monitoring
+- User analytics
+
+### [Troubleshooting](/operations/troubleshooting)
+
+**Common issues and solutions:**
+- Deployment failures
+- Database connection errors
+- Authentication issues
+- Performance problems
+
+## Production Checklist
+
+Before deploying to production, ensure:
+
+- [ ] Environment variables configured
+- [ ] Database migrations applied
+- [ ] Error monitoring setup (Sentry)
+- [ ] Logging configured (Better Stack)
+- [ ] Uptime monitoring enabled (Checkly)
+- [ ] Analytics installed (PostHog)
+- [ ] Security headers configured
+- [ ] Rate limiting enabled
+- [ ] SSL/TLS certificates valid
+- [ ] Backup strategy in place
+- [ ] Rollback plan documented
+- [ ] On-call rotation defined
+
+## Deployment
+
+### Production Deployment
+
+```bash
+# 1. Run tests
+pnpm ci:full
+
+# 2. Build
+pnpm build
+
+# 3. Apply migrations
+pnpm --filter web db:migrate
+
+# 4. Deploy
+vercel --prod
+```
+
+### Rollback
+
+```bash
+# Revert to previous deployment
+vercel rollback
+
+# Or rollback database
+./apps/web/scripts/db/rollback.sh
+```
+
+## Monitoring Stack
+
+### Error Tracking (Sentry)
+
+```typescript
+// Automatic error capture
+import * as Sentry from '@sentry/nextjs'
+
+Sentry.captureException(error)
+```
+
+**Dashboard:** https://sentry.io
+
+### Uptime Monitoring (Checkly)
+
+```typescript
+// Synthetic monitoring
+test('API is reachable', async () => {
+  const response = await fetch('https://api.yourapp.com/health')
+  expect(response.ok).toBe(true)
+})
+```
+
+**Dashboard:** https://checklyhq.com
+
+### Analytics (PostHog)
+
+```typescript
+// Track custom events
+posthog.capture('user_signed_up', {
+  plan: 'pro',
+})
+```
+
+**Dashboard:** https://app.posthog.com
+
+## Logging
+
+### Structured Logging
+
+```typescript
+import { logger } from '@/libs/Logger'
+
+logger.info('User created', {
+  userId: user.id,
+  email: user.email,
+})
+
+logger.error('Payment failed', {
+  error,
+  userId,
+  amount,
+})
+```
+
+### Log Levels
+
+- **debug** - Development debugging
+- **info** - General information
+- **warn** - Warnings, potential issues
+- **error** - Errors, exceptions
+- **fatal** - Critical failures
+
+### Better Stack Integration
+
+Logs automatically shipped to Better Stack in production.
+
+**Dashboard:** https://logs.betterstack.com
+
+## Alerts
+
+### Configure Alerts
+
+**Sentry:**
+- Error rate threshold
+- New error types
+- Performance degradation
+
+**Checkly:**
+- API downtime
+- Failed health checks
+- Slow response times
+
+**Better Stack:**
+- Error log patterns
+- Missing logs (service down)
+- Custom log queries
+
+## Performance Monitoring
+
+### Core Web Vitals
+
+Tracked automatically:
+- **LCP** - Largest Contentful Paint
+- **FID** - First Input Delay
+- **CLS** - Cumulative Layout Shift
+- **TTFB** - Time to First Byte
+
+### Database Performance
+
+```bash
+# Check slow queries
+pnpm --filter web db:studio
+
+# Monitor connections
+psql $DATABASE_URL -c "SELECT * FROM pg_stat_activity"
+```
+
+## Security
+
+### Security Monitoring
+
+- Failed login attempts
+- Rate limit violations
+- Suspicious traffic patterns
+- Security header violations
+
+### Compliance
+
+- GDPR data retention
+- Access logs
+- Audit trails
+- Data breach notifications
+
+## Incident Response
+
+### 1. Detect
+
+- Alert received (Sentry/Checkly)
+- User report
+- Metric anomaly
+
+### 2. Assess
+
+- Impact (users affected)
+- Severity (critical/major/minor)
+- Root cause analysis
+
+### 3. Respond
+
+- Immediate fix or rollback
+- Communicate with users
+- Document incident
+
+### 4. Post-Mortem
+
+- Timeline of events
+- Root cause
+- Action items
+- Process improvements
+
+## Resources
+
+- [CI/CD Guide](/operations/ci-cd) - Complete guide
+- [Sentry Docs](https://docs.sentry.io/)
+- [Checkly Docs](https://www.checklyhq.com/docs/)
+- [Better Stack](https://betterstack.com/docs/)
+- [PostHog](https://posthog.com/docs)
+
+## Next Steps
+
+Start with the comprehensive [CI/CD Guide](/operations/ci-cd) →

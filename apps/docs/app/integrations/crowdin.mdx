@@ -1,0 +1,553 @@
+# Crowdin
+
+Translation management platform for automated internationalization workflows.
+
+## Overview
+
+Crowdin provides comprehensive translation management:
+
+- **Automated Sync** - Two-way GitHub integration
+- **Machine Translation** - AI-powered translations
+- **Collaboration** - Multiple translators per language
+- **Version Control** - Track translation changes
+- **Context Screenshots** - Visual context for translators
+- **Translation Memory** - Reuse previous translations
+- **Quality Checks** - Automated validation
+
+## Quick Setup
+
+### 1. Create Crowdin Account
+
+Sign up at [crowdin.com](https://crowdin.com):
+
+1. Create a new project
+2. Select source language (English)
+3. Add target languages
+4. Note your **Project ID**
+
+### 2. Create API Token
+
+1. **Crowdin → Account Settings → API**
+2. **New Token** with permissions:
+   - Projects: Read & Write
+   - Source files: Read & Write
+   - Translations: Read & Write
+
+### 3. Configure GitHub Secrets
+
+```bash
+# GitHub repository → Settings → Secrets
+
+CROWDIN_PROJECT_ID=your_project_id
+CROWDIN_PERSONAL_TOKEN=your_api_token
+```
+
+### 4. Verify Workflow
+
+The workflow is pre-configured in `.github/workflows/crowdin.yml` and runs automatically.
+
+## Configuration
+
+### `crowdin.yml`
+
+Crowdin project configuration:
+
+```yaml
+project_id: "your_project_id"
+api_token_env: "CROWDIN_PERSONAL_TOKEN"
+preserve_hierarchy: true
+
+files:
+  - source: /src/locales/en.json
+    translation: /src/locales/%two_letters_code%.json
+    languages_mapping:
+      two_letters_code:
+        fr: fr
+        es: es
+        de: de
+        ja: ja
+        zh-CN: zh
+```
+
+### GitHub Workflow
+
+```yaml
+# .github/workflows/crowdin.yml
+name: Crowdin
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/locales/en.json'
+  schedule:
+    - cron: '0 5 * * *'  # Daily at 5 AM
+  workflow_dispatch:
+
+jobs:
+  synchronize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Crowdin push
+        uses: crowdin/github-action@v1
+        with:
+          upload_sources: true
+          upload_translations: false
+          download_translations: true
+          localization_branch_name: l10n_crowdin
+          create_pull_request: true
+        env:
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+```
+
+## Translation Workflow
+
+### 1. Update Source (English)
+
+Edit the source translation file:
+
+```json
+// src/locales/en.json
+{
+  "common": {
+    "welcome": "Welcome to our app",
+    "get_started": "Get Started",
+    "learn_more": "Learn More"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Manage your account"
+  }
+}
+```
+
+### 2. Automatic Upload
+
+When you push to `main` branch:
+
+1. **GitHub Action triggers**
+2. **Crowdin detects changes**
+3. **Source strings uploaded**
+4. **Translation tasks created**
+
+### 3. Translation
+
+Translators work in Crowdin:
+
+1. **Receive notifications**
+2. **Translate strings** with AI assistance
+3. **Review context screenshots**
+4. **Submit translations**
+
+### 4. Automatic Download
+
+After translations are complete:
+
+1. **GitHub Action runs** (daily or on-demand)
+2. **Downloads translations** from Crowdin
+3. **Creates Pull Request** with new translations
+4. **You review and merge**
+
+## Using Translations
+
+### In Components
+
+```typescript
+'use client'
+
+import { useTranslations } from 'next-intl'
+
+export function WelcomeMessage() {
+  const t = useTranslations('common')
+
+  return (
+    <div>
+      <h1>{t('welcome')}</h1>
+      <button>{t('get_started')}</button>
+    </div>
+  )
+}
+```
+
+### In Server Components
+
+```typescript
+import { getTranslations } from 'next-intl/server'
+
+export default async function HomePage() {
+  const t = await getTranslations('common')
+
+  return (
+    <div>
+      <h1>{t('welcome')}</h1>
+      <p>{t('learn_more')}</p>
+    </div>
+  )
+}
+```
+
+### With Parameters
+
+```json
+{
+  "greeting": "Hello, {name}!",
+  "items_count": "You have {count} items"
+}
+```
+
+```typescript
+const t = useTranslations('common')
+
+t('greeting', { name: 'John' })  // "Hello, John!"
+t('items_count', { count: 5 })   // "You have 5 items"
+```
+
+### Pluralization
+
+```json
+{
+  "items": "{count, plural, =0 {No items} =1 {One item} other {# items}}"
+}
+```
+
+```typescript
+t('items', { count: 0 })  // "No items"
+t('items', { count: 1 })  // "One item"
+t('items', { count: 5 })  // "5 items"
+```
+
+## Adding New Languages
+
+### 1. Add to Crowdin Project
+
+1. **Crowdin → Settings → Target Languages**
+2. **Add language** (e.g., Portuguese)
+3. **Assign translators**
+
+### 2. Update AppConfig
+
+```typescript
+// src/utils/AppConfig.ts
+export const AppConfig = {
+  locales: [
+    { id: 'en', name: 'English' },
+    { id: 'fr', name: 'Français' },
+    { id: 'es', name: 'Español' },
+    { id: 'pt', name: 'Português' },  // New language
+  ],
+  defaultLocale: 'en',
+}
+```
+
+### 3. Update crowdin.yml
+
+```yaml
+files:
+  - source: /src/locales/en.json
+    translation: /src/locales/%two_letters_code%.json
+    languages_mapping:
+      two_letters_code:
+        fr: fr
+        es: es
+        pt: pt  # New language
+```
+
+### 4. Sync Translations
+
+```bash
+# Manual sync via GitHub Actions
+# Or wait for automatic daily sync
+```
+
+## Translation Best Practices
+
+### Source String Guidelines
+
+✅ **DO:**
+
+```json
+{
+  "button_save": "Save",
+  "error_required": "This field is required",
+  "message_success": "Changes saved successfully"
+}
+```
+
+❌ **DON'T:**
+
+```json
+{
+  "btn1": "Save",  // Non-descriptive key
+  "err": "Required",  // Incomplete context
+  "msg": "OK"  // Too generic
+}
+```
+
+### Use Namespaces
+
+```json
+{
+  "auth": {
+    "sign_in": "Sign In",
+    "sign_out": "Sign Out",
+    "forgot_password": "Forgot Password"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back, {name}"
+  },
+  "settings": {
+    "profile": "Profile",
+    "security": "Security"
+  }
+}
+```
+
+### Provide Context
+
+```json
+{
+  "button_submit": "Submit",  // ❌ No context
+  "form_contact_submit": "Submit Message",  // ✅ Clear context
+  "comment": {
+    "translator_note": "This appears on the contact form"
+  }
+}
+```
+
+## Advanced Features
+
+### Screenshots for Context
+
+Upload screenshots to help translators:
+
+1. **Crowdin → Strings**
+2. **Select string**
+3. **Upload screenshot**
+4. **Tag UI element**
+
+Translators see visual context when translating.
+
+### Translation Memory
+
+Reuse previous translations:
+
+```json
+// Previously translated
+"button_save": "Save"
+
+// Automatically suggested
+"button_save_changes": "Save Changes"  // Suggests using "Save"
+```
+
+### Machine Translation
+
+Enable AI translation:
+
+1. **Crowdin → Settings → Machine Translation**
+2. **Enable providers:**
+   - Google Translate
+   - DeepL
+   - Microsoft Translator
+3. **Pre-translate new strings**
+
+### Quality Checks
+
+Automated validation:
+
+- **Missing placeholders** - `{name}` not translated
+- **Inconsistent spacing** - Extra spaces
+- **HTML tag mismatch** - `<b>` tags missing
+- **Punctuation** - Missing periods
+- **Character limits** - Too long for UI
+
+## Validation
+
+### Check Translation Completeness
+
+```bash
+# Check all translations are complete
+pnpm --filter web check:i18n
+```
+
+Script verifies:
+- All languages have same keys
+- No missing translations
+- No extra keys in translations
+
+### Output Example
+
+```bash
+✅ All translations complete
+
+Languages checked:
+- en: 250 keys
+- fr: 250 keys
+- es: 250 keys
+- de: 250 keys
+
+No missing or extra keys found.
+```
+
+## Manual Sync
+
+### Upload Sources
+
+```bash
+# Install Crowdin CLI
+npm install -g @crowdin/cli
+
+# Upload source file
+crowdin upload sources
+```
+
+### Download Translations
+
+```bash
+# Download all translations
+crowdin download
+
+# Download specific language
+crowdin download -l fr
+```
+
+### Pre-translate
+
+```bash
+# Use machine translation for new strings
+crowdin pre-translate
+```
+
+## Collaboration
+
+### Invite Translators
+
+1. **Crowdin → Members**
+2. **Invite member**
+3. **Assign languages**
+4. **Set permissions:**
+   - Translator
+   - Proofreader
+   - Manager
+
+### Translation Workflow
+
+**Translator:**
+- Translate strings
+- Use machine translation
+- View context screenshots
+
+**Proofreader:**
+- Review translations
+- Approve or request changes
+- Ensure quality
+
+**Manager:**
+- Oversee project
+- Manage members
+- Configure settings
+
+## Troubleshooting
+
+### Translations Not Syncing
+
+1. **Check GitHub secrets:**
+   ```bash
+   # Verify secrets are set
+   CROWDIN_PROJECT_ID
+   CROWDIN_PERSONAL_TOKEN
+   ```
+
+2. **Verify workflow:**
+   - Check GitHub Actions tab
+   - Look for errors in logs
+
+3. **Manual trigger:**
+   - GitHub Actions → Crowdin → Run workflow
+
+### Missing Translations
+
+1. **Check Crowdin project:**
+   - Are strings translated?
+   - Are translations approved?
+
+2. **Force download:**
+   ```bash
+   crowdin download -l fr
+   ```
+
+3. **Verify file format:**
+   ```bash
+   # Should be valid JSON
+   cat src/locales/fr.json
+   ```
+
+### Key Mismatch Errors
+
+1. **Run validation:**
+   ```bash
+   pnpm check:i18n
+   ```
+
+2. **Fix missing keys:**
+   - Add missing translations
+   - Remove extra keys
+
+3. **Re-sync:**
+   ```bash
+   crowdin upload sources
+   crowdin download
+   ```
+
+## Cost Optimization
+
+### Free Tier (Open Source)
+
+- **Unlimited projects**
+- **Unlimited translators**
+- **All features included**
+- Must have public GitHub repository
+
+### Paid Plans
+
+If private repository:
+- Review pricing at [crowdin.com/pricing](https://crowdin.com/pricing)
+- Consider open-sourcing translations
+
+## Best Practices
+
+✅ **DO:**
+
+- Edit only `en.json` (source language)
+- Use descriptive translation keys
+- Provide context for translators
+- Upload screenshots
+- Review translations before merging
+- Use namespaces for organization
+- Enable quality checks
+- Set up automatic sync
+
+❌ **DON'T:**
+
+- Edit translated files manually
+- Use auto-translated strings without review
+- Skip context for ambiguous strings
+- Forget to add new languages to AppConfig
+- Mix languages in one file
+- Commit translation files directly
+
+## Resources
+
+- [Crowdin Documentation](https://support.crowdin.com/)
+- [GitHub Integration](https://support.crowdin.com/github-integration/)
+- [next-intl Documentation](https://next-intl-docs.vercel.app/)
+- [i18n Guide](/guides/i18n)
+
+## Next Steps
+
+- **[i18n Setup](/guides/i18n/setup)** - Configure internationalization
+- **[Translation Management](/guides/i18n/translations)** - Managing translations
+- **[Customization](/getting-started/customization)** - Configure your app

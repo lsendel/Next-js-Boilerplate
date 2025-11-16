@@ -1,21 +1,95 @@
-# Validate commit messages
+# Lefthook Configuration
+# Git hooks for automated quality checks
+#
+# To skip hooks temporarily:
+#   LEFTHOOK=0 git commit -m "message"
+#   git commit --no-verify -m "message" (not recommended)
+#
+# To skip specific check:
+#   LEFTHOOK_EXCLUDE=lint git commit -m "message"
+
+# ============================================================================
+# COMMIT MESSAGE VALIDATION
+# ============================================================================
 commit-msg:
   commands:
     commitlint:
       run: npx --no -- commitlint --edit {1}
 
-# Validate content before committing
+# ============================================================================
+# PRE-COMMIT HOOKS (Fast checks on staged files)
+# ============================================================================
 pre-commit:
+  parallel: true
   commands:
+    # 1. Lint and auto-fix staged files
     lint:
-      glob: '*'
+      glob: '*.{js,jsx,ts,tsx}'
       run: npx --no -- eslint --fix --no-warn-ignored {staged_files}
       stage_fixed: true
       priority: 1
+
+    # 2. Format code with Prettier (via ESLint)
+    # Already handled by ESLint config with prettier plugin
+
+    # 3. Type checking (only on TypeScript files)
     check-types:
       glob: '*.{ts,tsx}'
       run: npm run check:types
       priority: 2
+
+    # 4. Validate i18n translations (if locale files changed)
+    check-i18n:
+      glob: 'src/locales/**/*.json'
+      run: npm run check:i18n
+      priority: 2
+
+    # 5. Secret scanning (prevent committing secrets)
+    check-secrets:
+      glob: '*'
+      run: |
+        echo "🔍 Scanning for secrets..."
+
+        # Check for common secret patterns in staged files
+        SECRETS_FOUND=0
+
+        # Pattern for potential secrets
+        if git diff --cached --name-only | xargs grep -E -i '(api[_-]?key|password|secret|token|auth)[[:space:]]*[:=][[:space:]]*["\047][a-zA-Z0-9]{20,}' 2>/dev/null; then
+          echo "❌ Potential secret detected in staged files!"
+          echo "Please remove secrets and use environment variables instead."
+          SECRETS_FOUND=1
+        fi
+
+        # Check if .env.local is being committed (should never happen)
+        if git diff --cached --name-only | grep -q "\.env\.local"; then
+          echo "❌ .env.local should not be committed!"
+          echo "This file contains secrets. Add it to .gitignore."
+          SECRETS_FOUND=1
+        fi
+
+        # Check for AWS keys
+        if git diff --cached --name-only | xargs grep -E 'AKIA[0-9A-Z]{16}' 2>/dev/null; then
+          echo "❌ AWS access key detected!"
+          SECRETS_FOUND=1
+        fi
+
+        # Check for private keys
+        if git diff --cached --name-only | xargs grep -E '-----BEGIN (RSA |DSA |EC )?PRIVATE KEY-----' 2>/dev/null; then
+          echo "❌ Private key detected!"
+          SECRETS_FOUND=1
+        fi
+
+        if [ $SECRETS_FOUND -eq 1 ]; then
+          echo ""
+          echo "💡 Tip: Use environment variables and .env.local (which is gitignored)"
+          exit 1
+        fi
+
+        echo "✓ No secrets detected"
+        exit 0
+      priority: 3
+
+    # 6. Check schema + migrations consistency
     schema-check:
       glob: 'src/server/db/models/**/*.ts'
       run: |
@@ -28,10 +102,139 @@ pre-commit:
         # Schema changed - ensure migrations are also staged
         if git diff --cached --quiet migrations/; then
           echo "❌ Schema changed but migrations not staged"
-          echo "Run: npm run db:generate && git add migrations/"
+          echo ""
+          echo "Run the following commands:"
+          echo "  npm run db:generate"
+          echo "  git add migrations/"
           exit 1
         fi
 
         echo "✓ Schema and migrations both staged"
         exit 0
+      priority: 4
+
+    # 7. Prevent large files
+    check-file-size:
+      glob: '*'
+      run: |
+        echo "📏 Checking file sizes..."
+
+        # Maximum file size in bytes (1MB)
+        MAX_SIZE=1048576
+        LARGE_FILES=0
+
+        for file in {staged_files}; do
+          if [ -f "$file" ]; then
+            SIZE=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null)
+            if [ "$SIZE" -gt "$MAX_SIZE" ]; then
+              echo "❌ File too large: $file ($(echo $SIZE | awk '{print int($1/1024)}')KB)"
+              LARGE_FILES=1
+            fi
+          fi
+        done
+
+        if [ $LARGE_FILES -eq 1 ]; then
+          echo ""
+          echo "💡 Tip: Use Git LFS for large files or compress images"
+          exit 1
+        fi
+
+        echo "✓ All files within size limits"
+        exit 0
+      priority: 5
+
+# ============================================================================
+# PRE-PUSH HOOKS (Comprehensive checks before pushing)
+# ============================================================================
+pre-push:
+  commands:
+    # 1. Run unit tests
+    test:
+      run: |
+        echo "🧪 Running unit tests..."
+        npm run test
+      priority: 1
+
+    # 2. Check for circular dependencies
+    check-circular:
+      run: |
+        echo "🔄 Checking for circular dependencies..."
+        npm run check:circular
+      priority: 2
+
+    # 3. Validate dependencies (no unused deps)
+    check-deps:
+      run: |
+        echo "📦 Checking dependencies..."
+        npm run check:deps
       priority: 3
+
+    # 4. Build verification (local build with in-memory DB)
+    build-check:
+      run: |
+        echo "🏗️  Verifying build..."
+        npm run build-local
+      priority: 4
+
+# ============================================================================
+# POST-CHECKOUT HOOKS (Run after checking out a branch)
+# ============================================================================
+post-checkout:
+  commands:
+    # Check if package.json changed and remind to install
+    check-dependencies:
+      run: |
+        PREV_REF=$1
+        NEW_REF=$2
+
+        # Check if package.json changed
+        if git diff --name-only $PREV_REF $NEW_REF | grep -q "package.json"; then
+          echo ""
+          echo "📦 package.json changed! You may need to run:"
+          echo "   pnpm install"
+          echo ""
+        fi
+
+# ============================================================================
+# POST-MERGE HOOKS (Run after git pull/merge)
+# ============================================================================
+post-merge:
+  commands:
+    # Reminder to install dependencies if package.json changed
+    check-dependencies:
+      run: |
+        # Check if package.json was modified in the merge
+        if git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep -q "package.json"; then
+          echo ""
+          echo "📦 package.json changed! Run:"
+          echo "   pnpm install"
+          echo ""
+        fi
+
+        # Check if migrations changed
+        if git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep -q "migrations/"; then
+          echo ""
+          echo "🗄️  Database migrations changed! Run:"
+          echo "   npm run db:migrate"
+          echo ""
+        fi
+
+# ============================================================================
+# SKIP OPTIONS
+# ============================================================================
+# You can skip hooks in these ways:
+#
+# 1. Skip all hooks:
+#    LEFTHOOK=0 git commit -m "message"
+#    LEFTHOOK=0 git push
+#
+# 2. Skip specific hook:
+#    LEFTHOOK_EXCLUDE=lint git commit -m "message"
+#    LEFTHOOK_EXCLUDE=test git push
+#
+# 3. Skip multiple hooks:
+#    LEFTHOOK_EXCLUDE=lint,check-types git commit -m "message"
+#
+# 4. Use --no-verify (NOT recommended, bypasses all checks):
+#    git commit --no-verify -m "message"
+#    git push --no-verify

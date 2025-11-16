@@ -1,0 +1,48 @@
+{
+  "fontSize": "10px",
+  "fontFace": "Arial",
+  "backgroundColor": "#ffffff",
+  "nodeShape": "box",
+  "nodeColor": "#4A90E2",
+  "noDependencyColor": "#90EE90",
+  "cyclicNodeColor": "#FF6B6B",
+  "edgeColor": "#757575",
+  "graphVizOptions": {
+    "G": {
+      "rankdir": "LR",
+      "fontname": "Arial",
+      "fontsize": "14",
+      "concentrate": "true",
+      "compound": "true"
+    },
+    "N": {
+      "fontname": "Arial",
+      "fontsize": "10"
+    },
+    "E": {
+      "fontname": "Arial",
+      "fontsize": "8"
+    }
+  },
+  "detectiveOptions": {
+    "ts": {
+      "skipTypeImports": true
+    },
+    "tsx": {
+      "skipTypeImports": true
+    }
+  },
+  "fileExtensions": ["ts", "tsx", "js", "jsx"],
+  "excludeRegExp": [
+    ".*\\.test\\.(ts|tsx|js|jsx)$",
+    ".*\\.spec\\.(ts|tsx|js|jsx)$",
+    ".*\\.e2e\\.(ts|tsx)$",
+    ".*\\.stories\\.(ts|tsx)$",
+    ".*node_modules.*",
+    ".*\\.next.*",
+    ".*/tests/.*",
+    ".*/dist/.*",
+    ".*/out/.*",
+    ".*/coverage/.*"
+  ]
+}

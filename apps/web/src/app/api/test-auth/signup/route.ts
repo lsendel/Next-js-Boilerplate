@@ -1,7 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { SESSION_COOKIE, sessions, users } from '@/libs/auth/adapters/TestAdapter.server';
+import { SESSION_COOKIE, users } from '@/libs/auth/adapters/TestAdapter.server';
 import { authLogger } from '@/libs/Logger';
 
 /**
@@ -59,23 +58,10 @@ export async function POST(request: NextRequest) {
     };
     users.set(userId, newUser);
 
-    // Create session
-    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-    sessions.set(sessionId, userId);
-
-    // Set session cookie
-    const cookieStore = await cookies();
-    cookieStore.set(SESSION_COOKIE, sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: '/',
-    });
-
     authLogger.info('Test auth: User registered', { userId, email });
 
-    return NextResponse.json({
+    // Create response with session cookie
+    const response = NextResponse.json({
       success: true,
       user: {
         id: userId,
@@ -85,6 +71,25 @@ export async function POST(request: NextRequest) {
         imageUrl: null,
       },
     });
+
+    // Store user data directly in cookie as JSON (no shared in-memory state needed)
+    const cookieData = JSON.stringify({
+      id: userId,
+      email,
+      firstName: null,
+      lastName: null,
+      imageUrl: null,
+    });
+
+    response.cookies.set(SESSION_COOKIE, cookieData, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    });
+
+    return response;
   } catch (error) {
     authLogger.error('Error during sign up', { error });
     return NextResponse.json(

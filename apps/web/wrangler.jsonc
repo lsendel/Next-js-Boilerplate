@@ -1,0 +1,60 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "next-boilerplate",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-03-25",
+  "compatibility_flags": ["nodejs_compat"],
+  
+  // Static assets configuration
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  
+  // D1 Database binding
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "next-boilerplate-db",
+      "database_id": "YOUR_D1_DATABASE_ID",
+      "migrations_dir": "./migrations-d1"
+    }
+  ],
+  
+  // Environment variables
+  "vars": {
+    "NODE_ENV": "production",
+    "NEXT_PUBLIC_AUTH_PROVIDER": "cloudflare"
+  },
+  
+  // Observability (2025 best practice)
+  "observability": {
+    "enabled": true
+  },
+  
+  // Analytics Engine binding
+  "analytics_engine_datasets": [
+    {
+      "binding": "ANALYTICS"
+    }
+  ],
+  
+  // Logpush for production monitoring
+  "logpush": true,
+  
+  // Tail consumers for real-time logs
+  "tail_consumers": [
+    {
+      "service": "log-consumer"
+    }
+  ],
+  
+  // Routes configuration (optional - for custom domains)
+  "routes": [
+    {
+      "pattern": "your-domain.com/*",
+      "custom_domain": true
+    }
+  ]
+}
+

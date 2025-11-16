@@ -89,6 +89,7 @@
   "devDependencies": {
     "@antfu/eslint-config": "^6.2.0",
     "@chromatic-com/playwright": "^0.12.7",
+    "@cloudflare/workers-types": "^4.20251115.0",
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
     "@commitlint/prompt-cli": "^20.1.0",

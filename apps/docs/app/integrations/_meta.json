@@ -1,0 +1,34 @@
+{
+  "index": {
+    "title": "Overview",
+    "type": "page"
+  },
+  "sentry": {
+    "title": "Sentry",
+    "type": "page"
+  },
+  "posthog": {
+    "title": "PostHog",
+    "type": "page"
+  },
+  "arcjet": {
+    "title": "Arcjet",
+    "type": "page"
+  },
+  "logtape": {
+    "title": "LogTape",
+    "type": "page"
+  },
+  "better-stack": {
+    "title": "Better Stack",
+    "type": "page"
+  },
+  "checkly": {
+    "title": "Checkly",
+    "type": "page"
+  },
+  "crowdin": {
+    "title": "Crowdin",
+    "type": "page"
+  }
+}

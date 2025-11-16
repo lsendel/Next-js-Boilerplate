@@ -1,0 +1,720 @@
+# LogTape
+
+Modern structured logging library for TypeScript and JavaScript applications.
+
+## Overview
+
+LogTape provides production-ready logging with:
+
+- **Structured Logging** - JSON-formatted logs with context
+- **Multiple Log Levels** - Debug, info, warn, error, fatal
+- **Flexible Sinks** - Console, file, Better Stack, custom
+- **Context-Aware** - Attach metadata to all logs
+- **Type-Safe** - Full TypeScript support
+- **Performance** - Minimal overhead, async by default
+- **Filters** - Control what gets logged
+
+## Quick Setup
+
+LogTape is pre-configured in the boilerplate - no additional setup needed!
+
+### Configuration Files
+
+### `libs/Logger.ts`
+
+Main logger configuration:
+
+```typescript
+import { configure, getConsoleSink, getLogger } from '@logtape/logtape'
+
+// Configure logging on app start
+export async function configureLogging() {
+  await configure({
+    sinks: {
+      console: getConsoleSink({
+        level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+      }),
+    },
+    loggers: [
+      {
+        category: 'app',
+        level: 'debug',
+        sinks: ['console'],
+      },
+    ],
+  })
+}
+
+// Export logger instance
+export const logger = getLogger(['app'])
+```
+
+### `instrumentation.ts`
+
+Initialize logging on app startup:
+
+```typescript
+export async function register() {
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    const { configureLogging } = await import('./libs/Logger')
+    await configureLogging()
+  }
+}
+```
+
+## Using LogTape
+
+### Basic Logging
+
+```typescript
+import { logger } from '@/libs/Logger'
+
+// Info level
+logger.info('User logged in', {
+  userId: user.id,
+  email: user.email,
+  timestamp: new Date(),
+})
+
+// Debug level
+logger.debug('Database query executed', {
+  query: 'SELECT * FROM users',
+  duration: 45,
+})
+
+// Warning
+logger.warn('API rate limit approaching', {
+  current: 95,
+  limit: 100,
+})
+
+// Error
+logger.error('Payment processing failed', {
+  error: error.message,
+  userId: user.id,
+  amount: 99.99,
+})
+
+// Fatal
+logger.fatal('Database connection lost', {
+  error: error.message,
+  connectionString: dbUrl,
+})
+```
+
+### Log Levels
+
+```typescript
+logger.debug('Debugging information')   // Development only
+logger.info('General information')      // Production
+logger.warn('Warning, potential issue') // Production
+logger.error('Error occurred')          // Production
+logger.fatal('Critical failure')        // Production
+```
+
+**Level hierarchy:**
+- `debug` < `info` < `warn` < `error` < `fatal`
+
+**Production recommendation:**
+- Minimum level: `info`
+- Debug logs excluded for performance
+
+## Structured Context
+
+### Add Context to Logs
+
+```typescript
+import { logger } from '@/libs/Logger'
+
+// User context
+logger.info('Action performed', {
+  userId: user.id,
+  email: user.email,
+  action: 'update_profile',
+  changes: {
+    name: 'New Name',
+  },
+})
+
+// API request context
+logger.info('API request', {
+  method: request.method,
+  url: request.url,
+  headers: request.headers,
+  duration: 123,
+  status: 200,
+})
+
+// Database operation
+logger.debug('Database query', {
+  operation: 'insert',
+  table: 'users',
+  duration: 45,
+  rows: 1,
+})
+```
+
+### Nested Context
+
+```typescript
+logger.info('Order processing', {
+  orderId: 'order_123',
+  user: {
+    id: 'user_456',
+    email: 'user@example.com',
+  },
+  items: [
+    { id: 'item_1', price: 99.99 },
+    { id: 'item_2', price: 49.99 },
+  ],
+  total: 149.98,
+  payment: {
+    method: 'card',
+    status: 'completed',
+  },
+})
+```
+
+## Categorized Loggers
+
+Create specialized loggers for different parts of your app:
+
+```typescript
+import { getLogger } from '@logtape/logtape'
+
+// Auth logger
+const authLogger = getLogger(['app', 'auth'])
+authLogger.info('User signed in', { userId })
+
+// Database logger
+const dbLogger = getLogger(['app', 'database'])
+dbLogger.debug('Query executed', { query, duration })
+
+// Payment logger
+const paymentLogger = getLogger(['app', 'payment'])
+paymentLogger.error('Payment failed', { error, amount })
+```
+
+### Configure Categories
+
+```typescript
+// libs/Logger.ts
+await configure({
+  sinks: { console: getConsoleSink() },
+  loggers: [
+    {
+      category: ['app', 'auth'],
+      level: 'info',
+      sinks: ['console'],
+    },
+    {
+      category: ['app', 'database'],
+      level: 'debug',
+      sinks: ['console'],
+    },
+    {
+      category: ['app', 'payment'],
+      level: 'info',
+      sinks: ['console', 'file'],
+    },
+  ],
+})
+```
+
+## Sinks
+
+### Console Sink
+
+```typescript
+import { getConsoleSink } from '@logtape/logtape'
+
+const consoleSink = getConsoleSink({
+  level: 'info',           // Minimum log level
+  formatter: 'json',       // 'json' or 'text'
+})
+```
+
+### File Sink
+
+```typescript
+import { getFileSink } from '@logtape/logtape'
+
+const fileSink = await getFileSink('logs/app.log', {
+  level: 'info',
+  formatter: 'json',
+  maxSize: 10_000_000,     // 10MB
+  maxFiles: 5,             // Keep 5 files
+})
+```
+
+### Better Stack Sink
+
+```typescript
+import { getBetterStackSink } from '@logtape/logtape'
+
+const betterStackSink = getBetterStackSink({
+  sourceToken: process.env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN!,
+  level: 'info',
+})
+```
+
+### Multiple Sinks
+
+```typescript
+await configure({
+  sinks: {
+    console: getConsoleSink(),
+    file: await getFileSink('logs/app.log'),
+    betterStack: getBetterStackSink({
+      sourceToken: process.env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN!,
+    }),
+  },
+  loggers: [
+    {
+      category: 'app',
+      level: 'debug',
+      sinks: ['console', 'file', 'betterStack'],
+    },
+  ],
+})
+```
+
+## Filters
+
+### Filter by Environment
+
+```typescript
+await configure({
+  sinks: {
+    console: getConsoleSink(),
+  },
+  loggers: [
+    {
+      category: 'app',
+      level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+      sinks: ['console'],
+    },
+  ],
+  filters: [
+    // Skip debug logs in production
+    (log) => {
+      if (process.env.NODE_ENV === 'production' && log.level === 'debug') {
+        return false
+      }
+      return true
+    },
+  ],
+})
+```
+
+### Filter Sensitive Data
+
+```typescript
+await configure({
+  filters: [
+    (log) => {
+      // Remove sensitive fields
+      const sanitized = { ...log }
+      if (sanitized.properties?.password) {
+        delete sanitized.properties.password
+      }
+      if (sanitized.properties?.apiKey) {
+        sanitized.properties.apiKey = '[REDACTED]'
+      }
+      return sanitized
+    },
+  ],
+})
+```
+
+## Better Stack Integration
+
+### Setup Better Stack
+
+1. **Sign up at [betterstack.com](https://betterstack.com)**
+2. **Create a source**
+3. **Copy source token**
+
+### Configure Environment
+
+```bash
+# apps/web/.env.local
+NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN=your_source_token_here
+```
+
+### Add Better Stack Sink
+
+```typescript
+// libs/Logger.ts
+import { getBetterStackSink } from '@logtape/logtape'
+
+await configure({
+  sinks: {
+    console: getConsoleSink(),
+    betterStack: getBetterStackSink({
+      sourceToken: process.env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN!,
+      level: 'info',
+    }),
+  },
+  loggers: [
+    {
+      category: 'app',
+      level: 'debug',
+      sinks: ['console', 'betterStack'],
+    },
+  ],
+})
+```
+
+### View Logs in Better Stack
+
+1. **Go to [logs.betterstack.com](https://logs.betterstack.com)**
+2. **Select your source**
+3. **View real-time logs**
+4. **Create dashboards and alerts**
+
+[Full Better Stack guide →](/integrations/better-stack)
+
+## API Routes
+
+```typescript
+// app/api/users/route.ts
+import { logger } from '@/libs/Logger'
+import { NextResponse } from 'next/server'
+
+export async function POST(request: Request) {
+  const startTime = Date.now()
+
+  try {
+    const body = await request.json()
+
+    logger.info('Creating user', {
+      email: body.email,
+      source: 'api',
+    })
+
+    const user = await createUser(body)
+
+    logger.info('User created successfully', {
+      userId: user.id,
+      duration: Date.now() - startTime,
+    })
+
+    return NextResponse.json(user)
+  } catch (error) {
+    logger.error('User creation failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      body,
+      duration: Date.now() - startTime,
+    })
+
+    return NextResponse.json(
+      { error: 'Failed to create user' },
+      { status: 500 }
+    )
+  }
+}
+```
+
+## Server Components
+
+```typescript
+// app/dashboard/page.tsx
+import { logger } from '@/libs/Logger'
+
+export default async function DashboardPage() {
+  try {
+    logger.debug('Loading dashboard')
+
+    const data = await fetchDashboardData()
+
+    logger.info('Dashboard loaded', {
+      itemCount: data.length,
+    })
+
+    return <Dashboard data={data} />
+  } catch (error) {
+    logger.error('Dashboard load failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    })
+
+    throw error
+  }
+}
+```
+
+## Server Actions
+
+```typescript
+'use server'
+
+import { logger } from '@/libs/Logger'
+
+export async function updateProfile(formData: FormData) {
+  const userId = await getCurrentUserId()
+
+  logger.info('Profile update started', {
+    userId,
+  })
+
+  try {
+    const name = formData.get('name')
+
+    await db.update(users)
+      .set({ name })
+      .where(eq(users.id, userId))
+
+    logger.info('Profile updated successfully', {
+      userId,
+      changes: { name },
+    })
+
+    return { success: true }
+  } catch (error) {
+    logger.error('Profile update failed', {
+      userId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    })
+
+    throw error
+  }
+}
+```
+
+## Middleware
+
+```typescript
+// middleware.ts
+import { logger } from '@/libs/Logger'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+export function middleware(request: NextRequest) {
+  const startTime = Date.now()
+
+  logger.debug('Request started', {
+    method: request.method,
+    url: request.url,
+    userAgent: request.headers.get('user-agent'),
+  })
+
+  const response = NextResponse.next()
+
+  logger.info('Request completed', {
+    method: request.method,
+    url: request.url,
+    status: response.status,
+    duration: Date.now() - startTime,
+  })
+
+  return response
+}
+```
+
+## Performance Logging
+
+### Track Operation Duration
+
+```typescript
+import { logger } from '@/libs/Logger'
+
+export async function processLargeDataset() {
+  const startTime = Date.now()
+
+  try {
+    const data = await fetchData()
+    logger.debug('Data fetched', { count: data.length })
+
+    const processed = await processData(data)
+    logger.debug('Data processed', { count: processed.length })
+
+    const saved = await saveData(processed)
+    logger.info('Processing complete', {
+      duration: Date.now() - startTime,
+      processed: processed.length,
+      saved: saved.length,
+    })
+
+    return saved
+  } catch (error) {
+    logger.error('Processing failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      duration: Date.now() - startTime,
+    })
+    throw error
+  }
+}
+```
+
+### Database Query Logging
+
+```typescript
+import { logger } from '@/libs/Logger'
+
+export async function loggedQuery<T>(
+  operation: string,
+  queryFn: () => Promise<T>
+): Promise<T> {
+  const startTime = Date.now()
+
+  try {
+    const result = await queryFn()
+
+    logger.debug('Database query', {
+      operation,
+      duration: Date.now() - startTime,
+    })
+
+    return result
+  } catch (error) {
+    logger.error('Database query failed', {
+      operation,
+      duration: Date.now() - startTime,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    })
+    throw error
+  }
+}
+
+// Usage
+const users = await loggedQuery('find_users', () =>
+  db.query.users.findMany()
+)
+```
+
+## Best Practices
+
+✅ **DO:**
+
+- Use structured logging (JSON format)
+- Include context in every log
+- Use appropriate log levels
+- Log errors with full context
+- Track operation duration
+- Use categorized loggers
+- Filter sensitive data (passwords, tokens)
+- Log at API boundaries
+- Include correlation IDs
+
+❌ **DON'T:**
+
+- Use `console.log()` directly
+- Log sensitive data unfiltered
+- Over-log (too many debug logs)
+- Skip error context
+- Log without structure
+- Forget about performance impact
+- Mix log levels incorrectly
+- Skip production logging
+
+## Common Patterns
+
+### Request Logging
+
+```typescript
+logger.info('HTTP request', {
+  method: 'POST',
+  path: '/api/users',
+  userId: user.id,
+  ip: request.ip,
+  userAgent: request.headers.get('user-agent'),
+  duration: 123,
+  status: 200,
+})
+```
+
+### Error Logging
+
+```typescript
+logger.error('Operation failed', {
+  operation: 'create_user',
+  error: error.message,
+  stack: error.stack,
+  userId: user.id,
+  context: {
+    // Additional context
+  },
+})
+```
+
+### Business Events
+
+```typescript
+logger.info('Payment completed', {
+  event: 'payment.completed',
+  userId: user.id,
+  orderId: order.id,
+  amount: 99.99,
+  currency: 'USD',
+  paymentMethod: 'card',
+})
+```
+
+## Troubleshooting
+
+### Logs Not Appearing
+
+1. **Check configuration:**
+   ```typescript
+   await configureLogging()  // Must be called on startup
+   ```
+
+2. **Verify log level:**
+   ```typescript
+   // Too high
+   level: 'error'  // Won't show info/debug logs
+
+   // Better
+   level: 'debug'  // Shows all logs
+   ```
+
+3. **Check sinks:**
+   ```typescript
+   sinks: ['console']  // Ensure sink exists
+   ```
+
+### Performance Issues
+
+1. **Reduce log level in production:**
+   ```typescript
+   level: process.env.NODE_ENV === 'production' ? 'info' : 'debug'
+   ```
+
+2. **Use async logging:**
+   LogTape is async by default - no action needed
+
+3. **Filter unnecessary logs:**
+   ```typescript
+   filters: [
+     (log) => !log.message.includes('health_check')
+   ]
+   ```
+
+### Better Stack Not Receiving Logs
+
+1. **Check token:**
+   ```bash
+   echo $NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN
+   ```
+
+2. **Verify sink configuration:**
+   ```typescript
+   betterStack: getBetterStackSink({
+     sourceToken: process.env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN!,
+     level: 'info',
+   })
+   ```
+
+3. **Check network connectivity**
+
+## Resources
+
+- [LogTape Documentation](https://logtape.org/)
+- [Better Stack Integration](/integrations/better-stack)
+- [Operations Guide](/operations/logging)
+
+## Next Steps
+
+- **[Better Stack](/integrations/better-stack)** - Log management
+- **[Sentry](/integrations/sentry)** - Error monitoring
+- **[Operations](/operations)** - Production logging

@@ -71,7 +71,7 @@ importers:
         version: 1.2.0
       '@opennextjs/cloudflare':
         specifier: ^1.12.0
-        version: 1.12.0(wrangler@4.47.0)
+        version: 1.12.0(wrangler@4.47.0(@cloudflare/workers-types@4.20251115.0))
       '@sentry/nextjs':
         specifier: ^10.25.0
         version: 10.25.0(@opentelemetry/context-async-hooks@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/core@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(next@16.0.3(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.56.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0)(webpack@5.102.1(esbuild@0.25.12))
@@ -86,7 +86,7 @@ importers:
         version: 3.0.3
       drizzle-orm:
         specifier: ^0.44.7
-        version: 0.44.7(@electric-sql/pglite@0.3.14)(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(pg@8.16.3)
+        version: 0.44.7(@cloudflare/workers-types@4.20251115.0)(@electric-sql/pglite@0.3.14)(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(pg@8.16.3)
       next:
         specifier: ^16.0.3
         version: 16.0.3(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.56.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -118,6 +118,9 @@ importers:
       '@chromatic-com/playwright':
         specifier: ^0.12.7
         version: 0.12.7(@playwright/test@1.56.1)(@types/react@19.2.5)(esbuild@0.25.12)(prettier@3.6.2)(typescript@5.9.3)
+      '@cloudflare/workers-types':
+        specifier: ^4.20251115.0
+        version: 4.20251115.0
       '@commitlint/cli':
         specifier: ^20.1.0
         version: 20.1.0(@types/node@24.10.1)(typescript@5.9.3)
@@ -285,7 +288,7 @@ importers:
         version: 2.0.2(@types/react@19.2.5)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(vitest@4.0.9)
       wrangler:
         specifier: ^4.47.0
-        version: 4.47.0
+        version: 4.47.0(@cloudflare/workers-types@4.20251115.0)
 
 packages:
 
@@ -1135,6 +1138,9 @@ packages:
     engines: {node: '>=16'}
     cpu: [x64]
     os: [win32]
+
+  '@cloudflare/workers-types@4.20251115.0':
+    resolution: {integrity: sha512-aM7jp7IfKhqKvfSaK1IhVTbSzxB6KQ4gX8e/W29tOuZk+YHlYXuRd/bMm4hWkfd7B1HWNWdsx1GTaEUoZIuVsw==}
 
   '@colors/colors@1.5.0':
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
@@ -13785,6 +13791,8 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20251109.0':
     optional: true
 
+  '@cloudflare/workers-types@4.20251115.0': {}
+
   '@colors/colors@1.5.0':
     optional: true
 
@@ -15296,7 +15304,7 @@ snapshots:
       - aws-crt
       - supports-color
 
-  '@opennextjs/cloudflare@1.12.0(wrangler@4.47.0)':
+  '@opennextjs/cloudflare@1.12.0(wrangler@4.47.0(@cloudflare/workers-types@4.20251115.0))':
     dependencies:
       '@dotenvx/dotenvx': 1.31.0
       '@opennextjs/aws': 3.8.5
@@ -15306,7 +15314,7 @@ snapshots:
       glob: 11.0.3
       rclone.js: 0.6.6
       ts-tqdm: 0.8.6
-      wrangler: 4.47.0
+      wrangler: 4.47.0(@cloudflare/workers-types@4.20251115.0)
       yargs: 18.0.0
     transitivePeerDependencies:
       - aws-crt
@@ -19886,8 +19894,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.44.7(@electric-sql/pglite@0.3.14)(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(pg@8.16.3):
+  drizzle-orm@0.44.7(@cloudflare/workers-types@4.20251115.0)(@electric-sql/pglite@0.3.14)(@opentelemetry/api@1.9.0)(@types/pg@8.15.6)(pg@8.16.3):
     optionalDependencies:
+      '@cloudflare/workers-types': 4.20251115.0
       '@electric-sql/pglite': 0.3.14
       '@opentelemetry/api': 1.9.0
       '@types/pg': 8.15.6
@@ -26249,7 +26258,7 @@ snapshots:
       '@cloudflare/workerd-linux-arm64': 1.20251109.0
       '@cloudflare/workerd-windows-64': 1.20251109.0
 
-  wrangler@4.47.0:
+  wrangler@4.47.0(@cloudflare/workers-types@4.20251115.0):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.4.0
       '@cloudflare/unenv-preset': 2.7.10(unenv@2.0.0-rc.24)(workerd@1.20251109.0)
@@ -26260,6 +26269,7 @@ snapshots:
       unenv: 2.0.0-rc.24
       workerd: 1.20251109.0
     optionalDependencies:
+      '@cloudflare/workers-types': 4.20251115.0
       fsevents: 2.3.3
     transitivePeerDependencies:
       - bufferutil

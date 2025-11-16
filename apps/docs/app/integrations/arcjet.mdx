@@ -1,0 +1,849 @@
+# Arcjet
+
+Security layer providing bot detection, rate limiting, email validation, and attack protection for Next.js applications.
+
+## Overview
+
+Arcjet provides comprehensive security features:
+
+- **Shield WAF** - Web Application Firewall for common attacks
+- **Bot Detection** - Block automated traffic, scrapers
+- **Rate Limiting** - Token bucket algorithm for API protection
+- **Email Validation** - Prevent disposable/invalid emails
+- **Attack Protection** - SQL injection, XSS, path traversal
+- **Real-time Decisions** - Fast, edge-compatible protection
+
+## Quick Setup
+
+### 1. Get Arcjet API Key
+
+Sign up at [arcjet.com](https://arcjet.com):
+
+1. Create a new site
+2. Copy your **API Key**
+3. Choose protection rules
+
+### 2. Configure Environment Variables
+
+```bash
+# apps/web/.env.local
+
+ARCJET_KEY=ajkey_your_api_key_here
+ARCJET_MODE=LIVE  # or DRY_RUN for testing
+```
+
+### 3. Test Configuration
+
+```bash
+# Development mode
+pnpm --filter web dev
+
+# Test bot detection by visiting protected routes
+# Check Arcjet dashboard for decisions
+```
+
+## Configuration
+
+The boilerplate includes pre-configured Arcjet setup:
+
+### `libs/Arcjet.ts`
+
+Base Arcjet instance with Shield WAF:
+
+```typescript
+import arcjet, { shield } from '@arcjet/next'
+
+export const aj = arcjet({
+  key: process.env.ARCJET_KEY!,
+  rules: [
+    // Shield WAF - protection against common attacks
+    shield({
+      mode: process.env.ARCJET_MODE === 'LIVE' ? 'LIVE' : 'DRY_RUN',
+    }),
+  ],
+})
+```
+
+### `middleware.ts`
+
+Bot detection and rate limiting in middleware:
+
+```typescript
+import arcjet, { detectBot, tokenBucket } from '@arcjet/next'
+
+const aj = arcjet({
+  key: process.env.ARCJET_KEY!,
+  rules: [
+    detectBot({
+      mode: 'LIVE',
+      block: [
+        'AUTOMATED',      // Automated tools
+        'LIKELY_AUTOMATED', // Suspicious patterns
+      ],
+      allow: [
+        'SEARCH_ENGINE',  // Google, Bing
+      ],
+    }),
+    tokenBucket({
+      mode: 'LIVE',
+      refillRate: 10,     // 10 tokens per interval
+      interval: '10s',    // Every 10 seconds
+      capacity: 100,      // Maximum 100 tokens
+    }),
+  ],
+})
+
+export async function middleware(request: NextRequest) {
+  // Skip protection for certain paths
+  if (request.nextUrl.pathname.startsWith('/api/health')) {
+    return NextResponse.next()
+  }
+
+  // Protect request
+  const decision = await aj.protect(request)
+
+  if (decision.isDenied()) {
+    return NextResponse.json(
+      { error: 'Forbidden', reason: decision.reason },
+      { status: 403 }
+    )
+  }
+
+  return NextResponse.next()
+}
+```
+
+## Shield WAF
+
+Web Application Firewall provides automatic protection:
+
+### What Shield Blocks
+
+- **SQL Injection** - Database attack attempts
+- **Cross-Site Scripting (XSS)** - Script injection
+- **Path Traversal** - Directory access attempts
+- **Command Injection** - OS command execution
+- **Server-Side Request Forgery (SSRF)**
+- **Log4Shell** - CVE-2021-44228 exploitation
+- **Spring4Shell** - CVE-2022-22965 exploitation
+
+### Enable Shield
+
+```typescript
+import arcjet, { shield } from '@arcjet/next'
+
+const aj = arcjet({
+  key: process.env.ARCJET_KEY!,
+  rules: [
+    shield({
+      mode: 'LIVE',  // or 'DRY_RUN' for testing
+    }),
+  ],
+})
+
+// Use in API routes, middleware, or Server Actions
+```
+
+### Example: Protect API Route
+
+```typescript
+// app/api/users/route.ts
+import { aj } from '@/libs/Arcjet'
+import { NextResponse } from 'next/server'
+
+export async function POST(request: Request) {
+  const decision = await aj.protect(request)
+
+  if (decision.isDenied()) {
+    return NextResponse.json(
+      { error: 'Forbidden' },
+      { status: 403 }
+    )
+  }
+
+  // Process request
+  const body = await request.json()
+  // ... your logic
+
+  return NextResponse.json({ success: true })
+}
+```
+
+## Bot Detection
+
+Identify and block automated traffic:
+
+### Bot Categories
+
+```typescript
+import arcjet, { detectBot } from '@arcjet/next'
+
+const aj = arcjet({
+  key: process.env.ARCJET_KEY!,
+  rules: [
+    detectBot({
+      mode: 'LIVE',
+
+      // Block these categories
+      block: [
+        'AUTOMATED',         // Scrapers, automation tools
+        'LIKELY_AUTOMATED',  // Suspicious patterns
+      ],
+
+      // Allow these categories
+      allow: [
+        'SEARCH_ENGINE',     // Google, Bing, etc.
+        'PREVIEW',           // Link preview bots (Slack, Discord)
+        'MONITOR',           // Uptime monitors
+      ],
+    }),
+  ],
+})
+```
+
+### Example: Protect Content from Scrapers
+
+```typescript
+// app/pricing/page.tsx
+import { aj } from '@/libs/Arcjet'
+import { headers } from 'next/headers'
+
+export default async function PricingPage() {
+  const request = {
+    headers: await headers(),
+  }
+
+  const decision = await aj.protect(request)
+
+  if (decision.isDenied()) {
+    if (decision.reason.isBot()) {
+      return <div>Access denied for automated traffic</div>
+    }
+  }
+
+  return <PricingTable />
+}
+```
+
+### Allow Specific Bots
+
+```typescript
+detectBot({
+  mode: 'LIVE',
+  allow: [
+    'SEARCH_ENGINE',  // SEO
+    'PREVIEW',        // Social media previews
+    'MONITOR',        // Uptime checks
+  ],
+})
+```
+
+## Rate Limiting
+
+Token bucket algorithm for flexible rate limiting:
+
+### Basic Rate Limiting
+
+```typescript
+import arcjet, { tokenBucket } from '@arcjet/next'
+
+const aj = arcjet({
+  key: process.env.ARCJET_KEY!,
+  rules: [
+    tokenBucket({
+      mode: 'LIVE',
+      refillRate: 10,    // Add 10 tokens
+      interval: '10s',   // Every 10 seconds
+      capacity: 100,     // Maximum 100 tokens
+    }),
+  ],
+})
+```
+
+### Rate Limit by User
+
+```typescript
+// app/api/search/route.ts
+import arcjet, { tokenBucket } from '@arcjet/next'
+
+const aj = arcjet({
+  key: process.env.ARCJET_KEY!,
+  characteristics: ['userId'],  // Rate limit per user
+  rules: [
+    tokenBucket({
+      mode: 'LIVE',
+      refillRate: 20,
+      interval: '60s',
+      capacity: 100,
+    }),
+  ],
+})
+
+export async function GET(request: Request) {
+  const userId = await getCurrentUserId()
+
+  const decision = await aj.protect(request, {
+    userId,  // Rate limit this specific user
+  })
+
+  if (decision.isDenied()) {
+    if (decision.reason.isRateLimit()) {
+      return Response.json(
+        {
+          error: 'Too many requests',
+          retry_after: decision.reason.retryAfter,
+        },
+        { status: 429 }
+      )
+    }
+  }
+
+  // Process search
+}
+```
+
+### Multiple Rate Limits
+
+```typescript
+import arcjet, { tokenBucket } from '@arcjet/next'
+
+const aj = arcjet({
+  key: process.env.ARCJET_KEY!,
+  rules: [
+    // Strict limit for anonymous users
+    tokenBucket({
+      mode: 'LIVE',
+      refillRate: 5,
+      interval: '60s',
+      capacity: 10,
+      match: (request) => !request.userId,
+    }),
+
+    // Generous limit for authenticated users
+    tokenBucket({
+      mode: 'LIVE',
+      refillRate: 100,
+      interval: '60s',
+      capacity: 500,
+      match: (request) => !!request.userId,
+    }),
+  ],
+})
+```
+
+### Sliding Window
+
+```typescript
+import arcjet, { slidingWindow } from '@arcjet/next'
+
+const aj = arcjet({
+  key: process.env.ARCJET_KEY!,
+  rules: [
+    slidingWindow({
+      mode: 'LIVE',
+      max: 100,          // 100 requests
+      interval: '60s',   // Per 60 seconds
+    }),
+  ],
+})
+```
+
+## Email Validation
+
+Validate emails at signup to prevent spam:
+
+### Basic Email Validation
+
+```typescript
+import arcjet, { validateEmail } from '@arcjet/next'
+
+const aj = arcjet({
+  key: process.env.ARCJET_KEY!,
+  rules: [
+    validateEmail({
+      mode: 'LIVE',
+      block: [
+        'DISPOSABLE',      // Temporary email services
+        'INVALID',         // Malformed emails
+        'NO_MX_RECORDS',   // Domain can't receive email
+      ],
+    }),
+  ],
+})
+```
+
+### Example: Signup Form
+
+```typescript
+// app/api/auth/signup/route.ts
+import arcjet, { validateEmail } from '@arcjet/next'
+
+const aj = arcjet({
+  key: process.env.ARCJET_KEY!,
+  rules: [
+    validateEmail({
+      mode: 'LIVE',
+      block: ['DISPOSABLE', 'INVALID', 'NO_MX_RECORDS'],
+    }),
+  ],
+})
+
+export async function POST(request: Request) {
+  const { email } = await request.json()
+
+  const decision = await aj.protect(request, { email })
+
+  if (decision.isDenied()) {
+    if (decision.reason.isEmail()) {
+      return Response.json(
+        { error: 'Invalid email address' },
+        { status: 400 }
+      )
+    }
+  }
+
+  // Create user account
+  await createUser(email)
+
+  return Response.json({ success: true })
+}
+```
+
+### Allow Free Email Providers
+
+```typescript
+validateEmail({
+  mode: 'LIVE',
+  block: ['DISPOSABLE', 'INVALID'],
+  // Don't block Gmail, Outlook, etc.
+})
+```
+
+## Server Actions
+
+Protect Server Actions:
+
+```typescript
+'use server'
+
+import arcjet, { shield } from '@arcjet/next'
+import { headers } from 'next/headers'
+
+const aj = arcjet({
+  key: process.env.ARCJET_KEY!,
+  rules: [shield({ mode: 'LIVE' })],
+})
+
+export async function createPost(formData: FormData) {
+  const request = {
+    headers: await headers(),
+  }
+
+  const decision = await aj.protect(request)
+
+  if (decision.isDenied()) {
+    throw new Error('Forbidden')
+  }
+
+  // Create post
+  const title = formData.get('title')
+  // ... your logic
+}
+```
+
+## Route-Specific Protection
+
+### Different Rules per Route
+
+```typescript
+// middleware.ts
+import arcjet, { detectBot, tokenBucket } from '@arcjet/next'
+
+// Strict protection for API
+const apiProtection = arcjet({
+  key: process.env.ARCJET_KEY!,
+  rules: [
+    tokenBucket({
+      refillRate: 10,
+      interval: '60s',
+      capacity: 100,
+    }),
+  ],
+})
+
+// Bot detection for content
+const contentProtection = arcjet({
+  key: process.env.ARCJET_KEY!,
+  rules: [
+    detectBot({
+      block: ['AUTOMATED'],
+      allow: ['SEARCH_ENGINE'],
+    }),
+  ],
+})
+
+export async function middleware(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith('/api')) {
+    const decision = await apiProtection.protect(request)
+    if (decision.isDenied()) {
+      return new Response('Too many requests', { status: 429 })
+    }
+  }
+
+  if (request.nextUrl.pathname.startsWith('/blog')) {
+    const decision = await contentProtection.protect(request)
+    if (decision.isDenied()) {
+      return new Response('Forbidden', { status: 403 })
+    }
+  }
+
+  return NextResponse.next()
+}
+```
+
+## Decision Handling
+
+### Check Decision Type
+
+```typescript
+const decision = await aj.protect(request)
+
+if (decision.isDenied()) {
+  // Check specific denial reason
+  if (decision.reason.isRateLimit()) {
+    console.log('Rate limited, retry after:', decision.reason.retryAfter)
+  }
+
+  if (decision.reason.isBot()) {
+    console.log('Bot detected')
+  }
+
+  if (decision.reason.isEmail()) {
+    console.log('Invalid email')
+  }
+
+  if (decision.reason.isShield()) {
+    console.log('Attack detected')
+  }
+}
+```
+
+### Dry Run Mode
+
+Test rules without blocking:
+
+```typescript
+const aj = arcjet({
+  key: process.env.ARCJET_KEY!,
+  rules: [
+    shield({ mode: 'DRY_RUN' }),  // Test mode
+  ],
+})
+
+const decision = await aj.protect(request)
+
+// Decision still returned, but never denies
+if (decision.isDenied()) {
+  console.log('Would have blocked:', decision.reason)
+  // But request continues
+}
+```
+
+## Monitoring
+
+### Decision Logging
+
+```typescript
+const decision = await aj.protect(request)
+
+console.log({
+  id: decision.id,
+  conclusion: decision.conclusion,  // 'ALLOW' or 'DENY'
+  reason: decision.reason,
+  ip: decision.ip,
+})
+```
+
+### Arcjet Dashboard
+
+View all decisions in real-time:
+
+1. **Go to [app.arcjet.com](https://app.arcjet.com)**
+2. **Select your site**
+3. **View decisions:**
+   - Real-time feed
+   - Filter by type (bot, rate limit, etc.)
+   - See request details
+   - Analyze patterns
+
+### Export Decisions
+
+```typescript
+// Send to your logging system
+import { logger } from '@/libs/Logger'
+
+const decision = await aj.protect(request)
+
+logger.info('Arcjet decision', {
+  arcjet_id: decision.id,
+  conclusion: decision.conclusion,
+  reason: decision.reason.type,
+  ip: decision.ip,
+  path: request.url,
+})
+```
+
+## Testing
+
+### Local Testing
+
+```bash
+# Use DRY_RUN mode
+ARCJET_MODE=DRY_RUN pnpm dev
+```
+
+### Test Bot Detection
+
+```bash
+# Use a bot user agent
+curl -H "User-Agent: BotName/1.0" http://localhost:3000/api/test
+```
+
+### Test Rate Limiting
+
+```bash
+# Send rapid requests
+for i in {1..20}; do
+  curl http://localhost:3000/api/test
+done
+```
+
+### Test Email Validation
+
+```bash
+# Try disposable email
+curl -X POST http://localhost:3000/api/signup \
+  -d '{"email":"test@tempmail.com"}'
+```
+
+## Best Practices
+
+✅ **DO:**
+
+- Use Shield WAF on all API routes
+- Rate limit based on user ID for authenticated routes
+- Allow search engine bots for SEO
+- Use DRY_RUN mode for testing
+- Monitor decisions in dashboard
+- Set appropriate rate limits (not too strict)
+- Validate emails at signup
+- Log denial reasons
+
+❌ **DON'T:**
+
+- Block all bots (allow search engines)
+- Use overly strict rate limits
+- Skip testing in DRY_RUN mode
+- Ignore decision analytics
+- Forget to handle rate limit responses
+- Block monitor bots (uptime checks)
+- Use same rules for all routes
+
+## Common Patterns
+
+### Protect Admin Routes
+
+```typescript
+// middleware.ts
+const adminProtection = arcjet({
+  key: process.env.ARCJET_KEY!,
+  rules: [
+    // Very strict rate limit
+    tokenBucket({
+      refillRate: 2,
+      interval: '60s',
+      capacity: 10,
+    }),
+    // Block all bots
+    detectBot({
+      block: ['AUTOMATED', 'LIKELY_AUTOMATED'],
+    }),
+  ],
+})
+
+export async function middleware(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    const decision = await adminProtection.protect(request)
+    if (decision.isDenied()) {
+      return new Response('Forbidden', { status: 403 })
+    }
+  }
+}
+```
+
+### API Key Rate Limiting
+
+```typescript
+// app/api/data/route.ts
+const aj = arcjet({
+  key: process.env.ARCJET_KEY!,
+  characteristics: ['apiKey'],
+  rules: [
+    tokenBucket({
+      refillRate: 100,
+      interval: '60s',
+      capacity: 1000,
+    }),
+  ],
+})
+
+export async function GET(request: Request) {
+  const apiKey = request.headers.get('x-api-key')
+
+  const decision = await aj.protect(request, { apiKey })
+
+  if (decision.isDenied()) {
+    return Response.json(
+      { error: 'Rate limit exceeded' },
+      { status: 429 }
+    )
+  }
+
+  return Response.json({ data: [] })
+}
+```
+
+### Gradual Rate Limit by Plan
+
+```typescript
+const aj = arcjet({
+  key: process.env.ARCJET_KEY!,
+  rules: [
+    // Free tier
+    tokenBucket({
+      refillRate: 10,
+      interval: '60s',
+      capacity: 100,
+      match: (req) => req.plan === 'free',
+    }),
+
+    // Pro tier
+    tokenBucket({
+      refillRate: 100,
+      interval: '60s',
+      capacity: 1000,
+      match: (req) => req.plan === 'pro',
+    }),
+
+    // Enterprise tier
+    tokenBucket({
+      refillRate: 1000,
+      interval: '60s',
+      capacity: 10000,
+      match: (req) => req.plan === 'enterprise',
+    }),
+  ],
+})
+```
+
+## Troubleshooting
+
+### Legitimate Traffic Blocked
+
+1. **Check decision in dashboard:**
+   - Identify block reason
+   - Review IP address
+   - Check user agent
+
+2. **Adjust rules:**
+   ```typescript
+   // Too strict
+   detectBot({ block: ['AUTOMATED', 'LIKELY_AUTOMATED'] })
+
+   // More lenient
+   detectBot({ block: ['AUTOMATED'] })
+   ```
+
+3. **Use allowlists:**
+   ```typescript
+   // Skip protection for specific IPs
+   if (request.ip === 'trusted-ip') {
+     return NextResponse.next()
+   }
+   ```
+
+### Rate Limits Too Strict
+
+1. **Increase capacity:**
+   ```typescript
+   tokenBucket({
+     refillRate: 100,   // Was 10
+     capacity: 1000,    // Was 100
+   })
+   ```
+
+2. **Use longer intervals:**
+   ```typescript
+   tokenBucket({
+     refillRate: 100,
+     interval: '60s',   // Was '10s'
+   })
+   ```
+
+### Search Engine Bots Blocked
+
+```typescript
+// Always allow search engines
+detectBot({
+  block: ['AUTOMATED'],
+  allow: ['SEARCH_ENGINE'],  // ✅ Critical for SEO
+})
+```
+
+### High Latency
+
+1. **Arcjet is edge-optimized** (typically <10ms)
+2. **Check network issues**
+3. **Use fewer rules** if needed
+4. **Cache decisions** for repeated requests
+
+## Cost Optimization
+
+### Free Tier
+
+- **1 million requests/month**
+- All features included
+- Real-time dashboard
+
+### Reduce Costs
+
+1. **Skip protection for static assets:**
+   ```typescript
+   if (request.nextUrl.pathname.startsWith('/_next')) {
+     return NextResponse.next()
+   }
+   ```
+
+2. **Use DRY_RUN selectively:**
+   ```typescript
+   shield({
+     mode: process.env.NODE_ENV === 'development' ? 'DRY_RUN' : 'LIVE',
+   })
+   ```
+
+3. **Protect critical routes only**
+
+## Resources
+
+- [Arcjet Documentation](https://docs.arcjet.com/)
+- [Next.js Integration](https://docs.arcjet.com/get-started/nextjs)
+- [Bot Detection](https://docs.arcjet.com/bot-protection/concepts)
+- [Rate Limiting](https://docs.arcjet.com/rate-limiting/concepts)
+- [Shield WAF](https://docs.arcjet.com/shield/concepts)
+- [Email Validation](https://docs.arcjet.com/email-validation/concepts)
+
+## Next Steps
+
+- **[Security Guide](/guides/security)** - Security best practices
+- **[Middleware](/architecture/middleware)** - Middleware architecture
+- **[Operations](/operations)** - Production monitoring

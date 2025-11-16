@@ -1,0 +1,478 @@
+# Switching Authentication Providers
+
+Guide to switching between Clerk, Cloudflare Access, and AWS Cognito without code changes.
+
+## Overview
+
+The boilerplate uses a **modular authentication system** that allows switching providers via a single environment variable:
+
+```bash
+# Switch providers instantly
+NEXT_PUBLIC_AUTH_PROVIDER=clerk      # Default
+NEXT_PUBLIC_AUTH_PROVIDER=cloudflare
+NEXT_PUBLIC_AUTH_PROVIDER=cognito
+```
+
+**No code changes required** - the factory pattern handles all provider-specific logic.
+
+## Quick Switch
+
+### Step 1: Update Environment Variable
+
+```bash
+# apps/web/.env.local
+
+# From Clerk (default)
+NEXT_PUBLIC_AUTH_PROVIDER=clerk
+
+# To Cloudflare Access
+NEXT_PUBLIC_AUTH_PROVIDER=cloudflare
+
+# Or AWS Cognito
+NEXT_PUBLIC_AUTH_PROVIDER=cognito
+```
+
+### Step 2: Configure Provider Credentials
+
+Each provider needs its own credentials:
+
+**Clerk:**
+```bash
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+```
+
+**Cloudflare Access:**
+```bash
+NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN=your-team.cloudflareaccess.com
+NEXT_PUBLIC_CLOUDFLARE_AUDIENCE=your_audience_tag
+NEXT_PUBLIC_CLOUDFLARE_VERIFY_JWT=true
+```
+
+**AWS Cognito:**
+```bash
+NEXT_PUBLIC_COGNITO_USER_POOL_ID=us-east-1_...
+NEXT_PUBLIC_COGNITO_CLIENT_ID=...
+NEXT_PUBLIC_COGNITO_REGION=us-east-1
+```
+
+### Step 3: Restart Development Server
+
+```bash
+pnpm dev
+```
+
+**That's it!** The app now uses the new provider.
+
+## How It Works
+
+### Factory Pattern
+
+```typescript
+// src/libs/auth/factory.ts
+import type { AuthAdapter } from './types'
+
+let authInstance: AuthAdapter | null = null
+
+export function getAuthAdapter(): AuthAdapter {
+  if (authInstance) return authInstance
+
+  const provider = process.env.NEXT_PUBLIC_AUTH_PROVIDER || 'clerk'
+
+  switch (provider) {
+    case 'clerk':
+      authInstance = new ClerkAdapter()
+      break
+    case 'cloudflare':
+      authInstance = new CloudflareAdapter()
+      break
+    case 'cognito':
+      authInstance = new CognitoAdapter()
+      break
+    default:
+      throw new Error(`Unknown auth provider: ${provider}`)
+  }
+
+  return authInstance
+}
+
+// Singleton instance
+export const auth = getAuthAdapter()
+```
+
+### Unified Interface
+
+All providers implement the same interface:
+
+```typescript
+// src/libs/auth/types.ts
+export interface AuthAdapter {
+  // Server-side
+  getCurrentUser(): Promise<User | null>
+  getCurrentSession(): Promise<Session | null>
+  isAuthenticated(): Promise<boolean>
+
+  // Middleware
+  getMiddleware(): any
+
+  // React components
+  AuthProvider: React.ComponentType<{ children: React.ReactNode }>
+  SignInComponent: React.ComponentType
+  SignUpComponent: React.ComponentType
+  SignOutButtonComponent: React.ComponentType
+  UserProfileComponent: React.ComponentType
+}
+```
+
+### Your Code Stays the Same
+
+```typescript
+// This code works with ANY provider
+import { auth } from '@/libs/auth'
+
+export default async function DashboardPage() {
+  const user = await auth.getCurrentUser()  // ← Works with all providers
+
+  if (!user) redirect('/sign-in')
+
+  return <Dashboard user={user} />
+}
+```
+
+## Provider Comparison
+
+| Feature | Clerk | Cloudflare | Cognito |
+|---------|-------|------------|---------|
+| **Setup Complexity** | Easy | Medium | Hard |
+| **Cost** | $25/mo | Free | Variable |
+| **UI Components** | ✅ Beautiful | ❌ DIY | ❌ DIY |
+| **Social Login** | ✅ All | ✅ Most | ✅ Custom |
+| **MFA** | ✅ Built-in | ✅ Built-in | ✅ Built-in |
+| **Organizations** | ✅ Yes | ✅ Teams | ❌ Manual |
+| **Customization** | Medium | High | High |
+| **Best For** | SaaS apps | Enterprises | AWS users |
+
+## Migration Guide
+
+### From Clerk to Cloudflare
+
+**1. Export Users from Clerk:**
+```bash
+# Clerk Dashboard → Users → Export
+```
+
+**2. Set up Cloudflare Access:**
+```bash
+# Create application in Cloudflare Zero Trust
+# Configure allowed emails/domains
+```
+
+**3. Update Environment:**
+```bash
+NEXT_PUBLIC_AUTH_PROVIDER=cloudflare
+NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN=your-team.cloudflareaccess.com
+NEXT_PUBLIC_CLOUDFLARE_AUDIENCE=your_audience_tag
+```
+
+**4. Custom Sign-In UI:**
+
+Cloudflare doesn't provide UI components, so you'll see a custom sign-in form:
+
+```typescript
+// Automatically used when provider = 'cloudflare'
+// Located at: src/libs/auth/adapters/CloudflareSignInForm.tsx
+```
+
+**5. Test Authentication:**
+```bash
+pnpm dev
+# Visit /sign-in
+# Should redirect to Cloudflare Access login
+```
+
+### From Clerk to AWS Cognito
+
+**1. Create Cognito User Pool:**
+```bash
+# AWS Console → Cognito → Create User Pool
+# Configure password policies, MFA
+```
+
+**2. Update Environment:**
+```bash
+NEXT_PUBLIC_AUTH_PROVIDER=cognito
+NEXT_PUBLIC_COGNITO_USER_POOL_ID=us-east-1_...
+NEXT_PUBLIC_COGNITO_CLIENT_ID=...
+NEXT_PUBLIC_COGNITO_REGION=us-east-1
+```
+
+**3. Implement Cognito Adapter:**
+
+The Cognito adapter is a stub - you'll need to implement:
+```typescript
+// src/libs/auth/adapters/CognitoAdapter.tsx
+export class CognitoAdapter implements AuthAdapter {
+  // Implement all interface methods
+  // Use aws-amplify or amazon-cognito-identity-js
+}
+```
+
+**4. Test:**
+```bash
+pnpm dev
+```
+
+### From Cloudflare to Clerk
+
+**1. Create Clerk Application:**
+```bash
+# clerk.com → Create Application
+```
+
+**2. Update Environment:**
+```bash
+NEXT_PUBLIC_AUTH_PROVIDER=clerk
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+```
+
+**3. Import Users:**
+```bash
+# Clerk Dashboard → Users → Import
+# Upload CSV with user data
+```
+
+**4. Test:**
+```bash
+pnpm dev
+# Should see Clerk UI components
+```
+
+## Data Migration
+
+### User Data Schema
+
+Each provider uses different user schemas. Map them:
+
+**Clerk User:**
+```typescript
+{
+  id: string
+  emailAddresses: [{ emailAddress: string }]
+  firstName: string
+  lastName: string
+  imageUrl: string
+}
+```
+
+**Cloudflare User:**
+```typescript
+{
+  sub: string  // User ID
+  email: string
+  name: string
+  groups: string[]
+}
+```
+
+**Your Database Schema:**
+```typescript
+// src/models/Schema.ts
+export const users = pgTable('users', {
+  id: text('id').primaryKey(),
+  email: text('email').notNull(),
+  name: text('name'),
+  // Provider-agnostic fields
+})
+```
+
+### Sync Users to Database
+
+```typescript
+// app/api/webhooks/[provider]/route.ts
+export async function POST(request: Request) {
+  const { type, data } = await request.json()
+
+  if (type === 'user.created') {
+    await db.insert(users).values({
+      id: data.id || data.sub,
+      email: data.email || data.emailAddresses[0].emailAddress,
+      name: data.name || `${data.firstName} ${data.lastName}`,
+    })
+  }
+
+  return new Response('OK', { status: 200 })
+}
+```
+
+## Session Management
+
+### Provider-Specific Sessions
+
+Each provider manages sessions differently:
+
+**Clerk:**
+- Cookie-based sessions
+- 7-day default lifetime
+- Automatic refresh
+
+**Cloudflare:**
+- JWT tokens in headers
+- Configurable lifetime
+- Manual verification
+
+**Cognito:**
+- Access tokens + refresh tokens
+- 1-hour access, 30-day refresh
+- Token rotation
+
+### Unified Session Interface
+
+```typescript
+// src/libs/auth/types.ts
+export interface Session {
+  userId: string
+  expiresAt: Date
+  // Provider-specific data
+  metadata?: Record<string, any>
+}
+```
+
+## Testing Provider Switch
+
+### Unit Tests
+
+```typescript
+// tests/auth/factory.test.ts
+import { getAuthAdapter } from '@/libs/auth/factory'
+
+describe('Auth Factory', () => {
+  it('returns Clerk adapter when provider is clerk', () => {
+    process.env.NEXT_PUBLIC_AUTH_PROVIDER = 'clerk'
+
+    const adapter = getAuthAdapter()
+
+    expect(adapter.constructor.name).toBe('ClerkAdapter')
+  })
+
+  it('returns Cloudflare adapter when provider is cloudflare', () => {
+    process.env.NEXT_PUBLIC_AUTH_PROVIDER = 'cloudflare'
+
+    const adapter = getAuthAdapter()
+
+    expect(adapter.constructor.name).toBe('CloudflareAdapter')
+  })
+})
+```
+
+### E2E Tests
+
+```typescript
+// tests/e2e/auth-switch.e2e.ts
+import { test, expect } from '@playwright/test'
+
+test.describe('Auth Provider Switching', () => {
+  test('works with Clerk', async ({ page }) => {
+    // Set provider to Clerk
+    process.env.NEXT_PUBLIC_AUTH_PROVIDER = 'clerk'
+
+    await page.goto('/sign-in')
+
+    // Should see Clerk UI
+    await expect(page.locator('.cl-rootBox')).toBeVisible()
+  })
+
+  test('works with Cloudflare', async ({ page }) => {
+    // Set provider to Cloudflare
+    process.env.NEXT_PUBLIC_AUTH_PROVIDER = 'cloudflare'
+
+    await page.goto('/sign-in')
+
+    // Should redirect to Cloudflare Access
+    await expect(page).toHaveURL(/cloudflareaccess.com/)
+  })
+})
+```
+
+## Troubleshooting
+
+### Provider Not Switching
+
+1. **Check environment variable:**
+   ```bash
+   echo $NEXT_PUBLIC_AUTH_PROVIDER
+   ```
+
+2. **Restart dev server:**
+   ```bash
+   # Environment variables are cached
+   pnpm dev
+   ```
+
+3. **Clear Next.js cache:**
+   ```bash
+   rm -rf .next
+   pnpm dev
+   ```
+
+### Credentials Not Working
+
+1. **Verify provider credentials:**
+   ```bash
+   # Check .env.local has correct keys
+   cat .env.local | grep CLERK
+   cat .env.local | grep CLOUDFLARE
+   ```
+
+2. **Test credentials:**
+   - Clerk: Dashboard → API Keys
+   - Cloudflare: Zero Trust → Access → Applications
+   - Cognito: AWS Console → Cognito → User Pools
+
+### Sessions Not Persisting
+
+1. **Check middleware configuration:**
+   ```typescript
+   // src/middleware.ts
+   const authMiddleware = auth.getMiddleware()
+   ```
+
+2. **Verify cookie settings:**
+   - Check domain
+   - Check secure flag
+   - Check sameSite
+
+## Best Practices
+
+✅ **DO:**
+
+- Set `NEXT_PUBLIC_AUTH_PROVIDER` in environment
+- Test after switching providers
+- Migrate user data properly
+- Keep auth code provider-agnostic
+- Use unified session interface
+- Test all auth flows
+- Document provider-specific setup
+
+❌ **DON'T:**
+
+- Hardcode provider-specific logic in pages
+- Skip user data migration
+- Forget to test sign-out
+- Mix provider-specific code
+- Skip session testing
+- Forget webhook configuration
+
+## Resources
+
+- [Clerk Guide](/guides/authentication/clerk)
+- [Cloudflare Guide](/guides/authentication/cloudflare)
+- [AWS Cognito Guide](/guides/authentication/cognito)
+- [Authentication Security](/guides/authentication/security)
+- [Architecture Overview](/architecture/auth-system)
+
+## Next Steps
+
+- **[Auth Security](/guides/authentication/security)** - Security best practices
+- **[Clerk Setup](/guides/authentication/clerk)** - Detailed Clerk guide
+- **[Cloudflare Setup](/guides/authentication/cloudflare)** - Cloudflare guide

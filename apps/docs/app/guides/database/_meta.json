@@ -1,0 +1,22 @@
+{
+  "index": {
+    "title": "Overview",
+    "type": "page"
+  },
+  "schema": {
+    "title": "Schema Design",
+    "type": "page"
+  },
+  "migrations": {
+    "title": "Migrations",
+    "type": "page"
+  },
+  "rollback": {
+    "title": "Rollback Procedures",
+    "type": "page"
+  },
+  "repositories": {
+    "title": "Repository Pattern",
+    "type": "page"
+  }
+}

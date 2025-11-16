@@ -36,7 +36,7 @@ export function createD1Connection(d1: D1Database) {
  * }
  * ```
  */
-export async function getD1(request?: Request): Promise<ReturnType<typeof createD1Connection>> {
+export async function getD1(_request?: Request): Promise<ReturnType<typeof createD1Connection>> {
   // In Cloudflare Workers, the D1 binding is available via the env object
   // The env object is passed through the request context
   

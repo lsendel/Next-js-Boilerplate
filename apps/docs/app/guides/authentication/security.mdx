@@ -1,0 +1,623 @@
+# Authentication Security
+
+Security best practices for authentication, session management, and access control.
+
+## Overview
+
+The boilerplate implements comprehensive security measures:
+
+- **Secure Sessions** - HTTPOnly cookies, CSRF protection
+- **Password Security** - Hashing, complexity requirements
+- **Multi-Factor Authentication** - TOTP, SMS backup
+- **Rate Limiting** - Login attempt throttling
+- **HTTPS Enforcement** - Secure communication only
+- **Token Security** - JWT validation, expiration
+- **Audit Logging** - Authentication events tracked
+
+## Session Security
+
+### Session Configuration
+
+```typescript
+// Secure session cookies
+const sessionCookie = {
+  name: 'session_id',
+  httpOnly: true,           // Prevent JavaScript access
+  secure: true,             // HTTPS only
+  sameSite: 'lax',          // CSRF protection
+  maxAge: 7 * 24 * 60 * 60, // 7 days
+  path: '/',
+}
+```
+
+### HTTPOnly Cookies
+
+```typescript
+// src/libs/auth/session.ts
+export function setSessionCookie(sessionId: string) {
+  cookies().set({
+    name: 'session_id',
+    value: sessionId,
+    httpOnly: true,  // ← Prevents XSS attacks
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+  })
+}
+```
+
+**Why HTTPOnly:**
+- Prevents JavaScript from accessing cookies
+- Protects against XSS attacks
+- No `document.cookie` access
+
+### Secure Flag
+
+```typescript
+// Always use HTTPS in production
+secure: process.env.NODE_ENV === 'production'
+```
+
+**Why Secure:**
+- Cookie only sent over HTTPS
+- Prevents man-in-the-middle attacks
+- Required for production
+
+### SameSite Protection
+
+```typescript
+sameSite: 'lax'  // or 'strict'
+```
+
+**Options:**
+- `strict` - Never send cross-site (most secure)
+- `lax` - Send on top-level navigation
+- `none` - Always send (requires `secure: true`)
+
+**Recommended:** `lax` for better UX
+
+## Password Security
+
+### Password Hashing
+
+```typescript
+import { hash, verify } from '@node-rs/argon2'
+
+// Hash password before storing
+export async function hashPassword(password: string): Promise<string> {
+  return hash(password, {
+    memoryCost: 19456,
+    timeCost: 2,
+    outputLen: 32,
+    parallelism: 1,
+  })
+}
+
+// Verify password on login
+export async function verifyPassword(
+  hash: string,
+  password: string
+): Promise<boolean> {
+  return verify(hash, password)
+}
+```
+
+**Why Argon2:**
+- Winner of Password Hashing Competition
+- Resistant to GPU attacks
+- Configurable memory/time costs
+- Industry standard (2023)
+
+### Password Requirements
+
+```typescript
+// src/utils/validation.ts
+export const passwordSchema = z
+  .string()
+  .min(8, 'Password must be at least 8 characters')
+  .regex(/[A-Z]/, 'Must contain uppercase letter')
+  .regex(/[a-z]/, 'Must contain lowercase letter')
+  .regex(/[0-9]/, 'Must contain number')
+  .regex(/[^A-Za-z0-9]/, 'Must contain special character')
+```
+
+**Recommended:**
+- Minimum 8 characters
+- Mix of uppercase/lowercase
+- At least one number
+- At least one special character
+
+### Prevent Common Passwords
+
+```typescript
+// Check against common password list
+import { commonPasswords } from '@/utils/common-passwords'
+
+export function isCommonPassword(password: string): boolean {
+  return commonPasswords.includes(password.toLowerCase())
+}
+```
+
+## Multi-Factor Authentication
+
+### TOTP (Authenticator App)
+
+```typescript
+import { generateSecret, verifyToken } from '@node-rs/argon2'
+
+// Generate MFA secret
+export function generateMFASecret() {
+  return generateSecret()
+}
+
+// Verify MFA token
+export function verifyMFAToken(secret: string, token: string): boolean {
+  return verifyToken(secret, token)
+}
+```
+
+**Setup Flow:**
+1. User enables MFA
+2. Generate secret
+3. Show QR code
+4. User scans with authenticator app
+5. Verify token
+6. Store secret (encrypted)
+
+### SMS Backup
+
+```typescript
+// Send SMS backup code
+export async function sendSMSCode(phoneNumber: string) {
+  const code = generateRandomCode(6)  // 6-digit code
+
+  // Store in database with expiration
+  await db.insert(mfaCodes).values({
+    phoneNumber,
+    code: await hash(code),
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000),  // 10 min
+  })
+
+  // Send via SMS provider (Twilio, etc.)
+  await sendSMS(phoneNumber, `Your code: ${code}`)
+}
+```
+
+### Backup Codes
+
+```typescript
+// Generate backup codes on MFA setup
+export function generateBackupCodes(count: number = 10): string[] {
+  const codes: string[] = []
+
+  for (let i = 0; i < count; i++) {
+    codes.push(generateRandomCode(8))
+  }
+
+  return codes
+}
+
+// Store hashed backup codes
+export async function storeBackupCodes(userId: string, codes: string[]) {
+  const hashed = await Promise.all(
+    codes.map(code => hash(code))
+  )
+
+  await db.insert(backupCodes).values(
+    hashed.map(hash => ({
+      userId,
+      code: hash,
+      used: false,
+    }))
+  )
+}
+```
+
+## Rate Limiting
+
+### Login Attempt Throttling
+
+```typescript
+import arcjet, { tokenBucket } from '@arcjet/next'
+
+const aj = arcjet({
+  key: process.env.ARCJET_KEY!,
+  rules: [
+    // Strict rate limiting for login
+    tokenBucket({
+      mode: 'LIVE',
+      refillRate: 5,        // 5 attempts
+      interval: '15m',      // Per 15 minutes
+      capacity: 5,
+    }),
+  ],
+})
+
+export async function POST(request: Request) {
+  // Check rate limit
+  const decision = await aj.protect(request)
+
+  if (decision.isDenied()) {
+    return NextResponse.json(
+      { error: 'Too many login attempts. Try again later.' },
+      { status: 429 }
+    )
+  }
+
+  // Process login
+}
+```
+
+### Account Lockout
+
+```typescript
+// Lock account after failed attempts
+export async function handleFailedLogin(email: string) {
+  const attempts = await db
+    .select()
+    .from(loginAttempts)
+    .where(eq(loginAttempts.email, email))
+
+  const recentAttempts = attempts.filter(
+    a => a.createdAt > new Date(Date.now() - 15 * 60 * 1000)
+  )
+
+  if (recentAttempts.length >= 5) {
+    // Lock account
+    await db
+      .update(users)
+      .set({ lockedUntil: new Date(Date.now() + 30 * 60 * 1000) })
+      .where(eq(users.email, email))
+
+    throw new Error('Account locked for 30 minutes')
+  }
+
+  // Record attempt
+  await db.insert(loginAttempts).values({
+    email,
+    success: false,
+    ipAddress: request.ip,
+  })
+}
+```
+
+## Token Security
+
+### JWT Validation
+
+```typescript
+import { SignJWT, jwtVerify } from 'jose'
+
+// Create JWT
+export async function createToken(userId: string): Promise<string> {
+  const secret = new TextEncoder().encode(process.env.JWT_SECRET)
+
+  return new SignJWT({ userId })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('7d')
+    .sign(secret)
+}
+
+// Verify JWT
+export async function verifyToken(token: string): Promise<string> {
+  const secret = new TextEncoder().encode(process.env.JWT_SECRET)
+
+  const { payload } = await jwtVerify(token, secret)
+
+  return payload.userId as string
+}
+```
+
+### Token Expiration
+
+```typescript
+// Short-lived access tokens
+const accessToken = await createToken(userId, '15m')
+
+// Long-lived refresh tokens
+const refreshToken = await createToken(userId, '7d')
+```
+
+### Token Rotation
+
+```typescript
+// Rotate refresh token on use
+export async function refreshAccessToken(refreshToken: string) {
+  // Verify refresh token
+  const userId = await verifyToken(refreshToken)
+
+  // Invalidate old refresh token
+  await db
+    .delete(tokens)
+    .where(eq(tokens.token, refreshToken))
+
+  // Create new tokens
+  const newAccessToken = await createToken(userId, '15m')
+  const newRefreshToken = await createToken(userId, '7d')
+
+  // Store new refresh token
+  await db.insert(tokens).values({
+    userId,
+    token: newRefreshToken,
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  })
+
+  return { accessToken: newAccessToken, refreshToken: newRefreshToken }
+}
+```
+
+## CSRF Protection
+
+### SameSite Cookies
+
+```typescript
+// Automatic CSRF protection with SameSite
+cookies().set({
+  name: 'session_id',
+  value: sessionId,
+  sameSite: 'lax',  // ← CSRF protection
+})
+```
+
+### CSRF Tokens
+
+```typescript
+// For forms that need extra protection
+export function generateCSRFToken(): string {
+  return crypto.randomBytes(32).toString('hex')
+}
+
+// Verify CSRF token
+export function verifyCSRFToken(token: string, expected: string): boolean {
+  return crypto.timingSafeEqual(
+    Buffer.from(token),
+    Buffer.from(expected)
+  )
+}
+```
+
+## Content Security Policy
+
+### CSP Headers
+
+```typescript
+// src/middleware.ts
+export function middleware(request: NextRequest) {
+  const response = NextResponse.next()
+
+  // Set Content Security Policy
+  response.headers.set(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: https:",
+      "font-src 'self' data:",
+      "connect-src 'self'",
+      "frame-ancestors 'none'",
+    ].join('; ')
+  )
+
+  return response
+}
+```
+
+## Security Headers
+
+### All Security Headers
+
+```typescript
+// src/middleware.ts
+export function middleware(request: NextRequest) {
+  const response = NextResponse.next()
+
+  // Security headers
+  response.headers.set('X-Frame-Options', 'DENY')
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  response.headers.set('X-XSS-Protection', '1; mode=block')
+  response.headers.set(
+    'Strict-Transport-Security',
+    'max-age=31536000; includeSubDomains'
+  )
+  response.headers.set(
+    'Permissions-Policy',
+    'geolocation=(), microphone=(), camera=()'
+  )
+
+  return response
+}
+```
+
+## Audit Logging
+
+### Log Authentication Events
+
+```typescript
+import { logger } from '@/libs/Logger'
+
+// Log sign-in
+export async function logSignIn(userId: string, request: Request) {
+  logger.info('User signed in', {
+    userId,
+    ipAddress: request.headers.get('x-forwarded-for'),
+    userAgent: request.headers.get('user-agent'),
+    timestamp: new Date(),
+  })
+}
+
+// Log sign-out
+export async function logSignOut(userId: string) {
+  logger.info('User signed out', {
+    userId,
+    timestamp: new Date(),
+  })
+}
+
+// Log failed login
+export async function logFailedLogin(email: string, reason: string) {
+  logger.warn('Failed login attempt', {
+    email,
+    reason,
+    ipAddress: request.headers.get('x-forwarded-for'),
+    timestamp: new Date(),
+  })
+}
+```
+
+### Suspicious Activity Detection
+
+```typescript
+// Detect unusual login patterns
+export async function detectSuspiciousActivity(userId: string) {
+  const recentLogins = await db
+    .select()
+    .from(loginHistory)
+    .where(eq(loginHistory.userId, userId))
+    .orderBy(desc(loginHistory.createdAt))
+    .limit(5)
+
+  // Check for multiple IPs
+  const uniqueIPs = new Set(recentLogins.map(l => l.ipAddress))
+  if (uniqueIPs.size > 3) {
+    await alertUser(userId, 'Multiple login locations detected')
+  }
+
+  // Check for new device
+  const devices = new Set(recentLogins.map(l => l.userAgent))
+  if (devices.size > 1) {
+    await alertUser(userId, 'New device detected')
+  }
+}
+```
+
+## Best Practices
+
+✅ **DO:**
+
+- Use HTTPOnly, Secure cookies
+- Hash passwords with Argon2
+- Implement rate limiting
+- Enable MFA for all users
+- Rotate tokens regularly
+- Log all auth events
+- Use HTTPS everywhere
+- Set security headers
+- Validate all inputs
+- Implement CSRF protection
+
+❌ **DON'T:**
+
+- Store passwords in plain text
+- Use weak hashing (MD5, SHA1)
+- Skip rate limiting
+- Allow weak passwords
+- Ignore failed login attempts
+- Skip audit logging
+- Use HTTP in production
+- Trust client input
+- Forget token expiration
+- Skip MFA for admin accounts
+
+## Security Checklist
+
+### Authentication
+- [ ] Passwords hashed with Argon2
+- [ ] Minimum password complexity enforced
+- [ ] MFA available for all users
+- [ ] Rate limiting on login
+- [ ] Account lockout after failed attempts
+- [ ] Audit logging enabled
+
+### Sessions
+- [ ] HTTPOnly cookies
+- [ ] Secure flag in production
+- [ ] SameSite protection
+- [ ] Session expiration
+- [ ] Session invalidation on logout
+
+### Tokens
+- [ ] JWT with expiration
+- [ ] Token rotation
+- [ ] Secure token storage
+- [ ] Token revocation
+
+### Headers
+- [ ] Content-Security-Policy
+- [ ] X-Frame-Options
+- [ ] X-Content-Type-Options
+- [ ] Strict-Transport-Security
+- [ ] Referrer-Policy
+
+## Testing Security
+
+### Penetration Testing
+
+```typescript
+// tests/security/auth.test.ts
+describe('Auth Security', () => {
+  it('prevents SQL injection in email field', async () => {
+    const response = await fetch('/api/auth/signin', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: "' OR '1'='1",
+        password: 'password',
+      }),
+    })
+
+    expect(response.status).toBe(400)
+  })
+
+  it('rate limits login attempts', async () => {
+    // Make 6 rapid requests
+    const promises = Array(6).fill(null).map(() =>
+      fetch('/api/auth/signin', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: 'test@example.com',
+          password: 'wrong',
+        }),
+      })
+    )
+
+    const responses = await Promise.all(promises)
+    const blocked = responses.filter(r => r.status === 429)
+
+    expect(blocked.length).toBeGreaterThan(0)
+  })
+})
+```
+
+## Compliance
+
+### GDPR
+- User data export
+- Right to deletion
+- Consent management
+- Data breach notifications
+
+### SOC 2
+- Access controls
+- Audit logging
+- Encryption at rest/transit
+- Security policies
+
+### HIPAA (if applicable)
+- PHI encryption
+- Access logging
+- Secure sessions
+- Regular audits
+
+## Resources
+
+- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
+- [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
+- [Security Guide](/guides/security)
+- [Arcjet Integration](/integrations/arcjet)
+
+## Next Steps
+
+- **[Security Guide](/guides/security)** - General security
+- **[Arcjet](/integrations/arcjet)** - Security layer
+- **[Authentication Guide](/guides/authentication)** - Auth overview

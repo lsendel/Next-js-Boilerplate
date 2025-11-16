@@ -1,0 +1,30 @@
+{
+  "index": {
+    "title": "Overview",
+    "type": "page"
+  },
+  "ci-cd": {
+    "title": "CI/CD Pipeline",
+    "type": "page"
+  },
+  "environments": {
+    "title": "Environments",
+    "type": "page"
+  },
+  "monitoring": {
+    "title": "Monitoring",
+    "type": "page"
+  },
+  "logging": {
+    "title": "Logging",
+    "type": "page"
+  },
+  "observability": {
+    "title": "Observability",
+    "type": "page"
+  },
+  "troubleshooting": {
+    "title": "Troubleshooting",
+    "type": "page"
+  }
+}

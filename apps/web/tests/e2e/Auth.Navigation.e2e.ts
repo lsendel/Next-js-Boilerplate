@@ -141,10 +141,23 @@ test.describe('Authentication Navigation & Page Content', () => {
 
       await emailInput.fill(`test-${Date.now()}@example.com`);
       await passwordInput.fill('TestPassword123!');
+
+      // Wait for the sign-in API response
+      const signInPromise = page.waitForResponse(
+        response => response.url().includes('/api/test-auth/signin') && response.status() === 200,
+        { timeout: 10000 }
+      );
+
       await submitButton.click();
 
-      // Wait for navigation
+      // Wait for successful sign-in response
+      await signInPromise;
+
+      // Wait for navigation and network to be idle
       await page.waitForLoadState('networkidle');
+
+      // Give the browser time to process the session cookie
+      await page.waitForTimeout(500);
 
       // Should be redirected to dashboard or should be able to navigate there
       if (!page.url().includes('/dashboard')) {
@@ -181,8 +194,23 @@ test.describe('Authentication Navigation & Page Content', () => {
 
       await emailInput.fill(`test-profile-${Date.now()}@example.com`);
       await passwordInput.fill('TestPassword123!');
+
+      // Wait for the sign-in API response
+      const signInPromise = page.waitForResponse(
+        response => response.url().includes('/api/test-auth/signin') && response.status() === 200,
+        { timeout: 10000 }
+      );
+
       await submitButton.click();
+
+      // Wait for successful sign-in response
+      await signInPromise;
+
+      // Wait for navigation and network to be idle
       await page.waitForLoadState('networkidle');
+
+      // Give the browser time to process the session cookie
+      await page.waitForTimeout(500);
 
       // Navigate to user profile
       await page.goto('/dashboard/user-profile');
@@ -278,8 +306,23 @@ test.describe('Authentication Navigation & Page Content', () => {
 
       await emailInput.fill(`test-navigation-${Date.now()}@example.com`);
       await passwordInput.fill('TestPassword123!');
+
+      // Wait for the sign-in API response
+      const signInPromise = page.waitForResponse(
+        response => response.url().includes('/api/test-auth/signin') && response.status() === 200,
+        { timeout: 10000 }
+      );
+
       await submitButton.click();
+
+      // Wait for successful sign-in response
+      await signInPromise;
+
+      // Wait for navigation and network to be idle
       await page.waitForLoadState('networkidle');
+
+      // Give the browser time to process the session cookie
+      await page.waitForTimeout(500);
 
       // 5. Should be on dashboard or redirect there
       if (!page.url().includes('/dashboard')) {
@@ -303,9 +346,12 @@ test.describe('Authentication Navigation & Page Content', () => {
       expect(bodyText4!.length).toBeGreaterThan(50);
 
       // 7. Sign out
-      const signOutButton = page.locator('button:has-text("Sign out"), button:has-text("Logout"), a:has-text("Sign out")');
+      const signOutButton = page.locator('button:has-text("Sign out"), button:has-text("Logout"), a:has-text("Sign out")').first();
       if (await signOutButton.isVisible()) {
-        await signOutButton.first().click();
+        await signOutButton.click();
+
+        // Wait for redirect to homepage after sign out
+        await page.waitForURL(/\/(sign-in)?$/, { timeout: 10000 });
         await page.waitForLoadState('networkidle');
 
         // Should be redirected to homepage or sign-in

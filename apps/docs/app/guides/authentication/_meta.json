@@ -1,0 +1,26 @@
+{
+  "index": {
+    "title": "Overview",
+    "type": "page"
+  },
+  "clerk": {
+    "title": "Clerk (Default)",
+    "type": "page"
+  },
+  "cloudflare": {
+    "title": "Cloudflare Access",
+    "type": "page"
+  },
+  "cognito": {
+    "title": "AWS Cognito",
+    "type": "page"
+  },
+  "switching": {
+    "title": "Switching Providers",
+    "type": "page"
+  },
+  "security": {
+    "title": "Security Features",
+    "type": "page"
+  }
+}

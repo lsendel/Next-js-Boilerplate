@@ -57,19 +57,56 @@ export const test = base.extend<AuthFixtures>({
    * Use this when tests need to start already signed in
    */
   authenticatedPage: async ({ page }, use) => {
-    // TODO: Implement actual authentication once auth provider is configured
-    // For now, this is a placeholder
-    // In a real scenario, you would:
-    // 1. Sign in via API or UI
-    // 2. Store cookies/tokens
-    // 3. Inject them into the page context
+    // Import test data generator dynamically
+    const { generateUserCredentials } = await import('../test-data/generators');
 
-    // Example implementation:
-    // const signInPage = new SignInPage(page);
-    // await signInPage.visit();
-    // await signInPage.signIn('test@example.com', 'password123');
-    // await page.waitForURL(/.*\/dashboard/);
+    // Generate unique test user credentials
+    const testUser = generateUserCredentials();
 
+    // Authenticate via Test Auth API endpoints
+    // This is faster than UI-based auth and more reliable
+
+    // Step 1: Sign up the test user
+    const signupResponse = await page.request.post('/api/test-auth/signup', {
+      data: {
+        email: testUser.email,
+        password: testUser.password,
+        firstName: testUser.firstName,
+        lastName: testUser.lastName,
+      },
+    });
+
+    if (!signupResponse.ok()) {
+      throw new Error(`Signup failed: ${signupResponse.status()} - ${await signupResponse.text()}`);
+    }
+
+    // Step 2: Sign in to get session cookie
+    const signinResponse = await page.request.post('/api/test-auth/signin', {
+      data: {
+        email: testUser.email,
+        password: testUser.password,
+      },
+    });
+
+    if (!signinResponse.ok()) {
+      throw new Error(`Sign-in failed: ${signinResponse.status()} - ${await signinResponse.text()}`);
+    }
+
+    // Step 3: Verify authentication by checking user endpoint
+    const userResponse = await page.request.get('/api/test-auth/user');
+
+    if (!userResponse.ok()) {
+      throw new Error(`Authentication verification failed: ${userResponse.status()}`);
+    }
+
+    const userData = await userResponse.json();
+
+    if (userData.email !== testUser.email) {
+      throw new Error(`Authentication mismatch: expected ${testUser.email}, got ${userData.email}`);
+    }
+
+    // Session cookie is now set in the page context
+    // Tests can proceed with authenticated state
     await use(page);
   },
 });

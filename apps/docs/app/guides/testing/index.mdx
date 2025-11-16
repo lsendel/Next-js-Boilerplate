@@ -1,0 +1,397 @@
+# Testing
+
+Comprehensive testing strategy with unit, integration, and E2E tests.
+
+## Testing Stack
+
+- **Vitest** - Unit and integration testing
+- **Playwright** - End-to-end testing
+- **Storybook** - Component testing and documentation
+- **Checkly** - Synthetic monitoring in production
+
+## Quick Start
+
+```bash
+# Unit tests
+pnpm test
+
+# E2E tests (install browsers first)
+npx playwright install
+pnpm test:e2e
+
+# Storybook
+pnpm --filter web storybook
+
+# Integration tests
+pnpm --filter web test:integration
+```
+
+## Testing Layers
+
+### Unit Tests (Vitest)
+
+**Fast, focused tests for individual units:**
+
+```typescript
+// Component.test.tsx
+import { render, screen } from '@testing-library/react'
+import { Button } from './Button'
+
+describe('Button', () => {
+  it('renders with text', () => {
+    render(<Button>Click me</Button>)
+    expect(screen.getByText('Click me')).toBeInTheDocument()
+  })
+
+  it('calls onClick when clicked', () => {
+    const onClick = vi.fn()
+    render(<Button onClick={onClick}>Click</Button>)
+
+    screen.getByText('Click').click()
+    expect(onClick).toHaveBeenCalledOnce()
+  })
+})
+```
+
+**Location:** Colocated with source (`*.test.ts`, `*.test.tsx`)
+
+[Learn more →](/guides/testing/unit)
+
+### Integration Tests (Vitest)
+
+**Test multiple units working together:**
+
+```typescript
+// api.spec.ts
+describe('User API', () => {
+  it('creates user and returns 201', async () => {
+    const response = await fetch('/api/users', {
+      method: 'POST',
+      body: JSON.stringify({ email: 'test@example.com' })
+    })
+
+    expect(response.status).toBe(201)
+    const user = await response.json()
+    expect(user.email).toBe('test@example.com')
+  })
+})
+```
+
+**Location:** `tests/integration/`
+
+[Learn more →](/guides/testing/integration)
+
+### E2E Tests (Playwright)
+
+**Full user flows in real browser:**
+
+```typescript
+// auth.e2e.ts
+import { test, expect } from '@playwright/test'
+
+test('user can sign in', async ({ page }) => {
+  await page.goto('/sign-in')
+
+  await page.fill('[name="email"]', 'user@example.com')
+  await page.fill('[name="password"]', 'password')
+  await page.click('button[type="submit"]')
+
+  await expect(page).toHaveURL('/dashboard')
+  await expect(page.locator('text=Welcome')).toBeVisible()
+})
+```
+
+**Location:** `tests/e2e/`
+
+[Learn more →](/guides/testing/e2e)
+
+### Storybook
+
+**Visual component testing:**
+
+```typescript
+// Button.stories.tsx
+import type { Meta, StoryObj } from '@storybook/react'
+import { Button } from './Button'
+
+const meta: Meta<typeof Button> = {
+  component: Button,
+  title: 'UI/Button',
+}
+
+export default meta
+type Story = StoryObj<typeof Button>
+
+export const Primary: Story = {
+  args: {
+    children: 'Primary Button',
+    variant: 'primary',
+  },
+}
+```
+
+**Location:** Colocated with components (`*.stories.tsx`)
+
+[Learn more →](/guides/testing/storybook)
+
+## When to Use Each Type
+
+| Test Type | When to Use | Speed | Coverage |
+|-----------|-------------|-------|----------|
+| Unit | Individual functions, components | ⚡ Fast | Low |
+| Integration | API routes, database operations | ✅ Medium | Medium |
+| E2E | Critical user flows, authentication | 🐌 Slow | High |
+| Storybook | UI components, design system | ⚡ Fast | Visual |
+
+## Testing Strategy
+
+### Test Pyramid
+
+```
+        ┌────────┐
+        │  E2E   │  Few, critical flows
+        ├────────┤
+        │  Integ │  API, database, services
+        ├────────┤
+        │  Unit  │  Most tests here
+        └────────┘
+```
+
+### What to Test
+
+✅ **DO Test:**
+- Business logic
+- API endpoints
+- Database operations
+- Authentication flows
+- Critical user journeys
+- Edge cases and errors
+
+❌ **DON'T Test:**
+- Third-party libraries
+- Framework internals
+- Trivial getters/setters
+- UI implementation details
+
+## Test Configuration
+
+### Vitest (Unit)
+
+```typescript
+// vitest.config.mts
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'node',
+    setupFiles: ['./vitest.setup.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+    },
+  },
+})
+```
+
+### Playwright (E2E)
+
+```typescript
+// playwright.config.ts
+export default defineConfig({
+  testDir: './tests/e2e',
+  use: {
+    baseURL: 'http://localhost:3000',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+  },
+  webServer: {
+    command: 'pnpm dev',
+    port: 3000,
+    reuseExistingServer: !process.env.CI,
+  },
+})
+```
+
+## Test Utilities
+
+### Database Helpers
+
+```typescript
+// tests/utils/db-test-helpers.ts
+export async function createTestUser() {
+  return db.insert(users).values({
+    id: generateId(),
+    email: 'test@example.com',
+  }).returning()
+}
+
+export async function cleanupDatabase() {
+  await db.delete(users)
+  await db.delete(sessions)
+}
+```
+
+### Test Factories
+
+```typescript
+// tests/utils/test-factories.ts
+export function userFactory(overrides = {}) {
+  return {
+    id: faker.string.uuid(),
+    email: faker.internet.email(),
+    name: faker.person.fullName(),
+    ...overrides,
+  }
+}
+```
+
+## Running Tests
+
+### Development
+
+```bash
+# Watch mode
+pnpm test --watch
+
+# Specific file
+pnpm test src/components/Button.test.tsx
+
+# UI mode
+pnpm test --ui
+```
+
+### CI/CD
+
+```bash
+# All tests with coverage
+pnpm ci:full
+
+# Quick check
+pnpm ci:check
+```
+
+### Local CI Testing
+
+Test CI pipeline locally before pushing:
+
+```bash
+# Uses act to run GitHub Actions locally
+pnpm --filter web ci:local
+```
+
+[Learn more →](/guides/testing/local-ci)
+
+## Coverage
+
+### Generate Coverage Report
+
+```bash
+pnpm test:coverage
+```
+
+Opens HTML report in `coverage/index.html`
+
+### Coverage Goals
+
+- **Unit tests:** >80% coverage
+- **Integration tests:** Critical paths covered
+- **E2E tests:** Happy paths + edge cases
+
+## Best Practices
+
+✅ **DO:**
+- Write tests before fixing bugs (TDD)
+- Test behavior, not implementation
+- Use descriptive test names
+- Isolate tests (no shared state)
+- Mock external dependencies
+- Clean up after tests
+
+❌ **DON'T:**
+- Test implementation details
+- Share state between tests
+- Skip flaky tests (fix them!)
+- Test everything (focus on critical paths)
+- Ignore failing tests
+
+## Debugging Tests
+
+### Vitest
+
+```bash
+# Debug mode
+pnpm test --inspect-brk
+
+# Browser UI
+pnpm test --ui
+```
+
+### Playwright
+
+```bash
+# Debug mode (opens browser)
+pnpm test:e2e --debug
+
+# Trace viewer
+pnpm test:e2e --trace on
+```
+
+## Continuous Integration
+
+### GitHub Actions
+
+```yaml
+# .github/workflows/test.yml
+name: Tests
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - run: pnpm install
+      - run: pnpm test
+      - run: pnpm test:e2e
+```
+
+### Pre-commit Hooks
+
+```yaml
+# lefthook.yml
+pre-commit:
+  commands:
+    tests:
+      run: pnpm test --run
+```
+
+## Monitoring as Code (Checkly)
+
+### Synthetic Monitoring
+
+E2E tests can run in production:
+
+```typescript
+// *.check.e2e.ts files
+test('homepage loads', async ({ page }) => {
+  await page.goto('https://yourapp.com')
+  await expect(page.locator('h1')).toBeVisible()
+})
+```
+
+Configured to run every 5 minutes in production.
+
+## Next Steps
+
+- **[Unit Testing](/guides/testing/unit)** - Vitest guide
+- **[Integration Testing](/guides/testing/integration)** - API testing
+- **[E2E Testing](/guides/testing/e2e)** - Playwright guide
+- **[Storybook](/guides/testing/storybook)** - Component stories
+- **[Local CI Testing](/guides/testing/local-ci)** - Test CI locally
+
+## Resources
+
+- [Vitest Documentation](https://vitest.dev/)
+- [Playwright Documentation](https://playwright.dev/)
+- [Storybook Documentation](https://storybook.js.org/)
+- [Testing Library](https://testing-library.com/)

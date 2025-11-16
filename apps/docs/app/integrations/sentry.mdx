@@ -1,0 +1,681 @@
+# Sentry
+
+Production-grade error monitoring and performance tracking for Next.js applications.
+
+## Overview
+
+Sentry provides comprehensive error tracking and performance monitoring with:
+
+- **Automatic Error Capture** - Unhandled exceptions, promise rejections
+- **Performance Monitoring** - Slow queries, API latency, render times
+- **Release Tracking** - Deploy notifications, regression detection
+- **Source Maps** - Readable stack traces with original source code
+- **Spotlight** - Local development error inspection tool
+- **Session Replay** - Watch user sessions when errors occur
+
+## Quick Setup
+
+### 1. Get Sentry DSN
+
+Sign up at [sentry.io](https://sentry.io) and create a new project:
+
+1. Choose **Next.js** as platform
+2. Copy your **DSN** (Data Source Name)
+3. Create an **Auth Token** for source map uploads
+
+### 2. Configure Environment Variables
+
+```bash
+# apps/web/.env.local
+
+# Required for error tracking
+SENTRY_DSN=https://examplePublicKey@o0.ingest.sentry.io/0
+NEXT_PUBLIC_SENTRY_DSN=https://examplePublicKey@o0.ingest.sentry.io/0
+
+# Required for source map upload (CI/CD)
+SENTRY_AUTH_TOKEN=your_auth_token_here
+SENTRY_ORG=your-org-slug
+SENTRY_PROJECT=your-project-slug
+```
+
+### 3. Test Configuration
+
+```bash
+# Development mode
+pnpm --filter web dev
+
+# Trigger a test error
+# Visit: http://localhost:3000/api/test-error
+```
+
+## Configuration Files
+
+The boilerplate includes pre-configured Sentry files:
+
+### `sentry.client.config.ts`
+
+Client-side error tracking:
+
+```typescript
+import * as Sentry from '@sentry/nextjs'
+
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+
+  // Performance monitoring
+  tracesSampleRate: 1.0,
+
+  // Session replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
+
+  // Environment
+  environment: process.env.NODE_ENV,
+
+  // Integrations
+  integrations: [
+    Sentry.replayIntegration({
+      maskAllText: true,
+      blockAllMedia: true,
+    }),
+  ],
+})
+```
+
+### `sentry.server.config.ts`
+
+Server-side error tracking:
+
+```typescript
+import * as Sentry from '@sentry/nextjs'
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+
+  // Performance monitoring
+  tracesSampleRate: 1.0,
+
+  // Environment
+  environment: process.env.NODE_ENV,
+
+  // Server-specific options
+  attachStacktrace: true,
+})
+```
+
+### `sentry.edge.config.ts`
+
+Edge runtime error tracking:
+
+```typescript
+import * as Sentry from '@sentry/nextjs'
+
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  tracesSampleRate: 1.0,
+})
+```
+
+### `instrumentation.ts`
+
+Server instrumentation:
+
+```typescript
+export async function register() {
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    await import('./sentry.server.config')
+  }
+
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    await import('./sentry.edge.config')
+  }
+}
+```
+
+## Using Sentry
+
+### Capture Errors
+
+```typescript
+import * as Sentry from '@sentry/nextjs'
+
+try {
+  await riskyOperation()
+} catch (error) {
+  // Capture exception with context
+  Sentry.captureException(error, {
+    tags: {
+      section: 'payment',
+    },
+    extra: {
+      userId: user.id,
+      amount: 100,
+    },
+  })
+}
+```
+
+### Capture Messages
+
+```typescript
+import * as Sentry from '@sentry/nextjs'
+
+// Info message
+Sentry.captureMessage('Payment processed', {
+  level: 'info',
+  tags: { feature: 'billing' },
+})
+
+// Warning
+Sentry.captureMessage('High memory usage detected', {
+  level: 'warning',
+})
+```
+
+### Add Breadcrumbs
+
+```typescript
+import * as Sentry from '@sentry/nextjs'
+
+Sentry.addBreadcrumb({
+  category: 'auth',
+  message: 'User logged in',
+  level: 'info',
+  data: {
+    userId: user.id,
+    provider: 'clerk',
+  },
+})
+```
+
+### Set User Context
+
+```typescript
+import * as Sentry from '@sentry/nextjs'
+
+Sentry.setUser({
+  id: user.id,
+  email: user.email,
+  username: user.name,
+})
+
+// Clear user context on logout
+Sentry.setUser(null)
+```
+
+### Set Tags
+
+```typescript
+import * as Sentry from '@sentry/nextjs'
+
+Sentry.setTag('tenant', tenantId)
+Sentry.setTag('deployment', 'production')
+Sentry.setTag('region', 'us-east-1')
+```
+
+### Transaction Tracing
+
+```typescript
+import * as Sentry from '@sentry/nextjs'
+
+const transaction = Sentry.startTransaction({
+  op: 'task',
+  name: 'Process Payment',
+})
+
+try {
+  const span = transaction.startChild({
+    op: 'db',
+    description: 'Query user',
+  })
+
+  await db.query.users.findFirst()
+  span.finish()
+
+  transaction.finish()
+} catch (error) {
+  transaction.setStatus('internal_error')
+  transaction.finish()
+  throw error
+}
+```
+
+## API Routes
+
+```typescript
+// app/api/checkout/route.ts
+import * as Sentry from '@sentry/nextjs'
+import { NextResponse } from 'next/server'
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json()
+
+    // Your logic here
+    const result = await processPayment(body)
+
+    return NextResponse.json(result)
+  } catch (error) {
+    // Automatically captured by Sentry
+    Sentry.captureException(error, {
+      tags: { route: 'checkout' },
+    })
+
+    return NextResponse.json(
+      { error: 'Payment failed' },
+      { status: 500 }
+    )
+  }
+}
+```
+
+## Server Components
+
+```typescript
+// app/dashboard/page.tsx
+import * as Sentry from '@sentry/nextjs'
+
+export default async function DashboardPage() {
+  try {
+    const data = await fetchDashboardData()
+    return <Dashboard data={data} />
+  } catch (error) {
+    Sentry.captureException(error)
+    throw error // Re-throw for error boundary
+  }
+}
+```
+
+## Error Boundaries
+
+```typescript
+'use client'
+
+import { useEffect } from 'react'
+import * as Sentry from '@sentry/nextjs'
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string }
+  reset: () => void
+}) {
+  useEffect(() => {
+    // Error automatically sent to Sentry
+    Sentry.captureException(error)
+  }, [error])
+
+  return (
+    <div>
+      <h2>Something went wrong!</h2>
+      <button onClick={reset}>Try again</button>
+    </div>
+  )
+}
+```
+
+## Source Maps
+
+Source maps are automatically uploaded during production builds via `next.config.ts`:
+
+```typescript
+// next.config.ts
+import { withSentryConfig } from '@sentry/nextjs'
+
+export default withSentryConfig(
+  nextConfig,
+  {
+    silent: true,
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+  },
+  {
+    widenClientFileUpload: true,
+    hideSourceMaps: true,
+    disableLogger: true,
+  }
+)
+```
+
+### Verify Source Maps
+
+```bash
+# Build and upload
+pnpm --filter web build
+
+# Check Sentry dashboard
+# Project Settings → Source Maps
+```
+
+## Spotlight (Local Development)
+
+Spotlight provides a local debugging UI for development:
+
+### Start with Spotlight
+
+```bash
+pnpm --filter web dev:spotlight
+```
+
+### Access Spotlight UI
+
+Visit: http://localhost:3000/monitoring
+
+### Features
+
+- Real-time error feed
+- Full stack traces
+- Request details
+- Performance metrics
+- Session replay
+
+## Performance Monitoring
+
+### Automatic Instrumentation
+
+Performance data is collected automatically:
+
+- Page load times
+- API response times
+- Database query duration
+- External API calls
+
+### Custom Transactions
+
+```typescript
+import * as Sentry from '@sentry/nextjs'
+
+export async function generateReport() {
+  return await Sentry.startSpan(
+    {
+      op: 'task',
+      name: 'Generate Monthly Report',
+    },
+    async () => {
+      const data = await fetchData()
+      const processed = await processData(data)
+      const report = await createReport(processed)
+
+      return report
+    }
+  )
+}
+```
+
+### Database Performance
+
+```typescript
+import * as Sentry from '@sentry/nextjs'
+
+const users = await Sentry.startSpan(
+  {
+    op: 'db.query',
+    description: 'Find all users',
+  },
+  async () => {
+    return await db.query.users.findMany()
+  }
+)
+```
+
+## Filtering Errors
+
+### Ignore Specific Errors
+
+```typescript
+// sentry.client.config.ts
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+
+  beforeSend(event, hint) {
+    const error = hint.originalException
+
+    // Ignore specific errors
+    if (error?.message?.includes('ResizeObserver')) {
+      return null
+    }
+
+    // Ignore specific URLs
+    if (event.request?.url?.includes('/health')) {
+      return null
+    }
+
+    return event
+  },
+})
+```
+
+### Sample Rate for Performance
+
+```typescript
+// Reduce data in production
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+})
+```
+
+## Alerts
+
+### Configure Alerts in Sentry
+
+1. Go to **Alerts** → **Create Alert Rule**
+2. Choose alert type:
+   - **Issues** - New errors, regression
+   - **Performance** - Slow endpoints
+   - **Crash Free** - Session reliability
+
+### Recommended Alerts
+
+**New Issue Alert:**
+- Trigger: First seen
+- Action: Email, Slack, PagerDuty
+
+**Regression Alert:**
+- Trigger: Issue reopened
+- Action: Email team
+
+**Performance Alert:**
+- Trigger: P95 response time > 3s
+- Action: Slack notification
+
+## Releases
+
+### Track Deployments
+
+Releases are automatically created during build:
+
+```typescript
+// sentry.client.config.ts
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  release: process.env.NEXT_PUBLIC_SENTRY_RELEASE,
+})
+```
+
+### Set Release in CI/CD
+
+```yaml
+# .github/workflows/deploy.yml
+env:
+  NEXT_PUBLIC_SENTRY_RELEASE: ${{ github.sha }}
+```
+
+### View Releases
+
+Dashboard → Releases → See deployments, commits, errors introduced
+
+## Session Replay
+
+Watch user sessions when errors occur:
+
+### Enable Replay
+
+```typescript
+// sentry.client.config.ts
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+
+  integrations: [
+    Sentry.replayIntegration({
+      maskAllText: true,        // Privacy: mask all text
+      blockAllMedia: true,      // Privacy: block images/videos
+      maskAllInputs: true,      // Privacy: mask form inputs
+    }),
+  ],
+
+  // Sample rates
+  replaysSessionSampleRate: 0.1,   // 10% of sessions
+  replaysOnErrorSampleRate: 1.0,   // 100% of errors
+})
+```
+
+### Privacy Controls
+
+```typescript
+// Unmask specific elements
+<div data-sentry-unmask>
+  Safe to show in replay
+</div>
+
+// Block specific elements
+<div data-sentry-block>
+  Never show in replay (shown as placeholder)
+</div>
+```
+
+## Best Practices
+
+✅ **DO:**
+
+- Set up source maps for readable stack traces
+- Use breadcrumbs for context
+- Set user context after authentication
+- Filter out expected errors (404s, validation)
+- Configure appropriate sample rates
+- Set up alerts for critical errors
+- Use tags to categorize errors
+- Test in Spotlight before deploying
+
+❌ **DON'T:**
+
+- Log sensitive data (passwords, tokens)
+- Send PII without anonymization
+- Ignore sampling in high-traffic apps
+- Skip source map verification
+- Leave default sample rates in production
+- Forget to clear user context on logout
+
+## Troubleshooting
+
+### Errors Not Appearing
+
+1. **Check DSN is set:**
+   ```bash
+   echo $NEXT_PUBLIC_SENTRY_DSN
+   ```
+
+2. **Verify initialization:**
+   - Check browser console for Sentry logs
+   - Look for "Sentry initialized" message
+
+3. **Test manually:**
+   ```typescript
+   Sentry.captureException(new Error('Test'))
+   ```
+
+4. **Check filters:**
+   - Review `beforeSend` configuration
+   - Verify error isn't being filtered out
+
+### Source Maps Not Working
+
+1. **Verify auth token:**
+   ```bash
+   echo $SENTRY_AUTH_TOKEN
+   ```
+
+2. **Check upload logs:**
+   ```bash
+   pnpm build --verbose
+   ```
+
+3. **Verify in Sentry:**
+   - Project Settings → Source Maps
+   - Check release matches
+
+### Performance Data Missing
+
+1. **Check sample rate:**
+   ```typescript
+   // Should be > 0
+   tracesSampleRate: 1.0
+   ```
+
+2. **Verify instrumentation:**
+   - Check `instrumentation.ts` is loaded
+   - Look for `register()` execution
+
+### High Event Volume
+
+1. **Reduce sample rates:**
+   ```typescript
+   tracesSampleRate: 0.1  // 10% of transactions
+   ```
+
+2. **Filter noisy errors:**
+   ```typescript
+   beforeSend(event) {
+     // Filter out frequent errors
+     return event
+   }
+   ```
+
+3. **Set rate limits:**
+   - Sentry Project Settings → Client Keys
+   - Configure rate limits
+
+## Cost Optimization
+
+### Free Tier Limits
+
+- **5,000 errors/month**
+- **10,000 performance units/month**
+- **500 session replays/month**
+
+### Reduce Costs
+
+1. **Sample aggressively:**
+   ```typescript
+   tracesSampleRate: 0.1        // 10% performance
+   replaysSessionSampleRate: 0.05  // 5% sessions
+   ```
+
+2. **Filter noise:**
+   - Ignore bot traffic
+   - Skip health check endpoints
+   - Filter expected errors
+
+3. **Use appropriate alerts:**
+   - Don't alert on every error
+   - Focus on critical paths
+
+4. **Manage retention:**
+   - Project Settings → Data Management
+   - Set appropriate retention periods
+
+## Resources
+
+- [Sentry Next.js Docs](https://docs.sentry.io/platforms/javascript/guides/nextjs/)
+- [Error Boundaries](https://nextjs.org/docs/app/building-your-application/routing/error-handling)
+- [Performance Monitoring](https://docs.sentry.io/product/performance/)
+- [Session Replay](https://docs.sentry.io/product/session-replay/)
+- [Source Maps](https://docs.sentry.io/platforms/javascript/sourcemaps/)
+- [Spotlight Docs](https://spotlightjs.com/)
+
+## Next Steps
+
+- **[PostHog](/integrations/posthog)** - Add analytics
+- **[Better Stack](/integrations/better-stack)** - Log management
+- **[Operations Guide](/operations)** - Production monitoring

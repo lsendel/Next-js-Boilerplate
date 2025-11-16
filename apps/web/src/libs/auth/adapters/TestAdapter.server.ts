@@ -15,6 +15,7 @@ export type TestUser = {
 
 /**
  * Session cookie name for test authentication
+ * The cookie value will be the user ID directly (no separate session Map needed)
  */
 export const SESSION_COOKIE = 'test-auth-session';
 
@@ -23,12 +24,6 @@ export const SESSION_COOKIE = 'test-auth-session';
  * This is shared between middleware and API routes
  */
 export const users = new Map<string, TestUser>();
-
-/**
- * In-memory session storage (server-side only)
- * This is shared between middleware and API routes
- */
-export const sessions = new Map<string, string>(); // sessionId -> userId
 
 /**
  * Test Authentication Middleware
@@ -46,16 +41,29 @@ export function createTestMiddleware(config: AuthMiddlewareConfig) {
       return null; // Continue to next middleware
     }
 
-    const sessionId = request.cookies.get(SESSION_COOKIE)?.value;
-    const userId = sessionId ? sessions.get(sessionId) : null;
+    // Debug logging
+    console.log('[TestMiddleware] Protected route:', request.nextUrl.pathname);
 
-    if (!userId) {
-      // User not authenticated, redirect to sign-in
+    // Parse user data from cookie (stored as JSON)
+    const cookieValue = request.cookies.get(SESSION_COOKIE)?.value;
+    console.log('[TestMiddleware] Cookie value:', cookieValue);
+
+    if (!cookieValue) {
+      console.log('[TestMiddleware] No cookie found, redirecting to sign-in');
       const locale = request.nextUrl.pathname.match(/(\/.*)\/dashboard/)?.at(1) ?? '';
       const signInUrl = new URL(`${locale}${config.signInUrl}`, request.url);
       return Response.redirect(signInUrl.toString(), 302);
     }
 
-    return null; // Continue to next middleware
+    try {
+      const userData = JSON.parse(cookieValue);
+      console.log('[TestMiddleware] User authenticated:', userData.id);
+      return null; // Continue to next middleware
+    } catch (error) {
+      console.log('[TestMiddleware] Invalid cookie data, redirecting to sign-in');
+      const locale = request.nextUrl.pathname.match(/(\/.*)\/dashboard/)?.at(1) ?? '';
+      const signInUrl = new URL(`${locale}${config.signInUrl}`, request.url);
+      return Response.redirect(signInUrl.toString(), 302);
+    }
   };
 }

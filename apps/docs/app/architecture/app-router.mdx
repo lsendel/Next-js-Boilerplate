@@ -1,0 +1,671 @@
+# Next.js App Router Architecture
+
+How the boilerplate leverages Next.js App Router for optimal performance and developer experience.
+
+## Overview
+
+The boilerplate uses Next.js 16+ App Router with advanced patterns:
+
+- **React Server Components** - Default server rendering
+- **Streaming & Suspense** - Progressive page loading
+- **Route Groups** - Logical organization without URL impact
+- **Parallel Routes** - Multiple sections rendered simultaneously
+- **Intercepting Routes** - Modal overlays and dynamic UI
+- **Server Actions** - Type-safe server mutations
+- **Metadata API** - SEO optimization
+
+## Directory Structure
+
+```
+app/
+├── [locale]/                    # i18n routing
+│   ├── (auth)/                  # Auth route group
+│   │   ├── (center)/            # Centered layout
+│   │   │   ├── sign-in/
+│   │   │   │   └── page.tsx     # /[locale]/sign-in
+│   │   │   └── sign-up/
+│   │   │       └── page.tsx     # /[locale]/sign-up
+│   │   └── dashboard/           # Protected routes
+│   │       ├── layout.tsx       # Dashboard layout
+│   │       ├── page.tsx         # /[locale]/dashboard
+│   │       └── settings/
+│   │           └── page.tsx     # /[locale]/dashboard/settings
+│   ├── (marketing)/             # Marketing route group
+│   │   ├── layout.tsx           # Marketing layout
+│   │   ├── page.tsx             # Homepage
+│   │   ├── about/
+│   │   └── pricing/
+│   ├── api/                     # API routes
+│   │   ├── auth/
+│   │   └── users/
+│   ├── layout.tsx               # Root layout
+│   └── error.tsx                # Error boundary
+├── not-found.tsx
+└── global-error.tsx
+```
+
+## Route Groups
+
+Route groups organize routes without affecting URLs.
+
+### (marketing) Group
+
+```
+app/[locale]/(marketing)/
+├── layout.tsx                   # Marketing layout
+├── page.tsx                     # Homepage (/)
+├── about/page.tsx               # /about
+├── pricing/page.tsx             # /pricing
+└── contact/page.tsx             # /contact
+```
+
+**Purpose:**
+- Share marketing-specific layout
+- Public, unauthenticated routes
+- Landing pages, pricing, about
+- Different header/footer than app
+
+**Layout:**
+```typescript
+// app/[locale]/(marketing)/layout.tsx
+export default function MarketingLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <>
+      <MarketingHeader />
+      <main>{children}</main>
+      <MarketingFooter />
+    </>
+  )
+}
+```
+
+### (auth) Group
+
+```
+app/[locale]/(auth)/
+├── (center)/                    # Centered auth pages
+│   ├── layout.tsx               # Center layout
+│   ├── sign-in/page.tsx         # /sign-in
+│   └── sign-up/page.tsx         # /sign-up
+└── dashboard/                   # Protected app
+    ├── layout.tsx               # App layout
+    ├── page.tsx                 # /dashboard
+    └── settings/page.tsx        # /dashboard/settings
+```
+
+**Purpose:**
+- Authentication required
+- Protected application routes
+- Dashboard and user features
+- Different layout from marketing
+
+**Layout:**
+```typescript
+// app/[locale]/(auth)/dashboard/layout.tsx
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex">
+      <Sidebar />
+      <main className="flex-1">{children}</main>
+    </div>
+  )
+}
+```
+
+### (center) Sub-group
+
+```
+app/[locale]/(auth)/(center)/
+├── layout.tsx                   # Centered layout
+├── sign-in/page.tsx
+└── sign-up/page.tsx
+```
+
+**Purpose:**
+- Centered auth forms
+- No sidebar or navigation
+- Clean authentication experience
+
+**Layout:**
+```typescript
+// app/[locale]/(auth)/(center)/layout.tsx
+export default function CenterLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      {children}
+    </div>
+  )
+}
+```
+
+## Layouts
+
+### Root Layout
+
+```typescript
+// app/[locale]/layout.tsx
+import { NextIntlClientProvider } from 'next-intl'
+import { getMessages } from 'next-intl/server'
+import { PHProvider } from '@/libs/PostHog'
+import PostHogPageView from '@/components/PostHogPageView'
+
+export default async function RootLayout({
+  children,
+  params: { locale },
+}: {
+  children: React.ReactNode
+  params: { locale: string }
+}) {
+  const messages = await getMessages()
+
+  return (
+    <html lang={locale}>
+      <body>
+        <NextIntlClientProvider messages={messages}>
+          <PHProvider>
+            <PostHogPageView />
+            {children}
+          </PHProvider>
+        </NextIntlClientProvider>
+      </body>
+    </html>
+  )
+}
+```
+
+**Responsibilities:**
+- HTML structure
+- i18n provider
+- Analytics provider
+- Global styles
+
+### Nested Layouts
+
+Layouts can be nested for progressive enhancement:
+
+```
+Root Layout (app/[locale]/layout.tsx)
+  └─ Marketing Layout (app/[locale]/(marketing)/layout.tsx)
+       └─ Page Content
+```
+
+## Pages
+
+### Server Components (Default)
+
+```typescript
+// app/[locale]/dashboard/page.tsx
+import { getStats } from '@/server/services/stats.service'
+
+export default async function DashboardPage() {
+  // Direct database access on server
+  const stats = await getStats()
+
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      <Stats data={stats} />
+    </div>
+  )
+}
+```
+
+**Benefits:**
+- Zero JavaScript to client
+- Direct database access
+- Automatic data fetching
+- Streaming support
+
+### Client Components
+
+```typescript
+'use client'
+
+import { useState } from 'react'
+
+export default function InteractiveChart({ data }) {
+  const [filter, setFilter] = useState('all')
+
+  return (
+    <div>
+      <select onChange={(e) => setFilter(e.target.value)}>
+        <option value="all">All</option>
+        <option value="active">Active</option>
+      </select>
+      <Chart data={data.filter((d) => filter === 'all' || d.status === filter)} />
+    </div>
+  )
+}
+```
+
+**Use cases:**
+- Event listeners
+- React hooks (useState, useEffect)
+- Browser APIs
+- Third-party libraries requiring client
+
+## Data Fetching
+
+### Server Component Fetching
+
+```typescript
+// app/[locale]/users/page.tsx
+import { db } from '@/libs/DB'
+
+export default async function UsersPage() {
+  // Direct database query
+  const users = await db.query.users.findMany({
+    orderBy: (users, { desc }) => [desc(users.createdAt)],
+    limit: 10,
+  })
+
+  return (
+    <div>
+      {users.map((user) => (
+        <UserCard key={user.id} user={user} />
+      ))}
+    </div>
+  )
+}
+```
+
+### Parallel Data Fetching
+
+```typescript
+export default async function DashboardPage() {
+  // Fetch in parallel
+  const [users, stats, activity] = await Promise.all([
+    getUsers(),
+    getStats(),
+    getRecentActivity(),
+  ])
+
+  return (
+    <div>
+      <Stats data={stats} />
+      <UserList users={users} />
+      <ActivityFeed activity={activity} />
+    </div>
+  )
+}
+```
+
+### Sequential Data Fetching
+
+```typescript
+export default async function UserPage({ params }: { params: { id: string } }) {
+  // Sequential: second depends on first
+  const user = await getUser(params.id)
+  const posts = await getUserPosts(user.id, user.tenantId)
+
+  return (
+    <div>
+      <UserProfile user={user} />
+      <PostList posts={posts} />
+    </div>
+  )
+}
+```
+
+## Streaming & Suspense
+
+### Loading States
+
+```typescript
+// app/[locale]/dashboard/loading.tsx
+export default function Loading() {
+  return <DashboardSkeleton />
+}
+```
+
+### Suspense Boundaries
+
+```typescript
+// app/[locale]/dashboard/page.tsx
+import { Suspense } from 'react'
+
+export default function DashboardPage() {
+  return (
+    <div>
+      <h1>Dashboard</h1>
+
+      {/* Immediate render */}
+      <QuickStats />
+
+      {/* Stream when ready */}
+      <Suspense fallback={<ChartSkeleton />}>
+        <AnalyticsChart />
+      </Suspense>
+
+      <Suspense fallback={<TableSkeleton />}>
+        <UserTable />
+      </Suspense>
+    </div>
+  )
+}
+```
+
+### Component Streaming
+
+```typescript
+// components/AnalyticsChart.tsx (Server Component)
+export async function AnalyticsChart() {
+  // Slow data fetch
+  const data = await fetchAnalytics()
+
+  return <Chart data={data} />
+}
+```
+
+## Server Actions
+
+### Form Actions
+
+```typescript
+// app/[locale]/dashboard/settings/page.tsx
+'use server'
+
+import { revalidatePath } from 'next/cache'
+import { db } from '@/libs/DB'
+
+export async function updateProfile(formData: FormData) {
+  const name = formData.get('name') as string
+
+  await db.update(users)
+    .set({ name })
+    .where(eq(users.id, userId))
+
+  revalidatePath('/dashboard/settings')
+
+  return { success: true }
+}
+
+export default function SettingsPage() {
+  return (
+    <form action={updateProfile}>
+      <input name="name" />
+      <button type="submit">Save</button>
+    </form>
+  )
+}
+```
+
+### Programmatic Actions
+
+```typescript
+'use client'
+
+import { deleteUser } from '@/actions/user-actions'
+import { useTransition } from 'react'
+
+export function DeleteButton({ userId }: { userId: string }) {
+  const [isPending, startTransition] = useTransition()
+
+  const handleDelete = () => {
+    startTransition(async () => {
+      await deleteUser(userId)
+    })
+  }
+
+  return (
+    <button onClick={handleDelete} disabled={isPending}>
+      {isPending ? 'Deleting...' : 'Delete'}
+    </button>
+  )
+}
+```
+
+## Error Handling
+
+### Error Boundaries
+
+```typescript
+// app/[locale]/error.tsx
+'use client'
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string }
+  reset: () => void
+}) {
+  return (
+    <div>
+      <h2>Something went wrong!</h2>
+      <button onClick={reset}>Try again</button>
+    </div>
+  )
+}
+```
+
+### Not Found
+
+```typescript
+// app/[locale]/not-found.tsx
+export default function NotFound() {
+  return (
+    <div>
+      <h2>404 - Page Not Found</h2>
+      <Link href="/">Go home</Link>
+    </div>
+  )
+}
+```
+
+### Global Error
+
+```typescript
+// app/global-error.tsx
+'use client'
+
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string }
+  reset: () => void
+}) {
+  return (
+    <html>
+      <body>
+        <h2>Something went wrong!</h2>
+        <button onClick={reset}>Try again</button>
+      </body>
+    </html>
+  )
+}
+```
+
+## Metadata
+
+### Static Metadata
+
+```typescript
+// app/[locale]/about/page.tsx
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'About Us',
+  description: 'Learn more about our company',
+}
+
+export default function AboutPage() {
+  return <div>About Us</div>
+}
+```
+
+### Dynamic Metadata
+
+```typescript
+// app/[locale]/users/[id]/page.tsx
+import type { Metadata } from 'next'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string }
+}): Promise<Metadata> {
+  const user = await getUser(params.id)
+
+  return {
+    title: `${user.name} - User Profile`,
+    description: `Profile page for ${user.name}`,
+  }
+}
+```
+
+### i18n Metadata
+
+```typescript
+// app/[locale]/layout.tsx
+import { getTranslations } from 'next-intl/server'
+
+export async function generateMetadata({ params: { locale } }) {
+  const t = await getTranslations({ locale, namespace: 'Metadata' })
+
+  return {
+    title: {
+      default: t('title'),
+      template: `%s | ${t('site_name')}`,
+    },
+    description: t('description'),
+  }
+}
+```
+
+## API Routes
+
+### Route Handlers
+
+```typescript
+// app/api/users/route.ts
+import { NextResponse } from 'next/server'
+import { db } from '@/libs/DB'
+
+export async function GET(request: Request) {
+  const users = await db.query.users.findMany()
+
+  return NextResponse.json(users)
+}
+
+export async function POST(request: Request) {
+  const body = await request.json()
+
+  const user = await db.insert(users).values(body).returning()
+
+  return NextResponse.json(user, { status: 201 })
+}
+```
+
+### Dynamic Routes
+
+```typescript
+// app/api/users/[id]/route.ts
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, params.id),
+  })
+
+  if (!user) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
+  return NextResponse.json(user)
+}
+```
+
+## Best Practices
+
+✅ **DO:**
+
+- Use Server Components by default
+- Add 'use client' only when needed
+- Fetch data in Server Components
+- Use loading.tsx for loading states
+- Implement error boundaries
+- Use route groups for organization
+- Leverage Suspense for streaming
+- Use Server Actions for mutations
+- Optimize metadata for SEO
+
+❌ **DON'T:**
+
+- Make everything a Client Component
+- Fetch data in Client Components
+- Skip error boundaries
+- Ignore loading states
+- Nest route groups unnecessarily
+- Use API routes for internal data fetching
+- Skip metadata optimization
+- Mix Server and Client Component patterns incorrectly
+
+## Performance Optimization
+
+### Code Splitting
+
+```typescript
+// Automatic code splitting per route
+app/[locale]/dashboard/page.tsx  // Separate bundle
+app/[locale]/settings/page.tsx   // Separate bundle
+```
+
+### Dynamic Imports
+
+```typescript
+import dynamic from 'next/dynamic'
+
+const HeavyChart = dynamic(() => import('@/components/HeavyChart'), {
+  loading: () => <ChartSkeleton />,
+  ssr: false,
+})
+```
+
+### Partial Prerendering
+
+```typescript
+// app/[locale]/dashboard/page.tsx
+export const experimental_ppr = true
+
+export default function DashboardPage() {
+  return (
+    <div>
+      {/* Static shell */}
+      <h1>Dashboard</h1>
+
+      {/* Dynamic content */}
+      <Suspense fallback={<Skeleton />}>
+        <UserStats />
+      </Suspense>
+    </div>
+  )
+}
+```
+
+## Resources
+
+- [Next.js App Router Docs](https://nextjs.org/docs/app)
+- [React Server Components](https://nextjs.org/docs/app/building-your-application/rendering/server-components)
+- [Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations)
+- [Architecture Overview](/architecture)
+
+## Next Steps
+
+- **[Middleware](/architecture/middleware)** - Request pipeline
+- **[Database Architecture](/architecture/database)** - Data layer
+- **[Multi-Tenancy](/architecture/multi-tenancy)** - Tenant isolation

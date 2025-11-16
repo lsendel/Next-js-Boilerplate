@@ -1,0 +1,641 @@
+# Database Architecture
+
+Database layer design using DrizzleORM, repository pattern, and multi-tenant isolation.
+
+## Overview
+
+The boilerplate uses a layered database architecture:
+
+- **DrizzleORM** - Type-safe ORM with zero runtime overhead
+- **Repository Pattern** - Data access abstraction
+- **Multi-Tenant Isolation** - Row-level security
+- **PGlite** - Local development database
+- **PostgreSQL** - Production database
+- **Migrations** - Version-controlled schema changes
+- **Type Safety** - End-to-end TypeScript types
+
+## Architecture Layers
+
+```
+┌─────────────────────────────────┐
+│   Presentation Layer (UI)       │
+│   - Pages, Components            │
+└────────────┬────────────────────┘
+             │
+┌────────────▼────────────────────┐
+│   Service Layer                  │
+│   - Business Logic               │
+│   - auth.service.ts              │
+│   - user.service.ts              │
+└────────────┬────────────────────┘
+             │
+┌────────────▼────────────────────┐
+│   Repository Layer               │
+│   - Data Access                  │
+│   - user.repository.ts           │
+│   - session.repository.ts        │
+└────────────┬────────────────────┘
+             │
+┌────────────▼────────────────────┐
+│   ORM Layer (DrizzleORM)        │
+│   - SQL Query Builder            │
+│   - Type-safe queries            │
+└────────────┬────────────────────┘
+             │
+┌────────────▼────────────────────┐
+│   Database (PostgreSQL/PGlite)   │
+│   - Data Storage                 │
+└─────────────────────────────────┘
+```
+
+## Database Connection
+
+### Connection Factory
+
+```typescript
+// src/utils/DBConnection.ts
+import { neon } from '@neondatabase/serverless'
+import { drizzle as drizzleNeon } from 'drizzle-orm/neon-http'
+import { PGlite } from '@electric-sql/pglite'
+import { drizzle as drizzlePglite } from 'drizzle-orm/pglite'
+import * as schema from '@/models/Schema'
+
+let db: ReturnType<typeof drizzleNeon> | ReturnType<typeof drizzlePglite>
+
+export function getDB() {
+  if (db) return db
+
+  if (process.env.DATABASE_URL) {
+    // Production: PostgreSQL via Neon
+    const sql = neon(process.env.DATABASE_URL)
+    db = drizzleNeon(sql, { schema })
+  } else {
+    // Development: PGlite (in-memory)
+    const client = new PGlite()
+    db = drizzlePglite(client, { schema })
+  }
+
+  return db
+}
+```
+
+### Usage
+
+```typescript
+// src/libs/DB.ts
+import { getDB } from '@/utils/DBConnection'
+
+export const db = getDB()
+```
+
+## Schema Definition
+
+### Table Schema
+
+```typescript
+// src/models/Schema.ts
+import { pgTable, text, timestamp, integer } from 'drizzle-orm/pg-core'
+import { relations } from 'drizzle-orm'
+
+export const users = pgTable('users', {
+  id: text('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  name: text('name'),
+  tenantId: text('tenant_id').notNull(), // Multi-tenancy
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+export const sessions = pgTable('sessions', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, {
+    onDelete: 'cascade',
+  }),
+  expiresAt: timestamp('expires_at').notNull(),
+})
+
+export const posts = pgTable('posts', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  content: text('content'),
+  authorId: text('author_id').notNull().references(() => users.id),
+  tenantId: text('tenant_id').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+```
+
+### Relations
+
+```typescript
+// src/models/Schema.ts
+export const usersRelations = relations(users, ({ many }) => ({
+  sessions: many(sessions),
+  posts: many(posts),
+}))
+
+export const postsRelations = relations(posts, ({ one }) => ({
+  author: one(users, {
+    fields: [posts.authorId],
+    references: [users.id],
+  }),
+}))
+```
+
+## Repository Pattern
+
+### Base Repository
+
+```typescript
+// src/server/db/repositories/base.repository.ts
+import { db } from '@/libs/DB'
+
+export abstract class BaseRepository<T> {
+  protected db = db
+
+  abstract findById(id: string): Promise<T | undefined>
+  abstract findMany(): Promise<T[]>
+  abstract create(data: Partial<T>): Promise<T>
+  abstract update(id: string, data: Partial<T>): Promise<T>
+  abstract delete(id: string): Promise<void>
+}
+```
+
+### User Repository
+
+```typescript
+// src/server/db/repositories/user.repository.ts
+import { eq } from 'drizzle-orm'
+import { users } from '@/models/Schema'
+import { BaseRepository } from './base.repository'
+
+export class UserRepository extends BaseRepository<typeof users.$inferSelect> {
+  async findById(id: string) {
+    return this.db.query.users.findFirst({
+      where: eq(users.id, id),
+    })
+  }
+
+  async findByEmail(email: string) {
+    return this.db.query.users.findFirst({
+      where: eq(users.email, email),
+    })
+  }
+
+  async findMany() {
+    return this.db.query.users.findMany({
+      orderBy: (users, { desc }) => [desc(users.createdAt)],
+    })
+  }
+
+  async create(data: typeof users.$inferInsert) {
+    const [user] = await this.db.insert(users).values(data).returning()
+    return user
+  }
+
+  async update(id: string, data: Partial<typeof users.$inferInsert>) {
+    const [user] = await this.db
+      .update(users)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning()
+
+    return user
+  }
+
+  async delete(id: string) {
+    await this.db.delete(users).where(eq(users.id, id))
+  }
+
+  // Custom query
+  async findByTenant(tenantId: string) {
+    return this.db.query.users.findMany({
+      where: eq(users.tenantId, tenantId),
+    })
+  }
+}
+```
+
+### Session Repository
+
+```typescript
+// src/server/db/repositories/session.repository.ts
+import { eq, gt } from 'drizzle-orm'
+import { sessions } from '@/models/Schema'
+import { BaseRepository } from './base.repository'
+
+export class SessionRepository extends BaseRepository<typeof sessions.$inferSelect> {
+  async findById(id: string) {
+    return this.db.query.sessions.findFirst({
+      where: eq(sessions.id, id),
+    })
+  }
+
+  async findByUserId(userId: string) {
+    return this.db.query.sessions.findMany({
+      where: eq(sessions.userId, userId),
+    })
+  }
+
+  async findValidSession(sessionId: string) {
+    return this.db.query.sessions.findFirst({
+      where: (sessions, { and, eq, gt }) =>
+        and(
+          eq(sessions.id, sessionId),
+          gt(sessions.expiresAt, new Date())
+        ),
+    })
+  }
+
+  async create(data: typeof sessions.$inferInsert) {
+    const [session] = await this.db.insert(sessions).values(data).returning()
+    return session
+  }
+
+  async deleteExpired() {
+    await this.db.delete(sessions).where(
+      gt(new Date(), sessions.expiresAt)
+    )
+  }
+
+  async deleteByUserId(userId: string) {
+    await this.db.delete(sessions).where(eq(sessions.userId, userId))
+  }
+}
+```
+
+## Service Layer
+
+### User Service
+
+```typescript
+// src/server/api/services/user.service.ts
+import { UserRepository } from '@/server/db/repositories/user.repository'
+import { generateId } from '@/utils/Helpers'
+
+const userRepository = new UserRepository()
+
+export class UserService {
+  async createUser(email: string, name: string, tenantId: string) {
+    // Business logic validation
+    const existing = await userRepository.findByEmail(email)
+    if (existing) {
+      throw new Error('User already exists')
+    }
+
+    // Create user
+    return userRepository.create({
+      id: generateId(),
+      email,
+      name,
+      tenantId,
+    })
+  }
+
+  async getUser(id: string) {
+    const user = await userRepository.findById(id)
+
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    return user
+  }
+
+  async updateUser(id: string, data: { name?: string }) {
+    return userRepository.update(id, data)
+  }
+
+  async deleteUser(id: string) {
+    // Business logic: cleanup related data
+    await sessionRepository.deleteByUserId(id)
+    await userRepository.delete(id)
+  }
+
+  async getUsersByTenant(tenantId: string) {
+    return userRepository.findByTenant(tenantId)
+  }
+}
+```
+
+## Multi-Tenancy
+
+### Tenant Isolation
+
+Every table includes `tenantId`:
+
+```typescript
+export const posts = pgTable('posts', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  tenantId: text('tenant_id').notNull(), // ← Tenant isolation
+  authorId: text('author_id').notNull(),
+})
+```
+
+### Repository-Level Filtering
+
+```typescript
+// src/server/db/repositories/post.repository.ts
+export class PostRepository extends BaseRepository<typeof posts.$inferSelect> {
+  async findByTenant(tenantId: string) {
+    return this.db.query.posts.findMany({
+      where: eq(posts.tenantId, tenantId),
+    })
+  }
+
+  async findById(id: string, tenantId: string) {
+    return this.db.query.posts.findFirst({
+      where: and(
+        eq(posts.id, id),
+        eq(posts.tenantId, tenantId) // ← Always filter by tenant
+      ),
+    })
+  }
+
+  async create(data: typeof posts.$inferInsert) {
+    // tenantId required in data
+    const [post] = await this.db.insert(posts).values(data).returning()
+    return post
+  }
+}
+```
+
+### Service-Level Enforcement
+
+```typescript
+// src/server/api/services/post.service.ts
+export class PostService {
+  async getPost(id: string, userId: string) {
+    // Get user to retrieve tenantId
+    const user = await userRepository.findById(userId)
+    if (!user) throw new Error('Unauthorized')
+
+    // Query with tenant filtering
+    return postRepository.findById(id, user.tenantId)
+  }
+
+  async createPost(data: CreatePostData, userId: string) {
+    const user = await userRepository.findById(userId)
+    if (!user) throw new Error('Unauthorized')
+
+    return postRepository.create({
+      ...data,
+      tenantId: user.tenantId, // ← Enforce tenant
+      authorId: userId,
+    })
+  }
+}
+```
+
+[Full multi-tenancy guide →](/architecture/multi-tenancy)
+
+## Query Patterns
+
+### Simple Query
+
+```typescript
+// Find by ID
+const user = await db.query.users.findFirst({
+  where: eq(users.id, userId),
+})
+```
+
+### Complex Query
+
+```typescript
+// Find with relations
+const user = await db.query.users.findFirst({
+  where: eq(users.id, userId),
+  with: {
+    posts: {
+      orderBy: (posts, { desc }) => [desc(posts.createdAt)],
+      limit: 10,
+    },
+    sessions: true,
+  },
+})
+```
+
+### Filtering
+
+```typescript
+// Multiple conditions
+const activePosts = await db.query.posts.findMany({
+  where: and(
+    eq(posts.tenantId, tenantId),
+    eq(posts.published, true),
+    gt(posts.createdAt, thirtyDaysAgo)
+  ),
+  orderBy: (posts, { desc }) => [desc(posts.createdAt)],
+  limit: 20,
+})
+```
+
+### Aggregation
+
+```typescript
+// Count
+const [{ count }] = await db
+  .select({ count: sql<number>`count(*)` })
+  .from(users)
+  .where(eq(users.tenantId, tenantId))
+```
+
+### Transactions
+
+```typescript
+// Atomic operations
+await db.transaction(async (tx) => {
+  const user = await tx.insert(users).values(userData).returning()
+
+  await tx.insert(sessions).values({
+    userId: user[0].id,
+    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+  })
+})
+```
+
+## Migrations
+
+### Generate Migration
+
+```bash
+# Make schema changes
+# src/models/Schema.ts
+
+# Generate migration
+pnpm --filter web db:generate
+```
+
+### Migration File
+
+```sql
+-- migrations/0001_add_posts_table.sql
+CREATE TABLE IF NOT EXISTS "posts" (
+  "id" text PRIMARY KEY NOT NULL,
+  "title" text NOT NULL,
+  "content" text,
+  "author_id" text NOT NULL,
+  "tenant_id" text NOT NULL,
+  "created_at" timestamp DEFAULT now() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS "posts_tenant_idx" ON "posts" ("tenant_id");
+CREATE INDEX IF NOT EXISTS "posts_author_idx" ON "posts" ("author_id");
+```
+
+### Apply Migration
+
+```bash
+# Local development
+pnpm --filter web db:migrate
+
+# Production (automatic on deploy)
+# Runs during build step
+```
+
+[Full migration guide →](/guides/database/migrations)
+
+## Performance Optimization
+
+### Indexes
+
+```typescript
+// src/models/Schema.ts
+import { index } from 'drizzle-orm/pg-core'
+
+export const users = pgTable('users', {
+  // ... columns
+}, (table) => ({
+  emailIdx: index('users_email_idx').on(table.email),
+  tenantIdx: index('users_tenant_idx').on(table.tenantId),
+}))
+```
+
+### Query Optimization
+
+```typescript
+// ✅ Good: Select specific fields
+const users = await db
+  .select({
+    id: users.id,
+    name: users.name,
+    email: users.email,
+  })
+  .from(users)
+
+// ❌ Bad: Select all fields unnecessarily
+const users = await db.select().from(users)
+```
+
+### Pagination
+
+```typescript
+async function getPaginatedUsers(page: number, pageSize: number) {
+  const offset = (page - 1) * pageSize
+
+  return db.query.users.findMany({
+    limit: pageSize,
+    offset,
+    orderBy: (users, { desc }) => [desc(users.createdAt)],
+  })
+}
+```
+
+## Best Practices
+
+✅ **DO:**
+
+- Use repository pattern for data access
+- Include `tenantId` in all tables
+- Create indexes on frequently queried fields
+- Use transactions for related operations
+- Validate data in service layer
+- Use type-safe queries
+- Generate migrations for schema changes
+- Use relations for complex queries
+
+❌ **DON'T:**
+
+- Access database directly from pages
+- Skip tenant isolation
+- Forget to add indexes
+- Mix business logic with database queries
+- Skip validation
+- Use raw SQL unless necessary
+- Manually write migrations
+- Over-fetch data
+
+## Development
+
+### Local Database (PGlite)
+
+```typescript
+// Automatic in development
+if (!process.env.DATABASE_URL) {
+  // Uses PGlite (in-memory PostgreSQL)
+  const client = new PGlite()
+  db = drizzlePglite(client, { schema })
+}
+```
+
+**Benefits:**
+- No Docker required
+- Instant startup
+- Full PostgreSQL compatibility
+- Perfect for testing
+
+### Drizzle Studio
+
+```bash
+# Visual database explorer
+pnpm --filter web db:studio
+
+# Opens: https://local.drizzle.studio
+```
+
+**Features:**
+- Browse tables
+- Run queries
+- Edit data
+- View relations
+
+## Production
+
+### PostgreSQL Connection
+
+```bash
+# Environment variable
+DATABASE_URL=postgresql://user:password@host:5432/database
+```
+
+### Connection Pooling
+
+```typescript
+// Neon provides automatic pooling
+const sql = neon(process.env.DATABASE_URL, {
+  fetchOptions: {
+    cache: 'no-store',
+  },
+})
+```
+
+### Monitoring
+
+- Track slow queries
+- Monitor connection pool
+- Set up alerts
+- Review query plans
+
+## Resources
+
+- [DrizzleORM Documentation](https://orm.drizzle.team/)
+- [Database Guide](/guides/database)
+- [Migrations](/guides/database/migrations)
+- [Multi-Tenancy](/architecture/multi-tenancy)
+
+## Next Steps
+
+- **[Multi-Tenancy](/architecture/multi-tenancy)** - Tenant isolation
+- **[Middleware](/architecture/middleware)** - Request pipeline
+- **[Authentication System](/architecture/auth-system)** - Auth architecture

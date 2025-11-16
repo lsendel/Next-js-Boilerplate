@@ -1,0 +1,26 @@
+{
+  "index": {
+    "title": "Overview",
+    "type": "page"
+  },
+  "auth-system": {
+    "title": "Authentication System",
+    "type": "page"
+  },
+  "app-router": {
+    "title": "App Router",
+    "type": "page"
+  },
+  "database": {
+    "title": "Database Layer",
+    "type": "page"
+  },
+  "middleware": {
+    "title": "Middleware Pipeline",
+    "type": "page"
+  },
+  "multi-tenancy": {
+    "title": "Multi-Tenancy",
+    "type": "page"
+  }
+}

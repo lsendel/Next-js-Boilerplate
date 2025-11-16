@@ -17,6 +17,10 @@ const baseConfig: NextConfig = {
   },
   experimental: {
     turbopackFileSystemCacheForDev: true,
+    // Enable Partial Prerendering (2025 best practice)
+    ppr: 'incremental',
+    // Enable Dynamic IO for composable caching
+    // dynamicIO: true, // Not available in Next.js 16.0.3
     // Optimize package imports to reduce bundle size
     optimizePackageImports: [
       'posthog-js',
@@ -35,6 +39,9 @@ const baseConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    // Use Cloudflare Images in production for automatic optimization
+    loader: process.env.NODE_ENV === 'production' ? 'custom' : 'default',
+    loaderFile: process.env.NODE_ENV === 'production' ? './src/utils/cloudflare-image-loader.ts' : undefined,
   },
   // Enable compression
   compress: true,

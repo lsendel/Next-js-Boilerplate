@@ -1,0 +1,645 @@
+# Checkly
+
+Synthetic monitoring and E2E testing platform that runs Playwright tests in production.
+
+## Overview
+
+Checkly provides monitoring as code with:
+
+- **Synthetic Monitoring** - Run E2E tests in production
+- **API Monitoring** - HTTP endpoint checks
+- **Multi-Region Checks** - Global availability testing
+- **Playwright Integration** - Use your existing E2E tests
+- **Alert Configuration** - Slack, email, PagerDuty
+- **Status Pages** - Public uptime dashboards
+- **CLI Integration** - Deploy checks from CI/CD
+
+## Quick Setup
+
+### 1. Create Checkly Account
+
+Sign up at [checklyhq.com](https://www.checklyhq.com):
+
+1. Create a new account
+2. Create an **API key**
+3. Note your **Account ID**
+
+### 2. Configure Environment Variables
+
+```bash
+# Local development (optional)
+# apps/web/.env.local
+
+# CI/CD (GitHub Secrets)
+CHECKLY_API_KEY=your_api_key_here
+CHECKLY_ACCOUNT_ID=your_account_id_here
+```
+
+### 3. Test Locally
+
+```bash
+# Run E2E tests locally
+pnpm --filter web test:e2e
+
+# Tests with *.check.e2e.ts will run in Checkly
+```
+
+## Configuration
+
+The boilerplate includes pre-configured Checkly setup:
+
+### `checkly.config.ts`
+
+Main configuration file:
+
+```typescript
+import { defineConfig } from 'checkly'
+
+export default defineConfig({
+  projectName: 'Next.js Boilerplate',
+  logicalId: 'next-js-boilerplate',
+  repoUrl: 'https://github.com/ixartz/Next-js-Boilerplate',
+  checks: {
+    activated: true,
+    muted: false,
+    runtimeId: '2024.02',
+    locations: ['us-east-1', 'eu-west-1'],
+    tags: ['production'],
+    checkMatch: '**/*.check.e2e.ts',
+    browserChecks: {
+      frequency: 5,  // Run every 5 minutes
+      testMatch: '**/*.check.e2e.ts',
+    },
+  },
+  cli: {
+    runLocation: 'us-east-1',
+  },
+})
+```
+
+### Check Frequency Options
+
+```typescript
+frequency: 1   // Every minute (expensive)
+frequency: 5   // Every 5 minutes (recommended)
+frequency: 10  // Every 10 minutes
+frequency: 30  // Every 30 minutes
+frequency: 60  // Every hour
+```
+
+### Available Regions
+
+```typescript
+locations: [
+  'us-east-1',      // US East (Virginia)
+  'us-west-1',      // US West (California)
+  'eu-west-1',      // EU (Ireland)
+  'eu-central-1',   // EU (Frankfurt)
+  'ap-southeast-1', // Asia Pacific (Singapore)
+  'ap-northeast-1', // Asia Pacific (Tokyo)
+]
+```
+
+## Creating Checks
+
+### E2E Browser Checks
+
+Create files ending in `*.check.e2e.ts`:
+
+```typescript
+// tests/e2e/homepage.check.e2e.ts
+import { test, expect } from '@playwright/test'
+
+test('homepage loads successfully', async ({ page }) => {
+  await page.goto('https://yourapp.com')
+
+  // Check page title
+  await expect(page).toHaveTitle(/Next.js Boilerplate/)
+
+  // Check main content
+  const heading = page.locator('h1')
+  await expect(heading).toBeVisible()
+
+  // Check navigation
+  const nav = page.locator('nav')
+  await expect(nav).toBeVisible()
+})
+```
+
+### API Checks
+
+Monitor API endpoints:
+
+```typescript
+// tests/e2e/api-health.check.e2e.ts
+import { test, expect } from '@playwright/test'
+
+test('API health check returns 200', async ({ request }) => {
+  const response = await request.get('https://api.yourapp.com/health')
+
+  expect(response.status()).toBe(200)
+
+  const body = await response.json()
+  expect(body.status).toBe('healthy')
+  expect(body.database).toBe('connected')
+})
+```
+
+### Authentication Flow
+
+```typescript
+// tests/e2e/auth.check.e2e.ts
+import { test, expect } from '@playwright/test'
+
+test('user can sign in', async ({ page }) => {
+  await page.goto('https://yourapp.com/sign-in')
+
+  // Fill in credentials
+  await page.fill('[name="email"]', 'test@example.com')
+  await page.fill('[name="password"]', 'password123')
+
+  // Submit form
+  await page.click('button[type="submit"]')
+
+  // Verify redirect to dashboard
+  await expect(page).toHaveURL(/\/dashboard/)
+
+  // Verify user is logged in
+  await expect(page.locator('text=Welcome')).toBeVisible()
+})
+```
+
+### E-commerce Flow
+
+```typescript
+// tests/e2e/checkout.check.e2e.ts
+import { test, expect } from '@playwright/test'
+
+test('user can complete purchase', async ({ page }) => {
+  await page.goto('https://yourapp.com/pricing')
+
+  // Select plan
+  await page.click('button:has-text("Buy Premium")')
+
+  // Fill in payment details
+  await page.fill('[name="cardNumber"]', '4242424242424242')
+  await page.fill('[name="expiry"]', '12/25')
+  await page.fill('[name="cvc"]', '123')
+
+  // Complete purchase
+  await page.click('button:has-text("Pay")')
+
+  // Verify success
+  await expect(page.locator('text=Payment successful')).toBeVisible()
+})
+```
+
+## Deploy Checks
+
+### Using GitHub Actions
+
+```yaml
+# .github/workflows/checkly.yml
+name: Checkly
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Deploy Checkly checks
+        env:
+          CHECKLY_API_KEY: ${{ secrets.CHECKLY_API_KEY }}
+          CHECKLY_ACCOUNT_ID: ${{ secrets.CHECKLY_ACCOUNT_ID }}
+        run: npx checkly deploy --force
+```
+
+### Using CLI
+
+```bash
+# Install Checkly CLI
+npm install -g checkly
+
+# Login
+checkly login
+
+# Deploy checks
+npx checkly deploy
+
+# Test before deploying
+npx checkly test
+```
+
+## Monitoring Patterns
+
+### Homepage Availability
+
+```typescript
+test('homepage is accessible', async ({ page }) => {
+  const response = await page.goto('https://yourapp.com')
+
+  expect(response?.status()).toBe(200)
+
+  // Check critical elements
+  await expect(page.locator('header')).toBeVisible()
+  await expect(page.locator('main')).toBeVisible()
+  await expect(page.locator('footer')).toBeVisible()
+})
+```
+
+### API Endpoint
+
+```typescript
+test('API responds within SLA', async ({ request }) => {
+  const startTime = Date.now()
+
+  const response = await request.get('https://api.yourapp.com/users')
+  const duration = Date.now() - startTime
+
+  expect(response.status()).toBe(200)
+  expect(duration).toBeLessThan(1000)  // < 1 second
+
+  const users = await response.json()
+  expect(users.length).toBeGreaterThan(0)
+})
+```
+
+### Database Connection
+
+```typescript
+test('database is accessible', async ({ request }) => {
+  const response = await request.get('https://api.yourapp.com/health')
+
+  expect(response.status()).toBe(200)
+
+  const health = await response.json()
+  expect(health.database).toBe('connected')
+  expect(health.latency).toBeLessThan(100)  // < 100ms
+})
+```
+
+### Third-Party Integration
+
+```typescript
+test('payment provider is reachable', async ({ request }) => {
+  const response = await request.post('https://api.yourapp.com/payments/test', {
+    data: { testMode: true }
+  })
+
+  expect(response.status()).toBe(200)
+
+  const result = await response.json()
+  expect(result.provider).toBe('stripe')
+  expect(result.status).toBe('connected')
+})
+```
+
+## Alerts
+
+### Configure Alert Channels
+
+1. **Checkly Dashboard → Settings → Alert Channels**
+2. **Add channel:**
+   - Email
+   - Slack
+   - PagerDuty
+   - Webhook
+   - SMS
+   - Opsgenie
+
+### Slack Alerts
+
+```typescript
+// checkly.config.ts
+export default defineConfig({
+  checks: {
+    alertChannels: [
+      {
+        type: 'SLACK',
+        webhook: process.env.SLACK_WEBHOOK_URL,
+        channel: '#alerts',
+      },
+    ],
+  },
+})
+```
+
+### Email Alerts
+
+```typescript
+alertChannels: [
+  {
+    type: 'EMAIL',
+    address: 'team@yourapp.com',
+  },
+]
+```
+
+### PagerDuty
+
+```typescript
+alertChannels: [
+  {
+    type: 'PAGERDUTY',
+    integrationKey: process.env.PAGERDUTY_KEY,
+  },
+]
+```
+
+### Webhook
+
+```typescript
+alertChannels: [
+  {
+    type: 'WEBHOOK',
+    url: 'https://yourapp.com/webhooks/checkly',
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ${SECRET}',
+    },
+  },
+]
+```
+
+## Grouping Checks
+
+Organize related checks:
+
+```typescript
+// tests/e2e/__checks__/api.check.ts
+import { CheckGroup } from 'checkly/constructs'
+
+export const apiGroup = new CheckGroup('api-checks', {
+  name: 'API Checks',
+  activated: true,
+  locations: ['us-east-1', 'eu-west-1'],
+  concurrency: 3,
+  tags: ['api', 'production'],
+  alertChannels: [
+    { type: 'SLACK', webhook: process.env.SLACK_WEBHOOK_URL },
+  ],
+})
+```
+
+Use in checks:
+
+```typescript
+// tests/e2e/users-api.check.e2e.ts
+import { apiGroup } from './__checks__/api.check'
+
+test.use({ group: apiGroup })
+
+test('users API works', async ({ request }) => {
+  // Test logic
+})
+```
+
+## Retries and Thresholds
+
+### Configure Retries
+
+```typescript
+export default defineConfig({
+  checks: {
+    retries: 2,  // Retry failed checks 2 times
+    doubleCheck: true,  // Run from 2 locations before alerting
+  },
+})
+```
+
+### Alert Threshold
+
+```typescript
+export default defineConfig({
+  checks: {
+    alertThreshold: 2,  // Alert after 2 consecutive failures
+  },
+})
+```
+
+## Environment Variables
+
+Use environment variables in checks:
+
+```typescript
+// tests/e2e/staging.check.e2e.ts
+import { test, expect } from '@playwright/test'
+
+const BASE_URL = process.env.STAGING_URL || 'https://staging.yourapp.com'
+
+test('staging environment is healthy', async ({ page }) => {
+  await page.goto(`${BASE_URL}/health`)
+
+  await expect(page.locator('text=healthy')).toBeVisible()
+})
+```
+
+Set in Checkly dashboard:
+
+```bash
+STAGING_URL=https://staging.yourapp.com
+API_KEY=your_api_key
+```
+
+## Status Pages
+
+Create public status page:
+
+1. **Checkly → Status Pages**
+2. **Create page:**
+   - Domain: `status.yourapp.com`
+   - Checks to display
+   - Custom branding
+
+### Example Status Page
+
+**Monitored Services:**
+- Website (homepage check)
+- API (health check)
+- Authentication (sign-in check)
+- Database (connection check)
+- Payment Processing (checkout check)
+
+## Best Practices
+
+✅ **DO:**
+
+- Monitor critical user journeys
+- Check from multiple regions
+- Set appropriate check frequency (5-10 min)
+- Use retries and double-check
+- Alert multiple channels
+- Group related checks
+- Test checks locally first
+- Monitor API endpoints
+- Check third-party integrations
+
+❌ **DON'T:**
+
+- Over-monitor (every minute is expensive)
+- Skip retries (false positives)
+- Alert on every failure
+- Test only from one region
+- Forget to test alerts
+- Mix dev and prod checks
+- Skip authentication flows
+- Ignore check results
+
+## Common Checks
+
+### SSL Certificate
+
+```typescript
+test('SSL certificate is valid', async ({ request }) => {
+  const response = await request.get('https://yourapp.com')
+
+  expect(response.status()).toBe(200)
+
+  // Certificate expiry checked automatically by Checkly
+})
+```
+
+### Redirect
+
+```typescript
+test('www redirects to apex', async ({ page }) => {
+  await page.goto('https://www.yourapp.com')
+
+  await expect(page).toHaveURL('https://yourapp.com')
+})
+```
+
+### Performance
+
+```typescript
+test('page loads within performance budget', async ({ page }) => {
+  const startTime = Date.now()
+
+  await page.goto('https://yourapp.com')
+  await page.waitForLoadState('networkidle')
+
+  const loadTime = Date.now() - startTime
+
+  expect(loadTime).toBeLessThan(3000)  // < 3 seconds
+})
+```
+
+### Content
+
+```typescript
+test('page contains required content', async ({ page }) => {
+  await page.goto('https://yourapp.com')
+
+  // Check for critical content
+  await expect(page.locator('text=Get Started')).toBeVisible()
+  await expect(page.locator('text=Pricing')).toBeVisible()
+  await expect(page.locator('text=Documentation')).toBeVisible()
+})
+```
+
+## Troubleshooting
+
+### Checks Not Running
+
+1. **Verify deployment:**
+   ```bash
+   npx checkly deploy
+   ```
+
+2. **Check API credentials:**
+   ```bash
+   echo $CHECKLY_API_KEY
+   echo $CHECKLY_ACCOUNT_ID
+   ```
+
+3. **Verify check files:**
+   ```bash
+   ls tests/e2e/*.check.e2e.ts
+   ```
+
+### False Positives
+
+1. **Enable retries:**
+   ```typescript
+   retries: 2
+   ```
+
+2. **Use double-check:**
+   ```typescript
+   doubleCheck: true
+   ```
+
+3. **Increase timeouts:**
+   ```typescript
+   test.setTimeout(30000)  // 30 seconds
+   ```
+
+### Check Failures
+
+1. **View in dashboard:**
+   - Check history
+   - Screenshots
+   - Logs
+
+2. **Run locally:**
+   ```bash
+   npx checkly test
+   ```
+
+3. **Debug mode:**
+   ```bash
+   PWDEBUG=1 npx playwright test
+   ```
+
+## Cost Optimization
+
+### Free Tier
+
+- **150 check runs/month**
+- Up to 3 checks
+- Email alerts
+
+### Reduce Costs
+
+1. **Reduce frequency:**
+   ```typescript
+   frequency: 10  // Every 10 minutes (cheaper than 5)
+   ```
+
+2. **Limit regions:**
+   ```typescript
+   locations: ['us-east-1']  // One region instead of multiple
+   ```
+
+3. **Group checks:**
+   - Combine related tests
+   - Reduce total check count
+
+4. **Use API checks:**
+   - Cheaper than browser checks
+   - Faster execution
+
+## Resources
+
+- [Checkly Documentation](https://www.checklyhq.com/docs/)
+- [Playwright Docs](https://playwright.dev/)
+- [Monitoring as Code](https://www.checklyhq.com/docs/monitoring-as-code/)
+- [Operations Guide](/operations/monitoring)
+
+## Next Steps
+
+- **[E2E Testing](/guides/testing/e2e)** - Playwright guide
+- **[Better Stack](/integrations/better-stack)** - Uptime monitoring
+- **[Operations](/operations)** - Production monitoring

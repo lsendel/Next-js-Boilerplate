@@ -1,0 +1,566 @@
+# i18n Setup
+
+Complete guide to configuring internationalization for your Next.js application.
+
+## Prerequisites
+
+The boilerplate comes with i18n pre-configured. This guide covers customization and adding new languages.
+
+## Current Configuration
+
+### Supported Languages
+
+```typescript
+// src/utils/AppConfig.ts
+export const AppConfig = {
+  locales: [
+    { id: 'en', name: 'English' },
+    { id: 'fr', name: 'Français' },
+    { id: 'es', name: 'Español' },
+    { id: 'de', name: 'Deutsch' },
+    { id: 'ja', name: '日本語' },
+    { id: 'zh', name: '中文' },
+  ],
+  defaultLocale: 'en',
+}
+```
+
+### Translation Files
+
+```
+src/locales/
+├── en.json   # English (source)
+├── fr.json   # French
+├── es.json   # Spanish
+├── de.json   # German
+├── ja.json   # Japanese
+└── zh.json   # Chinese
+```
+
+## Adding a New Language
+
+### Step 1: Add to AppConfig
+
+```typescript
+// src/utils/AppConfig.ts
+export const AppConfig = {
+  locales: [
+    { id: 'en', name: 'English' },
+    { id: 'fr', name: 'Français' },
+    { id: 'pt', name: 'Português' },  // ← New language
+  ],
+  defaultLocale: 'en',
+}
+```
+
+### Step 2: Create Translation File
+
+```bash
+# Copy English source file
+cp src/locales/en.json src/locales/pt.json
+```
+
+Or create manually:
+
+```json
+// src/locales/pt.json
+{
+  "HomePage": {
+    "welcome": "Bem-vindo",
+    "get_started": "Começar"
+  },
+  "Dashboard": {
+    "title": "Painel"
+  }
+}
+```
+
+### Step 3: Update Crowdin Configuration
+
+```yaml
+# crowdin.yml
+files:
+  - source: /src/locales/en.json
+    translation: /src/locales/%two_letters_code%.json
+    languages_mapping:
+      two_letters_code:
+        fr: fr
+        es: es
+        pt: pt  # ← Add new language
+```
+
+### Step 4: Add to Crowdin Project
+
+1. **Go to Crowdin → Settings → Target Languages**
+2. **Click "Add Language"**
+3. **Select Portuguese**
+4. **Assign translators**
+
+### Step 5: Test
+
+```bash
+# Start dev server
+pnpm dev
+
+# Visit Portuguese version
+open http://localhost:3000/pt
+```
+
+## Changing Default Language
+
+### Update AppConfig
+
+```typescript
+// src/utils/AppConfig.ts
+export const AppConfig = {
+  locales: [
+    { id: 'en', name: 'English' },
+    { id: 'fr', name: 'Français' },
+  ],
+  defaultLocale: 'fr',  // ← Changed from 'en'
+}
+```
+
+### Update I18n Configuration
+
+```typescript
+// src/libs/I18n.ts
+export default getRequestConfig(async ({ locale }) => {
+  return {
+    messages: (await import(`@/locales/${locale}.json`)).default,
+    timeZone: 'Europe/Paris',  // Update timezone
+  }
+})
+```
+
+## Removing a Language
+
+### Step 1: Remove from AppConfig
+
+```typescript
+// src/utils/AppConfig.ts
+export const AppConfig = {
+  locales: [
+    { id: 'en', name: 'English' },
+    { id: 'fr', name: 'Français' },
+    // { id: 'de', name: 'Deutsch' },  ← Removed
+  ],
+  defaultLocale: 'en',
+}
+```
+
+### Step 2: Remove Translation File
+
+```bash
+rm src/locales/de.json
+```
+
+### Step 3: Update Crowdin
+
+1. **Crowdin → Settings → Target Languages**
+2. **Remove German**
+
+### Step 4: Update crowdin.yml
+
+```yaml
+# Remove from languages_mapping
+languages_mapping:
+  two_letters_code:
+    fr: fr
+    es: es
+    # de: de  ← Removed
+```
+
+## Configuration Files
+
+### I18n Routing
+
+```typescript
+// src/libs/I18nRouting.ts
+import { createNavigation } from 'next-intl/navigation'
+import { defineRouting } from 'next-intl/routing'
+import { AppConfig } from '@/utils/AppConfig'
+
+export const routing = defineRouting({
+  locales: AppConfig.locales.map(locale => locale.id),
+  defaultLocale: AppConfig.defaultLocale,
+  localePrefix: 'always',  // Always show locale in URL
+})
+
+export const { Link, redirect, usePathname, useRouter } =
+  createNavigation(routing)
+```
+
+### Locale Prefix Options
+
+```typescript
+// Always show locale: /en/dashboard
+localePrefix: 'always'
+
+// Hide default locale: /dashboard (English), /fr/dashboard (French)
+localePrefix: 'as-needed'
+
+// Never show locale (not recommended)
+localePrefix: 'never'
+```
+
+### Request Configuration
+
+```typescript
+// src/libs/I18n.ts
+import { getRequestConfig } from 'next-intl/server'
+
+export default getRequestConfig(async ({ locale }) => {
+  return {
+    messages: (await import(`@/locales/${locale}.json`)).default,
+
+    // Optional: Configure time zone
+    timeZone: 'UTC',
+
+    // Optional: Configure date/number formatting
+    formats: {
+      dateTime: {
+        short: {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        },
+      },
+      number: {
+        currency: {
+          style: 'currency',
+          currency: 'USD',
+        },
+      },
+    },
+  }
+})
+```
+
+### Middleware Configuration
+
+```typescript
+// src/middleware.ts
+import createMiddleware from 'next-intl/middleware'
+import { routing } from '@/libs/I18nRouting'
+
+const i18nMiddleware = createMiddleware(routing)
+
+export default function middleware(request: NextRequest) {
+  // I18n middleware runs first
+  const response = i18nMiddleware(request)
+
+  // Then other middleware (auth, security, etc.)
+  // ...
+
+  return response
+}
+```
+
+## Language Detection
+
+### Detection Priority
+
+1. **URL locale** - `/fr/dashboard` → French
+2. **Cookie** - `NEXT_LOCALE=fr` → French
+3. **Accept-Language header** - Browser language
+4. **Default** - Fallback to English
+
+### Custom Detection
+
+```typescript
+// src/middleware.ts
+export default function middleware(request: NextRequest) {
+  // Get locale from subdomain
+  const hostname = request.headers.get('host')
+  if (hostname?.startsWith('fr.')) {
+    return i18nMiddleware(request, { locale: 'fr' })
+  }
+
+  // Default detection
+  return i18nMiddleware(request)
+}
+```
+
+## Date and Time Formatting
+
+### Configure Time Zones
+
+```typescript
+// src/libs/I18n.ts
+export default getRequestConfig(async ({ locale }) => {
+  const timeZones = {
+    en: 'America/New_York',
+    fr: 'Europe/Paris',
+    de: 'Europe/Berlin',
+    ja: 'Asia/Tokyo',
+  }
+
+  return {
+    messages: (await import(`@/locales/${locale}.json`)).default,
+    timeZone: timeZones[locale] || 'UTC',
+  }
+})
+```
+
+### Usage
+
+```typescript
+import { useFormatter } from 'next-intl'
+
+const format = useFormatter()
+
+// Automatically uses correct timezone
+format.dateTime(new Date(), {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: 'numeric',
+})
+```
+
+## Number and Currency Formatting
+
+### Configure Currencies
+
+```typescript
+// src/libs/I18n.ts
+export default getRequestConfig(async ({ locale }) => {
+  const currencies = {
+    en: 'USD',
+    fr: 'EUR',
+    de: 'EUR',
+    ja: 'JPY',
+  }
+
+  return {
+    messages: (await import(`@/locales/${locale}.json`)).default,
+    formats: {
+      number: {
+        currency: {
+          style: 'currency',
+          currency: currencies[locale] || 'USD',
+        },
+      },
+    },
+  }
+})
+```
+
+### Usage
+
+```typescript
+import { useFormatter } from 'next-intl'
+
+const format = useFormatter()
+
+// English: "$1,234.56"
+// French:  "1 234,56 €"
+// Japanese: "¥1,235"
+format.number(1234.56, { style: 'currency', currency: 'USD' })
+```
+
+## SEO Configuration
+
+### Localized Metadata
+
+```typescript
+// app/[locale]/layout.tsx
+import { getTranslations } from 'next-intl/server'
+
+export async function generateMetadata({ params: { locale } }) {
+  const t = await getTranslations({ locale, namespace: 'Metadata' })
+
+  return {
+    title: {
+      default: t('title'),
+      template: `%s | ${t('site_name')}`,
+    },
+    description: t('description'),
+  }
+}
+```
+
+### Alternate Language Links
+
+```typescript
+// app/[locale]/layout.tsx
+import { AppConfig } from '@/utils/AppConfig'
+
+export async function generateMetadata({ params: { locale } }) {
+  const alternates = {
+    languages: {},
+  }
+
+  AppConfig.locales.forEach(({ id }) => {
+    alternates.languages[id] = `/${id}`
+  })
+
+  return {
+    alternates,
+  }
+}
+```
+
+Generates:
+```html
+<link rel="alternate" hreflang="en" href="https://yourapp.com/en" />
+<link rel="alternate" hreflang="fr" href="https://yourapp.com/fr" />
+<link rel="alternate" hreflang="es" href="https://yourapp.com/es" />
+```
+
+## Environment-Specific Configuration
+
+### Development
+
+```typescript
+// next.config.ts
+const config = {
+  i18n: {
+    // Show translation keys in development
+    debug: process.env.NODE_ENV === 'development',
+  },
+}
+```
+
+### Production
+
+```typescript
+// Preload all translations for better performance
+export const dynamic = 'force-static'
+
+export async function generateStaticParams() {
+  return AppConfig.locales.map(locale => ({
+    locale: locale.id,
+  }))
+}
+```
+
+## Testing
+
+### Test All Languages
+
+```bash
+# Test each language manually
+open http://localhost:3000/en
+open http://localhost:3000/fr
+open http://localhost:3000/es
+```
+
+### Validate Translations
+
+```bash
+# Check for missing translations
+pnpm --filter web check:i18n
+```
+
+### E2E Tests
+
+```typescript
+// tests/e2e/i18n.e2e.ts
+import { test, expect } from '@playwright/test'
+
+test('language switcher works', async ({ page }) => {
+  await page.goto('/en')
+
+  // Should show English
+  await expect(page.locator('h1')).toContainText('Welcome')
+
+  // Switch to French
+  await page.selectOption('select', 'fr')
+
+  // Should navigate to French version
+  await expect(page).toHaveURL(/\/fr/)
+  await expect(page.locator('h1')).toContainText('Bienvenue')
+})
+```
+
+## Troubleshooting
+
+### Language Not Showing
+
+1. **Check AppConfig:**
+   ```typescript
+   // Must be in locales array
+   locales: [
+     { id: 'pt', name: 'Português' },
+   ]
+   ```
+
+2. **Check translation file exists:**
+   ```bash
+   ls src/locales/pt.json
+   ```
+
+3. **Clear cache:**
+   ```bash
+   rm -rf .next
+   pnpm dev
+   ```
+
+### Translations Not Loading
+
+1. **Check file format:**
+   ```bash
+   # Must be valid JSON
+   cat src/locales/fr.json | jq
+   ```
+
+2. **Check imports:**
+   ```typescript
+   // Should match locale ID
+   await import(`@/locales/${locale}.json`)
+   ```
+
+3. **Restart dev server:**
+   ```bash
+   pnpm dev
+   ```
+
+### Wrong Default Language
+
+1. **Verify AppConfig:**
+   ```typescript
+   defaultLocale: 'en'  // Should match desired default
+   ```
+
+2. **Clear browser cookies:**
+   - `NEXT_LOCALE` cookie may override
+
+3. **Check middleware:**
+   - Ensure i18n middleware runs first
+
+## Best Practices
+
+✅ **DO:**
+
+- Use consistent locale IDs (en, fr, es, not en-US, fr-FR)
+- Keep AppConfig as single source of truth
+- Test all languages before deploying
+- Configure appropriate timezones
+- Use locale-specific currencies
+- Generate alternate language links for SEO
+- Validate translations regularly
+
+❌ **DON'T:**
+
+- Hardcode locale lists in multiple places
+- Skip translation file validation
+- Forget to update Crowdin configuration
+- Mix locale formats (en vs en-US)
+- Skip SEO metadata translation
+- Ignore timezone differences
+
+## Resources
+
+- [next-intl Documentation](https://next-intl-docs.vercel.app/)
+- [i18n Overview](/guides/i18n)
+- [Translation Management](/guides/i18n/translations)
+- [Crowdin Integration](/integrations/crowdin)
+
+## Next Steps
+
+- **[Managing Translations](/guides/i18n/translations)** - Translation workflow
+- **[Crowdin Workflow](/guides/i18n/crowdin)** - Automated translations
+- **[Customization](/getting-started/customization)** - Configure your app

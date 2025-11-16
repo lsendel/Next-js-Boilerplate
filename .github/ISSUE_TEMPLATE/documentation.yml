@@ -1,0 +1,115 @@
+name: Documentation Update
+description: Suggest improvements or report issues with documentation
+title: "[Docs]: "
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve our documentation! Clear docs help everyone.
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Documentation Type
+      description: What type of documentation update is needed?
+      options:
+        - Missing documentation
+        - Incorrect/outdated information
+        - Unclear/confusing explanation
+        - Typo or grammar issue
+        - Code example improvement
+        - New guide/tutorial needed
+        - API reference update
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Documentation Location
+      description: Where is the documentation that needs updating?
+      placeholder: "e.g., README.md, CLAUDE.md, docs/authentication.md, inline comments in src/libs/auth/"
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current Documentation
+      description: What does the current documentation say (if applicable)?
+      placeholder: |
+        Copy the current text or describe what's missing...
+      render: markdown
+
+  - type: textarea
+    id: issue
+    attributes:
+      label: Issue Description
+      description: What's wrong or missing?
+      placeholder: |
+        Describe the problem with the current documentation...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed Documentation
+      description: How should it be documented instead?
+      placeholder: |
+        Provide the corrected/new documentation text...
+      render: markdown
+    validations:
+      required: true
+
+  - type: dropdown
+    id: audience
+    attributes:
+      label: Target Audience
+      description: Who is this documentation primarily for?
+      options:
+        - New users/beginners
+        - Intermediate developers
+        - Advanced/power users
+        - All users
+        - Contributors/maintainers
+    validations:
+      required: true
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Code Examples
+      description: Provide code examples to include in the documentation (if applicable)
+      render: typescript
+      placeholder: |
+        // Your code example here
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context, screenshots, or references
+      placeholder: |
+        - Related documentation pages
+        - External references
+        - Screenshots of confusing parts
+
+  - type: checkboxes
+    id: implementation
+    attributes:
+      label: Contribution Willingness
+      options:
+        - label: I am willing to submit a PR with these documentation changes
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I have searched existing issues to ensure this is not a duplicate
+          required: true
+        - label: I have clearly described the documentation issue and proposed fix
+          required: true

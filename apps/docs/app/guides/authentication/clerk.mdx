@@ -1,0 +1,633 @@
+# Clerk Authentication
+
+Complete guide to using Clerk as your authentication provider.
+
+## Overview
+
+Clerk is the default authentication provider in the boilerplate with:
+
+- **Pre-configured** - Ready to use out of the box
+- **Keyless Development** - No API keys needed locally
+- **Multi-Language** - Full i18n support
+- **Social Login** - Google, GitHub, Microsoft, etc.
+- **MFA** - Two-factor authentication
+- **Session Management** - Secure session handling
+- **User Management** - Built-in user admin
+
+## Quick Start
+
+### 1. Development Mode (Keyless)
+
+```bash
+# No configuration needed!
+pnpm --filter web dev
+
+# Visit: http://localhost:3000/sign-in
+```
+
+Clerk works out of the box in development using test keys from `.env`.
+
+### 2. Production Setup
+
+1. **Create Clerk account** at [clerk.com](https://clerk.com)
+2. **Create application**
+3. **Copy API keys**:
+   - Publishable key
+   - Secret key
+
+4. **Add to environment:**
+
+```bash
+# apps/web/.env.local
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+```
+
+## Configuration
+
+### Clerk Provider Setup
+
+```typescript
+// src/libs/auth/adapters/ClerkAdapter.tsx
+import { ClerkProvider as Provider } from '@clerk/nextjs'
+import { AppConfig } from '@/utils/AppConfig'
+
+export function ClerkProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <Provider
+      localization={getClerkLocale()}
+      appearance={{
+        elements: {
+          formButtonPrimary: 'bg-blue-600 hover:bg-blue-700',
+        },
+      }}
+    >
+      {children}
+    </Provider>
+  )
+}
+
+function getClerkLocale() {
+  const locale = useLocale()
+
+  const localeMap = {
+    en: 'en-US',
+    fr: 'fr-FR',
+    es: 'es-ES',
+    de: 'de-DE',
+  }
+
+  return localeMap[locale] || 'en-US'
+}
+```
+
+### Root Layout Integration
+
+```typescript
+// app/[locale]/layout.tsx
+import { ClerkProvider } from '@/libs/auth/adapters/ClerkAdapter'
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <ClerkProvider>
+          {children}
+        </ClerkProvider>
+      </body>
+    </html>
+  )
+}
+```
+
+## Authentication Components
+
+### Sign-In Page
+
+```typescript
+// app/[locale]/(auth)/(center)/sign-in/page.tsx
+import { SignIn } from '@clerk/nextjs'
+
+export default function SignInPage() {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <SignIn
+        path="/sign-in"
+        routing="path"
+        signUpUrl="/sign-up"
+        redirectUrl="/dashboard"
+      />
+    </div>
+  )
+}
+```
+
+### Sign-Up Page
+
+```typescript
+// app/[locale]/(auth)/(center)/sign-up/page.tsx
+import { SignUp } from '@clerk/nextjs'
+
+export default function SignUpPage() {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <SignUp
+        path="/sign-up"
+        routing="path"
+        signInUrl="/sign-in"
+        redirectUrl="/dashboard"
+      />
+    </div>
+  )
+}
+```
+
+### User Button
+
+```typescript
+// components/UserButton.tsx
+import { UserButton } from '@clerk/nextjs'
+
+export function Header() {
+  return (
+    <header>
+      <nav>
+        {/* User menu with profile, settings, sign out */}
+        <UserButton
+          afterSignOutUrl="/"
+          appearance={{
+            elements: {
+              avatarBox: 'w-10 h-10',
+            },
+          }}
+        />
+      </nav>
+    </header>
+  )
+}
+```
+
+## Server-Side Auth
+
+### Check Authentication
+
+```typescript
+// app/[locale]/dashboard/page.tsx
+import { auth } from '@clerk/nextjs/server'
+import { redirect } from 'next/navigation'
+
+export default async function DashboardPage() {
+  const { userId } = await auth()
+
+  if (!userId) {
+    redirect('/sign-in')
+  }
+
+  return <Dashboard />
+}
+```
+
+### Get Current User
+
+```typescript
+import { currentUser } from '@clerk/nextjs/server'
+
+export default async function ProfilePage() {
+  const user = await currentUser()
+
+  if (!user) {
+    redirect('/sign-in')
+  }
+
+  return (
+    <div>
+      <h1>{user.firstName} {user.lastName}</h1>
+      <p>{user.emailAddresses[0].emailAddress}</p>
+    </div>
+  )
+}
+```
+
+### API Route Protection
+
+```typescript
+// app/api/users/route.ts
+import { auth } from '@clerk/nextjs/server'
+import { NextResponse } from 'next/server'
+
+export async function GET(request: Request) {
+  const { userId } = await auth()
+
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Fetch user data
+  const users = await getUsers(userId)
+
+  return NextResponse.json(users)
+}
+```
+
+## Client-Side Auth
+
+### useAuth Hook
+
+```typescript
+'use client'
+
+import { useAuth } from '@clerk/nextjs'
+
+export function ProtectedComponent() {
+  const { isLoaded, userId, sessionId, getToken } = useAuth()
+
+  if (!isLoaded) {
+    return <div>Loading...</div>
+  }
+
+  if (!userId) {
+    return <div>Please sign in</div>
+  }
+
+  return <div>Welcome! User ID: {userId}</div>
+}
+```
+
+### useUser Hook
+
+```typescript
+'use client'
+
+import { useUser } from '@clerk/nextjs'
+
+export function UserProfile() {
+  const { isLoaded, isSignedIn, user } = useUser()
+
+  if (!isLoaded) {
+    return <div>Loading...</div>
+  }
+
+  if (!isSignedIn) {
+    return <div>Not signed in</div>
+  }
+
+  return (
+    <div>
+      <h2>{user.fullName}</h2>
+      <p>{user.primaryEmailAddress?.emailAddress}</p>
+    </div>
+  )
+}
+```
+
+## Middleware Protection
+
+```typescript
+// src/middleware.ts
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+
+const isProtectedRoute = createRouteMatcher([
+  '/dashboard(.*)',
+  '/settings(.*)',
+  '/profile(.*)',
+])
+
+export default clerkMiddleware((auth, req) => {
+  if (isProtectedRoute(req)) {
+    auth().protect()
+  }
+})
+
+export const config = {
+  matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
+}
+```
+
+## Social Login
+
+### Enable Providers
+
+1. **Clerk Dashboard → User & Authentication → Social Connections**
+2. **Enable providers:**
+   - Google
+   - GitHub
+   - Microsoft
+   - Facebook
+   - Apple
+   - Twitter
+
+3. **Configure OAuth:**
+   - Set redirect URLs
+   - Add client IDs/secrets
+   - Enable for your app
+
+### Customization
+
+```typescript
+// app/[locale]/sign-in/page.tsx
+<SignIn
+  appearance={{
+    elements: {
+      socialButtonsBlockButton: 'w-full',
+      socialButtonsProviderIcon: 'w-5 h-5',
+    },
+  }}
+  socialButtonsPlacement="top"
+  socialButtonsVariant="blockButton"
+/>
+```
+
+## Multi-Factor Authentication
+
+### Enable MFA
+
+1. **Clerk Dashboard → User & Authentication → Multi-factor**
+2. **Enable options:**
+   - SMS
+   - Authenticator app (TOTP)
+   - Backup codes
+
+### Require MFA
+
+```typescript
+// Clerk Dashboard → Settings → Security
+// Set MFA policy:
+// - Optional (default)
+// - Required for all
+// - Required for specific roles
+```
+
+### Check MFA Status
+
+```typescript
+import { currentUser } from '@clerk/nextjs/server'
+
+export default async function SettingsPage() {
+  const user = await currentUser()
+
+  const hasMFA = user?.twoFactorEnabled
+
+  return (
+    <div>
+      <p>MFA: {hasMFA ? 'Enabled' : 'Disabled'}</p>
+    </div>
+  )
+}
+```
+
+## Session Management
+
+### Session Duration
+
+Configure in Clerk Dashboard:
+- **Session lifetime:** 7 days (default)
+- **Inactivity timeout:** 30 minutes
+- **Multi-session:** Allowed
+
+### Get Session
+
+```typescript
+'use client'
+
+import { useSession } from '@clerk/nextjs'
+
+export function SessionInfo() {
+  const { session, isLoaded } = useSession()
+
+  if (!isLoaded) return <div>Loading...</div>
+
+  return (
+    <div>
+      <p>Session ID: {session?.id}</p>
+      <p>Expires: {session?.expireAt.toLocaleString()}</p>
+    </div>
+  )
+}
+```
+
+### Session Tokens
+
+```typescript
+'use client'
+
+import { useAuth } from '@clerk/nextjs'
+
+export function useApiCall() {
+  const { getToken } = useAuth()
+
+  const callAPI = async () => {
+    const token = await getToken()
+
+    const response = await fetch('/api/data', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    return response.json()
+  }
+
+  return { callAPI }
+}
+```
+
+## Customization
+
+### Appearance
+
+```typescript
+<ClerkProvider
+  appearance={{
+    baseTheme: dark,  // or light
+    elements: {
+      formButtonPrimary: 'bg-blue-600 hover:bg-blue-700',
+      card: 'shadow-lg',
+      headerTitle: 'text-2xl font-bold',
+    },
+    layout: {
+      socialButtonsPlacement: 'top',
+      socialButtonsVariant: 'blockButton',
+    },
+  }}
+>
+  {children}
+</ClerkProvider>
+```
+
+### Localization
+
+```typescript
+import { deDE, esES, frFR } from '@clerk/localizations'
+
+<ClerkProvider
+  localization={frFR}  // French
+>
+  {children}
+</ClerkProvider>
+```
+
+### Custom Pages
+
+```typescript
+// Use your own custom UI
+<ClerkProvider
+  signInUrl="/custom-sign-in"
+  signUpUrl="/custom-sign-up"
+  afterSignInUrl="/dashboard"
+  afterSignUpUrl="/onboarding"
+>
+  {children}
+</ClerkProvider>
+```
+
+## Webhooks
+
+### Setup Webhooks
+
+1. **Clerk Dashboard → Webhooks**
+2. **Add endpoint:** `https://yourapp.com/api/webhooks/clerk`
+3. **Select events:**
+   - user.created
+   - user.updated
+   - user.deleted
+   - session.created
+
+### Handle Webhooks
+
+```typescript
+// app/api/webhooks/clerk/route.ts
+import { Webhook } from 'svix'
+import { headers } from 'next/headers'
+
+export async function POST(request: Request) {
+  const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET
+
+  const headerPayload = headers()
+  const svixId = headerPayload.get('svix-id')
+  const svixTimestamp = headerPayload.get('svix-timestamp')
+  const svixSignature = headerPayload.get('svix-signature')
+
+  const body = await request.text()
+
+  const wh = new Webhook(WEBHOOK_SECRET!)
+  const evt = wh.verify(body, {
+    'svix-id': svixId!,
+    'svix-timestamp': svixTimestamp!,
+    'svix-signature': svixSignature!,
+  })
+
+  const { type, data } = evt
+
+  switch (type) {
+    case 'user.created':
+      await handleUserCreated(data)
+      break
+    case 'user.updated':
+      await handleUserUpdated(data)
+      break
+    case 'user.deleted':
+      await handleUserDeleted(data)
+      break
+  }
+
+  return new Response('', { status: 200 })
+}
+
+async function handleUserCreated(data: any) {
+  // Sync user to your database
+  await db.insert(users).values({
+    id: data.id,
+    email: data.email_addresses[0].email_address,
+    name: `${data.first_name} ${data.last_name}`,
+  })
+}
+```
+
+## Organizations (Multi-Tenancy)
+
+### Enable Organizations
+
+1. **Clerk Dashboard → Organizations**
+2. **Enable feature**
+3. **Configure settings**
+
+### Organization Switcher
+
+```typescript
+'use client'
+
+import { OrganizationSwitcher } from '@clerk/nextjs'
+
+export function Header() {
+  return (
+    <header>
+      <OrganizationSwitcher
+        afterCreateOrganizationUrl="/dashboard"
+        afterSelectOrganizationUrl="/dashboard"
+      />
+    </header>
+  )
+}
+```
+
+### Get Organization
+
+```typescript
+import { auth } from '@clerk/nextjs/server'
+
+export default async function OrgDashboard() {
+  const { orgId } = await auth()
+
+  if (!orgId) {
+    return <div>No organization selected</div>
+  }
+
+  const data = await getOrgData(orgId)
+
+  return <Dashboard data={data} />
+}
+```
+
+## Testing
+
+### Test Users
+
+Clerk provides test users in development:
+- `user_2...` - Test user IDs
+- No email verification required
+- Instant sign-in
+
+### E2E Tests
+
+```typescript
+// tests/e2e/auth.e2e.ts
+import { test, expect } from '@playwright/test'
+
+test('user can sign in with Clerk', async ({ page }) => {
+  await page.goto('/sign-in')
+
+  // Clerk test account
+  await page.fill('[name="identifier"]', 'test@example.com')
+  await page.click('button:has-text("Continue")')
+
+  await page.fill('[name="password"]', 'testpassword')
+  await page.click('button:has-text("Continue")')
+
+  // Should redirect to dashboard
+  await expect(page).toHaveURL(/\/dashboard/)
+})
+```
+
+## Resources
+
+- [Clerk Documentation](https://clerk.com/docs)
+- [Next.js Integration](https://clerk.com/docs/quickstarts/nextjs)
+- [Authentication Guide](/guides/authentication)
+- [Switching Providers](/guides/authentication/switching)
+
+## Next Steps
+
+- **[Cloudflare Access](/guides/authentication/cloudflare)** - Alternative provider
+- **[AWS Cognito](/guides/authentication/cognito)** - Enterprise option
+- **[Switching Providers](/guides/authentication/switching)** - How to switch
+- **[Auth Security](/guides/authentication/security)** - Security best practices

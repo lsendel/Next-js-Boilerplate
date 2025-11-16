@@ -30,8 +30,8 @@ export const users = sqliteTable('users', {
   externalId: text('external_id', { length: 255 }), // ID from external auth provider
 
   // Account status
-  isActive: integer('is_active', { mode: 'boolean' }).default(1).notNull(),
-  isEmailVerified: integer('is_email_verified', { mode: 'boolean' }).default(0).notNull(),
+  isActive: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
+  isEmailVerified: integer('is_email_verified', { mode: 'boolean' }).default(false).notNull(),
 
   // Security fields
   lastLoginAt: timestampOptional('last_login_at'),
@@ -91,8 +91,8 @@ export const userPreferences = sqliteTable('user_preferences', {
   language: text('language', { length: 10 }).default('en'), // 'en', 'fr', 'es', etc.
 
   // Notification preferences
-  emailNotifications: integer('email_notifications', { mode: 'boolean' }).default(1).notNull(),
-  pushNotifications: integer('push_notifications', { mode: 'boolean' }).default(0).notNull(),
+  emailNotifications: integer('email_notifications', { mode: 'boolean' }).default(true).notNull(),
+  pushNotifications: integer('push_notifications', { mode: 'boolean' }).default(false).notNull(),
 
   // Display preferences
   timezone: text('timezone', { length: 50 }).default('UTC'),
@@ -143,4 +143,40 @@ export const tenantMembers = sqliteTable('tenant_members', {
   createdAt: timestamp('created_at'),
   updatedAt: timestamp('updated_at'),
 });
+
+// Relation definitions for DrizzleORM relational queries
+export const usersRelations = relations(users, ({ many }) => ({
+  sessions: many(sessions),
+  tenantMemberships: many(tenantMembers),
+}));
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, {
+    fields: [sessions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const tenantsRelations = relations(tenants, ({ many }) => ({
+  domains: many(tenantDomains),
+  members: many(tenantMembers),
+}));
+
+export const tenantDomainsRelations = relations(tenantDomains, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [tenantDomains.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+export const tenantMembersRelations = relations(tenantMembers, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [tenantMembers.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(users, {
+    fields: [tenantMembers.userId],
+    references: [users.id],
+  }),
+}));
 

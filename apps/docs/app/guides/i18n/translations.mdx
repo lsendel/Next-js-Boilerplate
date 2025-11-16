@@ -1,0 +1,655 @@
+# Managing Translations
+
+Best practices for creating, organizing, and maintaining translations in your application.
+
+## Translation File Structure
+
+### Recommended Organization
+
+```json
+{
+  "Metadata": {
+    "title": "Next.js Boilerplate",
+    "description": "Production-ready Next.js starter"
+  },
+  "HomePage": {
+    "hero": {
+      "title": "Welcome to Next.js Boilerplate",
+      "subtitle": "Start building in minutes",
+      "cta_primary": "Get Started",
+      "cta_secondary": "View Documentation"
+    },
+    "features": {
+      "title": "Features",
+      "auth": "Authentication",
+      "database": "Database ORM",
+      "i18n": "Internationalization"
+    }
+  },
+  "Dashboard": {
+    "nav": {
+      "home": "Home",
+      "settings": "Settings",
+      "profile": "Profile"
+    },
+    "stats": {
+      "users": "Total Users",
+      "revenue": "Revenue",
+      "growth": "Growth Rate"
+    }
+  }
+}
+```
+
+### Namespace Guidelines
+
+✅ **Good Organization:**
+```json
+{
+  "Auth": {
+    "sign_in": "Sign In",
+    "sign_out": "Sign Out"
+  },
+  "Forms": {
+    "email": "Email",
+    "password": "Password",
+    "submit": "Submit"
+  },
+  "Validation": {
+    "required": "This field is required",
+    "email_invalid": "Invalid email address"
+  }
+}
+```
+
+❌ **Poor Organization:**
+```json
+{
+  "signin": "Sign In",
+  "signout": "Sign Out",
+  "email1": "Email",
+  "password1": "Password",
+  "required1": "This field is required"
+}
+```
+
+## Creating Translations
+
+### Basic Translation
+
+```json
+// src/locales/en.json
+{
+  "HomePage": {
+    "welcome": "Welcome",
+    "description": "Get started with our platform"
+  }
+}
+```
+
+```typescript
+// Component
+import { useTranslations } from 'next-intl'
+
+export function WelcomeBanner() {
+  const t = useTranslations('HomePage')
+
+  return (
+    <div>
+      <h1>{t('welcome')}</h1>
+      <p>{t('description')}</p>
+    </div>
+  )
+}
+```
+
+### With Parameters
+
+```json
+{
+  "greeting": "Hello, {name}!",
+  "welcome_back": "Welcome back, {name}. You have {count} new messages."
+}
+```
+
+```typescript
+const t = useTranslations('HomePage')
+
+t('greeting', { name: 'John' })
+// "Hello, John!"
+
+t('welcome_back', { name: 'Jane', count: 5 })
+// "Welcome back, Jane. You have 5 new messages."
+```
+
+### Pluralization
+
+```json
+{
+  "items_count": "{count, plural, =0 {No items} =1 {One item} other {# items}}",
+  "notifications": "{count, plural, =0 {No notifications} =1 {One notification} other {# notifications}}"
+}
+```
+
+```typescript
+t('items_count', { count: 0 })  // "No items"
+t('items_count', { count: 1 })  // "One item"
+t('items_count', { count: 42 }) // "42 items"
+```
+
+### Rich Text
+
+```json
+{
+  "terms": "I agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
+  "welcome_html": "<strong>Welcome</strong> to our platform"
+}
+```
+
+```typescript
+t.rich('terms', {
+  terms: (chunks) => <a href="/terms">{chunks}</a>,
+  privacy: (chunks) => <a href="/privacy">{chunks}</a>,
+})
+```
+
+## Translation Patterns
+
+### Form Labels
+
+```json
+{
+  "Forms": {
+    "labels": {
+      "email": "Email Address",
+      "password": "Password",
+      "confirm_password": "Confirm Password",
+      "first_name": "First Name",
+      "last_name": "Last Name"
+    },
+    "placeholders": {
+      "email": "you@example.com",
+      "password": "Enter your password",
+      "search": "Search..."
+    },
+    "buttons": {
+      "submit": "Submit",
+      "cancel": "Cancel",
+      "save": "Save Changes",
+      "delete": "Delete"
+    }
+  }
+}
+```
+
+### Validation Messages
+
+```json
+{
+  "Validation": {
+    "required": "This field is required",
+    "email": "Please enter a valid email address",
+    "min_length": "Must be at least {min} characters",
+    "max_length": "Must be no more than {max} characters",
+    "password_mismatch": "Passwords do not match",
+    "number_range": "Must be between {min} and {max}"
+  }
+}
+```
+
+Usage:
+```typescript
+const t = useTranslations('Validation')
+
+// Simple validation
+if (!email) {
+  return t('required')
+}
+
+// With parameters
+if (password.length < 8) {
+  return t('min_length', { min: 8 })
+}
+```
+
+### Status Messages
+
+```json
+{
+  "Status": {
+    "success": {
+      "saved": "Changes saved successfully",
+      "created": "{item} created successfully",
+      "updated": "{item} updated successfully",
+      "deleted": "{item} deleted successfully"
+    },
+    "error": {
+      "generic": "Something went wrong. Please try again.",
+      "network": "Network error. Check your connection.",
+      "unauthorized": "You are not authorized to perform this action.",
+      "not_found": "{item} not found"
+    },
+    "loading": {
+      "please_wait": "Please wait...",
+      "loading": "Loading {item}...",
+      "saving": "Saving changes..."
+    }
+  }
+}
+```
+
+### Navigation
+
+```json
+{
+  "Navigation": {
+    "main": {
+      "home": "Home",
+      "features": "Features",
+      "pricing": "Pricing",
+      "about": "About",
+      "contact": "Contact"
+    },
+    "footer": {
+      "company": "Company",
+      "product": "Product",
+      "support": "Support",
+      "legal": "Legal"
+    },
+    "user_menu": {
+      "dashboard": "Dashboard",
+      "settings": "Settings",
+      "profile": "Profile",
+      "sign_out": "Sign Out"
+    }
+  }
+}
+```
+
+## Formatting
+
+### Dates
+
+```typescript
+import { useFormatter } from 'next-intl'
+
+const format = useFormatter()
+
+// Full date
+format.dateTime(new Date(), {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
+})
+// English: "January 15, 2024"
+// French:  "15 janvier 2024"
+
+// Short date
+format.dateTime(new Date(), {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric'
+})
+// English: "Jan 15, 2024"
+// French:  "15 janv. 2024"
+
+// Relative time
+format.relativeTime(new Date('2024-01-15'), 'day')
+// "5 days ago"
+```
+
+### Numbers
+
+```typescript
+import { useFormatter } from 'next-intl'
+
+const format = useFormatter()
+
+// Currency
+format.number(1234.56, { style: 'currency', currency: 'USD' })
+// English: "$1,234.56"
+// French:  "1 234,56 $US"
+
+// Percentage
+format.number(0.856, { style: 'percent' })
+// "85.6%"
+
+// Compact notation
+format.number(1500000, { notation: 'compact' })
+// "1.5M"
+```
+
+### Lists
+
+```typescript
+import { useFormatter } from 'next-intl'
+
+const format = useFormatter()
+
+const items = ['Apple', 'Banana', 'Orange']
+
+// Conjunction
+format.list(items, { type: 'conjunction' })
+// English: "Apple, Banana, and Orange"
+// French:  "Apple, Banana et Orange"
+
+// Disjunction
+format.list(items, { type: 'disjunction' })
+// English: "Apple, Banana, or Orange"
+```
+
+## Translation Workflow
+
+### 1. Edit Source File
+
+Only edit `src/locales/en.json`:
+
+```json
+{
+  "Dashboard": {
+    "new_feature": "Check out our new feature!"
+  }
+}
+```
+
+### 2. Use in Component
+
+```typescript
+const t = useTranslations('Dashboard')
+
+<div>{t('new_feature')}</div>
+```
+
+### 3. Push to Main Branch
+
+```bash
+git add src/locales/en.json
+git commit -m "Add new feature translation"
+git push origin main
+```
+
+### 4. Automatic Sync
+
+GitHub Action uploads to Crowdin:
+- New strings appear in Crowdin
+- Translators receive notifications
+- AI provides translation suggestions
+
+### 5. Review Translations
+
+1. **Crowdin → Strings**
+2. **Review translations**
+3. **Approve or request changes**
+
+### 6. Download Translations
+
+GitHub Action (runs daily):
+- Downloads completed translations
+- Creates Pull Request
+- You review and merge
+
+[Full Crowdin workflow →](/guides/i18n/crowdin)
+
+## Validation
+
+### Check Translation Keys
+
+```bash
+# Verify all languages have same keys
+pnpm --filter web check:i18n
+```
+
+### Expected Output
+
+```bash
+✅ All translations complete
+
+Languages checked:
+- en: 250 keys
+- fr: 250 keys
+- es: 250 keys
+- de: 250 keys
+
+No missing or extra keys found.
+```
+
+### Error Output
+
+```bash
+❌ Translation validation failed
+
+Missing keys in fr.json:
+- Dashboard.new_feature
+- Settings.profile_updated
+
+Extra keys in es.json:
+- OldPage.deprecated_key
+
+Please fix these issues and try again.
+```
+
+## Best Practices
+
+### Translation Keys
+
+✅ **DO:**
+
+```json
+{
+  "form_email_label": "Email Address",
+  "button_submit_form": "Submit",
+  "error_validation_required": "This field is required"
+}
+```
+
+❌ **DON'T:**
+
+```json
+{
+  "email": "Email Address",     // Too generic
+  "btn1": "Submit",              // Non-descriptive
+  "err1": "Required"             // Ambiguous
+}
+```
+
+### Provide Context
+
+✅ **DO:**
+
+```json
+{
+  "Auth": {
+    "sign_in_button": "Sign In",
+    "sign_in_title": "Sign in to your account",
+    "sign_in_subtitle": "Welcome back! Please enter your details."
+  }
+}
+```
+
+❌ **DON'T:**
+
+```json
+{
+  "signin1": "Sign In",
+  "signin2": "Sign In",
+  "signin3": "Sign In"
+}
+```
+
+### Use Namespaces
+
+✅ **DO:**
+
+```json
+{
+  "Dashboard": {
+    "stats": {
+      "users": "Users",
+      "revenue": "Revenue"
+    }
+  },
+  "Settings": {
+    "profile": {
+      "title": "Profile Settings"
+    }
+  }
+}
+```
+
+❌ **DON'T:**
+
+```json
+{
+  "dashboard_stats_users": "Users",
+  "dashboard_stats_revenue": "Revenue",
+  "settings_profile_title": "Profile Settings"
+}
+```
+
+### Handle Plurals Correctly
+
+✅ **DO:**
+
+```json
+{
+  "items": "{count, plural, =0 {No items} =1 {One item} other {# items}}"
+}
+```
+
+❌ **DON'T:**
+
+```json
+{
+  "items_zero": "No items",
+  "items_one": "One item",
+  "items_many": "{count} items"
+}
+```
+
+## Common Pitfalls
+
+### Hardcoded Strings
+
+❌ **Wrong:**
+```typescript
+<button>Sign In</button>
+```
+
+✅ **Correct:**
+```typescript
+const t = useTranslations('Auth')
+<button>{t('sign_in')}</button>
+```
+
+### String Concatenation
+
+❌ **Wrong:**
+```json
+{
+  "hello": "Hello",
+  "world": "World"
+}
+```
+```typescript
+{t('hello')} {t('world')}  // "Hello World" - hard to translate
+```
+
+✅ **Correct:**
+```json
+{
+  "greeting": "Hello, World!"
+}
+```
+```typescript
+{t('greeting')}
+```
+
+### Missing Parameters
+
+❌ **Wrong:**
+```typescript
+t('welcome_back')  // Expected: "Welcome back, John"
+```
+
+✅ **Correct:**
+```typescript
+t('welcome_back', { name: user.name })
+```
+
+### Editing Translated Files
+
+❌ **Wrong:**
+```bash
+# DON'T edit these files manually
+vim src/locales/fr.json
+vim src/locales/es.json
+```
+
+✅ **Correct:**
+```bash
+# Only edit source file
+vim src/locales/en.json
+# Let Crowdin handle translations
+```
+
+## Troubleshooting
+
+### Translation Not Showing
+
+1. **Check key exists:**
+   ```bash
+   cat src/locales/en.json | grep "new_feature"
+   ```
+
+2. **Check namespace:**
+   ```typescript
+   // Must match JSON structure
+   const t = useTranslations('Dashboard')  // ✅
+   const t = useTranslations('HomePage')   // ❌ Wrong namespace
+   ```
+
+3. **Restart dev server:**
+   ```bash
+   pnpm dev
+   ```
+
+### Wrong Translation Displayed
+
+1. **Check locale:**
+   ```typescript
+   import { useLocale } from 'next-intl'
+
+   const locale = useLocale()
+   console.log('Current locale:', locale)
+   ```
+
+2. **Clear browser cache:**
+   - Translations may be cached
+
+3. **Verify translation file:**
+   ```bash
+   cat src/locales/fr.json | grep "key"
+   ```
+
+### Type Errors
+
+1. **Rebuild:**
+   ```bash
+   pnpm build
+   ```
+
+2. **Restart TypeScript:**
+   - VSCode: Cmd/Ctrl + Shift + P → "Restart TypeScript Server"
+
+## Resources
+
+- [next-intl Documentation](https://next-intl-docs.vercel.app/)
+- [i18n Overview](/guides/i18n)
+- [Setup Guide](/guides/i18n/setup)
+- [Crowdin Workflow](/guides/i18n/crowdin)
+
+## Next Steps
+
+- **[Crowdin Workflow](/guides/i18n/crowdin)** - Automated translations
+- **[Crowdin Integration](/integrations/crowdin)** - Integration guide
+- **[Setup Guide](/guides/i18n/setup)** - Configure languages

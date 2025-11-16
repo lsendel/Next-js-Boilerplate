@@ -1,0 +1,180 @@
+name: Performance Issue
+description: Report a performance problem or regression
+title: "[Performance]: "
+labels: ["performance", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a performance issue! This helps us keep the boilerplate fast and efficient.
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Performance Issue Type
+      description: What kind of performance issue are you experiencing?
+      options:
+        - Slow page load
+        - High bundle size
+        - Slow build time
+        - Runtime performance (CPU/memory)
+        - Network performance
+        - Database query performance
+        - Rendering/hydration performance
+        - Development server performance
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Issue Description
+      description: Describe the performance issue
+      placeholder: |
+        What's slow? When does it happen? How noticeable is it?
+    validations:
+      required: true
+
+  - type: textarea
+    id: measurements
+    attributes:
+      label: Performance Measurements
+      description: Provide actual performance metrics
+      placeholder: |
+        **Page Load Time:**
+        - Current: 5.2s
+        - Expected: <2s
+
+        **Bundle Size:**
+        - Current: 500 KB
+        - Previous version: 350 KB
+
+        **Build Time:**
+        - Current: 2m 30s
+        - Expected: <1m
+
+        **Lighthouse Scores:**
+        - Performance: 65
+        - FCP: 3.2s
+        - LCP: 4.5s
+        - TTI: 5.8s
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this performance issue?
+      placeholder: |
+        1. Start dev server
+        2. Navigate to /dashboard
+        3. Open DevTools Performance tab
+        4. Observe slow rendering
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Impact Severity
+      description: How severe is the performance impact?
+      options:
+        - Critical (makes application unusable)
+        - High (significant degradation)
+        - Medium (noticeable but tolerable)
+        - Low (minor impact)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: regression
+    attributes:
+      label: Is this a regression?
+      description: Did this work better in a previous version?
+      options:
+        - "Yes - it was faster before"
+        - "No - always been slow"
+        - "Unknown"
+    validations:
+      required: true
+
+  - type: input
+    id: regression-version
+    attributes:
+      label: Last Known Good Version
+      description: If this is a regression, what version worked well?
+      placeholder: e.g., v1.2.0 or commit hash
+
+  - type: textarea
+    id: profiling
+    attributes:
+      label: Profiling Data
+      description: Attach screenshots/exports from profiling tools
+      placeholder: |
+        - Chrome DevTools Performance tab
+        - React DevTools Profiler
+        - Webpack Bundle Analyzer
+        - Lighthouse report
+        - Network waterfall screenshots
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Details
+      description: Environment information
+      placeholder: |
+        - Node.js version: v20.10.0
+        - Package manager: npm 10.2.3
+        - OS: macOS 14.1
+        - Browser: Chrome 120
+        - Hardware: M1 MacBook Pro, 16GB RAM
+        - Network: Cable/WiFi/3G
+        - Deployment: Vercel/local
+    validations:
+      required: true
+
+  - type: textarea
+    id: analysis
+    attributes:
+      label: Root Cause Analysis
+      description: If you've investigated, what did you find?
+      placeholder: |
+        - Large component re-renders unnecessarily
+        - Heavy dependency X adds 200KB to bundle
+        - Database query missing index
+        - Unoptimized images
+
+  - type: textarea
+    id: proposed-fix
+    attributes:
+      label: Proposed Fix
+      description: Do you have ideas for how to fix this?
+      placeholder: |
+        - Memoize component X
+        - Code split route Y
+        - Lazy load library Z
+        - Add database index on field A
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other relevant information
+      placeholder: |
+        - Related issues
+        - External references
+        - Comparisons with similar projects
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I have measured actual performance metrics (not just subjective feeling)
+          required: true
+        - label: I have provided profiling data or screenshots
+          required: true
+        - label: I have searched existing issues to ensure this is not a duplicate
+          required: true

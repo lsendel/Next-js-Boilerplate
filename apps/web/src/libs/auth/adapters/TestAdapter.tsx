@@ -19,55 +19,50 @@ export class TestAdapter implements IAuthAdapter {
   async getCurrentUser(): Promise<AuthUser | null> {
     // Import server-side modules
     const { cookies } = await import('next/headers');
-    const { sessions, users } = await import('./TestAdapter.server');
 
     const cookieStore = await cookies();
-    const sessionId = cookieStore.get(TestAdapter.SESSION_COOKIE)?.value;
+    // Parse user data from cookie (stored as JSON)
+    const cookieValue = cookieStore.get(TestAdapter.SESSION_COOKIE)?.value;
 
-    if (!sessionId) {
+    if (!cookieValue) {
       return null;
     }
 
-    const userId = sessions.get(sessionId);
-    if (!userId) {
+    try {
+      const userData = JSON.parse(cookieValue);
+      return {
+        id: userData.id,
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        imageUrl: userData.imageUrl,
+      };
+    } catch (error) {
       return null;
     }
-
-    const user = users.get(userId);
-    if (!user) {
-      return null;
-    }
-
-    return {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      imageUrl: user.imageUrl,
-    };
   }
 
   async getSession(): Promise<AuthSession | null> {
     // Import server-side modules
     const { cookies } = await import('next/headers');
-    const { sessions } = await import('./TestAdapter.server');
 
     const cookieStore = await cookies();
-    const sessionId = cookieStore.get(TestAdapter.SESSION_COOKIE)?.value;
+    // Parse user data from cookie (stored as JSON)
+    const cookieValue = cookieStore.get(TestAdapter.SESSION_COOKIE)?.value;
 
-    if (!sessionId) {
+    if (!cookieValue) {
       return null;
     }
 
-    const userId = sessions.get(sessionId);
-    if (!userId) {
+    try {
+      const userData = JSON.parse(cookieValue);
+      return {
+        userId: userData.id,
+        sessionId: userData.id, // For compatibility with AuthSession interface
+      };
+    } catch (error) {
       return null;
     }
-
-    return {
-      userId,
-      sessionId,
-    };
   }
 
   async signOut(): Promise<void> {
@@ -87,14 +82,13 @@ export class TestAdapter implements IAuthAdapter {
       return { isAuthenticated: false };
     }
 
-    // Import server-side modules
-    const { sessions } = await import('./TestAdapter.server');
-    const userId = sessions.get(sessionId);
-    if (!userId) {
+    // Session data is stored directly in the cookie as JSON
+    try {
+      const userData = JSON.parse(sessionId);
+      return { isAuthenticated: !!userData?.id };
+    } catch {
       return { isAuthenticated: false };
     }
-
-    return { isAuthenticated: true };
   }
 
   renderProvider(props: { children: React.ReactNode; locale: string }): React.ReactElement {
@@ -134,9 +128,16 @@ export class TestAdapter implements IAuthAdapter {
 
       const sessionId = request.cookies.get(TestAdapter.SESSION_COOKIE)?.value;
 
-      // Import server-side modules
-      const { sessions } = await import('./TestAdapter.server');
-      const userId = sessionId ? sessions.get(sessionId) : null;
+      // Session data is stored directly in the cookie as JSON
+      let userId: string | null = null;
+      if (sessionId) {
+        try {
+          const userData = JSON.parse(sessionId);
+          userId = userData?.id || null;
+        } catch {
+          userId = null;
+        }
+      }
 
       if (!userId) {
         // User not authenticated, redirect to sign-in

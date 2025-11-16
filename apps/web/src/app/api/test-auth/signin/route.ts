@@ -1,7 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { SESSION_COOKIE, sessions, users } from '@/libs/auth/adapters/TestAdapter.server';
+import { SESSION_COOKIE, users } from '@/libs/auth/adapters/TestAdapter.server';
 import { authLogger } from '@/libs/Logger';
 
 /**
@@ -60,23 +59,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create session
-    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-    sessions.set(sessionId, user.id);
-
-    // Set session cookie
-    const cookieStore = await cookies();
-    cookieStore.set(SESSION_COOKIE, sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: '/',
-    });
+    // Debug logging
+    console.log('[SignIn API] User signed in:', user.id);
+    console.log('[SignIn API] Total users in storage:', users.size);
 
     authLogger.info('Test auth: User signed in', { userId: user.id, email });
 
-    return NextResponse.json({
+    // Create response with session cookie
+    const response = NextResponse.json({
       success: true,
       user: {
         id: user.id,
@@ -86,6 +76,28 @@ export async function POST(request: NextRequest) {
         imageUrl: user.imageUrl,
       },
     });
+
+    // Store user data directly in cookie as JSON (no shared in-memory state needed)
+    // This is the only way to share data between API routes and middleware in Next.js
+    const cookieData = JSON.stringify({
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      imageUrl: user.imageUrl,
+    });
+
+    response.cookies.set(SESSION_COOKIE, cookieData, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    });
+
+    console.log('[SignIn API] Set cookie with user data');
+
+    return response;
   } catch (error) {
     authLogger.error('Error during sign in', {
       error: error instanceof Error ? error.message : String(error),

@@ -1,0 +1,658 @@
+# Better Stack
+
+Log management, uptime monitoring, and incident management platform.
+
+## Overview
+
+Better Stack provides comprehensive operational monitoring:
+
+- **Log Management** - Centralized log aggregation and search
+- **Uptime Monitoring** - Website and API availability checks
+- **Incident Management** - Alert routing and on-call scheduling
+- **Status Pages** - Public status communication
+- **Real-time Search** - Fast log queries and analysis
+- **Dashboards** - Custom visualizations and metrics
+
+## Quick Setup
+
+### 1. Create Better Stack Account
+
+Sign up at [betterstack.com](https://betterstack.com):
+
+1. Create a new account
+2. Create a **Log Source** for your application
+3. Copy the **Source Token**
+
+### 2. Configure Environment Variables
+
+```bash
+# apps/web/.env.local
+
+NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN=your_source_token_here
+```
+
+### 3. Configure LogTape Integration
+
+LogTape is already configured to send logs to Better Stack:
+
+```typescript
+// libs/Logger.ts
+import { getBetterStackSink } from '@logtape/logtape'
+
+await configure({
+  sinks: {
+    console: getConsoleSink(),
+    betterStack: getBetterStackSink({
+      sourceToken: process.env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN!,
+      level: 'info',
+    }),
+  },
+  loggers: [
+    {
+      category: 'app',
+      level: 'debug',
+      sinks: ['console', 'betterStack'],
+    },
+  ],
+})
+```
+
+### 4. Verify Logs
+
+```bash
+# Start your app
+pnpm --filter web dev
+
+# Trigger some logs
+# Visit: http://localhost:3000
+
+# Check Better Stack dashboard
+# Logs should appear within seconds
+```
+
+## Log Management
+
+### View Logs
+
+1. **Go to [logs.betterstack.com](https://logs.betterstack.com)**
+2. **Select your source**
+3. **View live tail** - Real-time log stream
+4. **Search logs** - Query historical logs
+
+### Search Logs
+
+```
+# Search by level
+level:error
+
+# Search by message
+message:"User created"
+
+# Search by field
+userId:user_123
+
+# Combine filters
+level:error AND userId:user_123
+
+# Time range
+level:error last 1h
+
+# Regular expressions
+message:/payment.*failed/i
+```
+
+### Example Queries
+
+```
+# All errors in last hour
+level:error last 1h
+
+# Slow API requests
+duration:>1000 AND path:/api/*
+
+# Failed payments
+event:payment.failed
+
+# User activity
+userId:user_123 last 24h
+
+# Database errors
+message:"database" AND level:error
+```
+
+### Saved Searches
+
+1. **Create common queries**
+2. **Save for quick access**
+3. **Share with team**
+
+Example saved searches:
+- "Production Errors"
+- "Slow API Requests"
+- "Failed Logins"
+- "Payment Issues"
+
+## Structured Logging
+
+### Send Structured Logs
+
+```typescript
+import { logger } from '@/libs/Logger'
+
+// Automatically sent to Better Stack
+logger.info('User action', {
+  userId: user.id,
+  action: 'purchase',
+  product: 'premium',
+  amount: 99.99,
+  timestamp: new Date(),
+})
+```
+
+### Best Log Structure
+
+```typescript
+logger.info('Operation completed', {
+  // Event type
+  event: 'payment.completed',
+
+  // User context
+  userId: user.id,
+  email: user.email,
+
+  // Operation details
+  orderId: order.id,
+  amount: 99.99,
+  currency: 'USD',
+
+  // Performance
+  duration: 123,
+
+  // Additional context
+  source: 'web',
+  version: '1.0.0',
+})
+```
+
+## Uptime Monitoring
+
+### Create Uptime Monitor
+
+1. **Go to Better Stack → Uptime**
+2. **Click "Create Monitor"**
+3. **Configure:**
+   - URL: `https://yourapp.com`
+   - Interval: 30 seconds
+   - Locations: Multiple regions
+   - Expected status: 200
+
+### HTTP(S) Monitor
+
+```yaml
+Name: Homepage
+URL: https://yourapp.com
+Method: GET
+Expected status: 200
+Timeout: 10s
+Interval: 30s
+Locations: [US, EU, Asia]
+```
+
+### API Monitor
+
+```yaml
+Name: API Health Check
+URL: https://api.yourapp.com/health
+Method: GET
+Expected status: 200
+Expected body: "healthy"
+Headers:
+  Authorization: Bearer ${API_KEY}
+```
+
+### SSL Certificate Monitor
+
+Automatically checks SSL certificate expiry:
+
+```yaml
+Name: SSL Certificate
+URL: https://yourapp.com
+Monitor type: SSL Certificate
+Alert before: 14 days
+```
+
+### Keyword Monitor
+
+Check for specific content:
+
+```yaml
+Name: Homepage Content
+URL: https://yourapp.com
+Expected keyword: "Welcome"
+Alert if keyword missing: true
+```
+
+## Alerts
+
+### Configure Alert Routing
+
+1. **Better Stack → Alerts → Policies**
+2. **Create policy:**
+   - Name: "Production Errors"
+   - Conditions: `level:error`
+   - Escalation rules
+
+### Alert Channels
+
+**Email:**
+```
+Recipient: team@yourapp.com
+Template: Default
+```
+
+**Slack:**
+```
+Webhook: https://hooks.slack.com/services/...
+Channel: #alerts
+```
+
+**PagerDuty:**
+```
+Integration key: your_pagerduty_key
+Severity: high
+```
+
+**Webhook:**
+```
+URL: https://yourapp.com/webhooks/alerts
+Method: POST
+Headers:
+  Authorization: Bearer ${SECRET}
+```
+
+### Alert Examples
+
+**Error Rate Alert:**
+```
+Condition: count(level:error) > 10 in 5m
+Action: Email team, Slack #alerts
+```
+
+**Slow Response Alert:**
+```
+Condition: avg(duration) > 1000 in 5m
+Action: Slack #performance
+```
+
+**Failed Payments:**
+```
+Condition: count(event:payment.failed) > 0 in 1m
+Action: Email finance, PagerDuty
+```
+
+## Dashboards
+
+### Create Custom Dashboard
+
+1. **Better Stack → Dashboards**
+2. **Click "Create Dashboard"**
+3. **Add widgets:**
+   - Log count over time
+   - Error rate
+   - Top error messages
+   - Response time percentiles
+
+### Example Dashboard
+
+**Production Overview:**
+- Total requests (last 24h)
+- Error count (last 24h)
+- Average response time
+- Top 10 errors
+- Active users
+- Uptime percentage
+
+### Widget Queries
+
+**Request Count:**
+```
+count(*) by time(1h)
+```
+
+**Error Rate:**
+```
+count(level:error) by time(5m)
+```
+
+**Slow Requests:**
+```
+count(duration:>1000) by time(5m)
+```
+
+**Top Errors:**
+```
+count(*) by message where level:error
+```
+
+## Incident Management
+
+### On-Call Schedules
+
+1. **Better Stack → On-Call**
+2. **Create schedule:**
+   - Name: "Engineering"
+   - Rotation: Weekly
+   - Members: [Team members]
+
+### Escalation Policies
+
+```yaml
+Level 1:
+  - Alert: Primary on-call
+  - Wait: 5 minutes
+
+Level 2:
+  - Alert: Secondary on-call
+  - Wait: 10 minutes
+
+Level 3:
+  - Alert: Engineering manager
+  - Wait: 15 minutes
+```
+
+### Incident Response
+
+When alert fires:
+1. **Acknowledge** - Stop escalation
+2. **Investigate** - Check logs, metrics
+3. **Resolve** - Fix issue
+4. **Post-mortem** - Document learnings
+
+## Status Pages
+
+### Create Status Page
+
+1. **Better Stack → Status Pages**
+2. **Create page:**
+   - Domain: `status.yourapp.com`
+   - Components to monitor
+   - Subscribers
+
+### Example Status Page
+
+**Components:**
+- Website
+- API
+- Database
+- Authentication
+- Payment Processing
+
+**Incident Updates:**
+```
+2024-01-15 14:30 - Investigating
+We're investigating reports of slow response times.
+
+2024-01-15 14:45 - Identified
+Issue identified in database cluster.
+
+2024-01-15 15:00 - Monitoring
+Database restarted. Monitoring recovery.
+
+2024-01-15 15:15 - Resolved
+All systems operational.
+```
+
+## Log Retention
+
+### Free Tier
+
+- **1 GB/month** log ingestion
+- **7 days** retention
+- Unlimited monitors
+- Unlimited status pages
+
+### Manage Retention
+
+1. **Settings → Data Retention**
+2. **Configure:**
+   - Archive old logs to S3
+   - Delete after X days
+   - Keep errors longer
+
+## Integration with Other Services
+
+### Sentry Integration
+
+Forward Sentry errors to Better Stack:
+
+```typescript
+// sentry.server.config.ts
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  beforeSend(event) {
+    // Send to Better Stack via logger
+    logger.error('Sentry error', {
+      error: event.message,
+      tags: event.tags,
+      level: event.level,
+    })
+
+    return event
+  },
+})
+```
+
+### Vercel Integration
+
+Forward Vercel logs:
+
+1. **Vercel → Project Settings → Integrations**
+2. **Add Better Stack**
+3. **Configure log drain**
+
+### CloudWatch Integration
+
+Forward AWS CloudWatch logs:
+
+1. **Better Stack → Sources**
+2. **Create CloudWatch source**
+3. **Configure Lambda forwarder**
+
+## Best Practices
+
+✅ **DO:**
+
+- Use structured logging (JSON)
+- Include context in every log
+- Set up alerts for critical errors
+- Create dashboards for key metrics
+- Monitor uptime from multiple regions
+- Configure escalation policies
+- Use status pages for transparency
+- Archive old logs to reduce costs
+
+❌ **DON'T:**
+
+- Log sensitive data (passwords, tokens)
+- Over-alert (alert fatigue)
+- Skip log rotation
+- Ignore retention limits
+- Forget to test alerts
+- Mix dev and prod logs
+- Skip incident post-mortems
+
+## Common Use Cases
+
+### Application Monitoring
+
+```typescript
+// Track all API requests
+logger.info('API request', {
+  method: request.method,
+  path: request.url,
+  userId: user?.id,
+  duration: Date.now() - startTime,
+  status: response.status,
+})
+```
+
+### Error Tracking
+
+```typescript
+// Track all errors
+logger.error('Error occurred', {
+  error: error.message,
+  stack: error.stack,
+  context: {
+    userId: user?.id,
+    action: 'checkout',
+  },
+})
+```
+
+### Performance Monitoring
+
+```typescript
+// Track slow operations
+const duration = Date.now() - startTime
+if (duration > 1000) {
+  logger.warn('Slow operation', {
+    operation: 'database_query',
+    duration,
+    query: 'SELECT * FROM users',
+  })
+}
+```
+
+### Business Metrics
+
+```typescript
+// Track business events
+logger.info('Revenue event', {
+  event: 'payment.completed',
+  amount: 99.99,
+  plan: 'premium',
+  userId: user.id,
+})
+```
+
+## Troubleshooting
+
+### Logs Not Appearing
+
+1. **Check source token:**
+   ```bash
+   echo $NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN
+   ```
+
+2. **Verify LogTape configuration:**
+   ```typescript
+   // Should include betterStack sink
+   sinks: ['console', 'betterStack']
+   ```
+
+3. **Check network connectivity:**
+   - Firewall rules
+   - Outbound HTTPS allowed
+
+4. **Test manually:**
+   ```typescript
+   logger.info('Test log', { test: true })
+   ```
+
+### High Log Volume
+
+1. **Reduce log level:**
+   ```typescript
+   level: 'warn'  // Skip info/debug
+   ```
+
+2. **Filter unnecessary logs:**
+   ```typescript
+   filters: [
+     (log) => !log.message.includes('health_check')
+   ]
+   ```
+
+3. **Sample high-volume logs:**
+   ```typescript
+   if (Math.random() < 0.1) {  // 10% sampling
+     logger.debug('Debug log')
+   }
+   ```
+
+### Alerts Not Firing
+
+1. **Check alert policy conditions**
+2. **Verify data is being logged:**
+   ```
+   level:error last 1h  // Should show errors
+   ```
+3. **Test alert manually:**
+   - Trigger condition
+   - Verify channel receives alert
+
+### Slow Searches
+
+1. **Use time ranges:**
+   ```
+   level:error last 1h  // Faster than "last 7d"
+   ```
+
+2. **Index frequently searched fields**
+3. **Use specific queries:**
+   ```
+   userId:user_123  // Better than wildcard
+   ```
+
+## Cost Optimization
+
+### Free Tier Features
+
+- 1 GB logs/month
+- 7 days retention
+- Unlimited monitors
+- Unlimited dashboards
+- Unlimited team members
+
+### Reduce Costs
+
+1. **Sample logs:**
+   ```typescript
+   // Only log 10% of requests
+   if (Math.random() < 0.1) {
+     logger.info('Request', { ... })
+   }
+   ```
+
+2. **Increase log level:**
+   ```typescript
+   level: 'warn'  // Skip info/debug in production
+   ```
+
+3. **Filter noise:**
+   ```typescript
+   // Skip health checks
+   if (path !== '/health') {
+     logger.info('Request', { ... })
+   }
+   ```
+
+4. **Reduce retention:**
+   - Archive to S3 after 7 days
+   - Keep only errors for 30 days
+
+## Resources
+
+- [Better Stack Documentation](https://betterstack.com/docs)
+- [LogTape Integration](/integrations/logtape)
+- [Uptime Monitoring Guide](https://betterstack.com/docs/uptime)
+- [Status Pages Guide](https://betterstack.com/docs/status-pages)
+- [Operations Guide](/operations/logging)
+
+## Next Steps
+
+- **[LogTape](/integrations/logtape)** - Logging library
+- **[Sentry](/integrations/sentry)** - Error monitoring
+- **[Checkly](/integrations/checkly)** - Synthetic monitoring
+- **[Operations](/operations)** - Production monitoring

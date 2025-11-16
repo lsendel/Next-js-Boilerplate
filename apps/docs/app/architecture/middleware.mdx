@@ -1,0 +1,652 @@
+# Middleware Architecture
+
+Request pipeline architecture using Next.js Middleware for authentication, security, and i18n routing.
+
+## Overview
+
+The boilerplate uses a layered middleware architecture:
+
+- **Arcjet Security** - Bot detection, rate limiting, WAF
+- **Authentication** - Session validation and route protection
+- **i18n Routing** - Locale detection and redirection
+- **Performance** - Request optimization
+- **Logging** - Request tracking
+
+## Middleware Flow
+
+```
+Incoming Request
+      │
+      ▼
+┌─────────────────┐
+│ Arcjet Security │  Bot detection, rate limiting, WAF
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Authentication  │  Session validation, route protection
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ i18n Routing    │  Locale detection, URL rewriting
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│   Response      │
+└─────────────────┘
+```
+
+## Middleware Configuration
+
+### Main Middleware
+
+```typescript
+// src/middleware.ts
+import { NextRequest, NextResponse } from 'next/server'
+import arcjet, { detectBot, shield, tokenBucket } from '@arcjet/next'
+import { createMiddleware } from 'next-intl/middleware'
+import { routing } from '@/libs/I18nRouting'
+
+// Arcjet configuration
+const aj = arcjet({
+  key: process.env.ARCJET_KEY!,
+  rules: [
+    // Shield WAF
+    shield({
+      mode: process.env.ARCJET_MODE === 'LIVE' ? 'LIVE' : 'DRY_RUN',
+    }),
+
+    // Bot detection
+    detectBot({
+      mode: 'LIVE',
+      block: ['AUTOMATED'],
+      allow: ['SEARCH_ENGINE', 'PREVIEW'],
+    }),
+
+    // Rate limiting
+    tokenBucket({
+      mode: 'LIVE',
+      refillRate: 10,
+      interval: '10s',
+      capacity: 100,
+    }),
+  ],
+})
+
+// i18n middleware
+const i18nMiddleware = createMiddleware(routing)
+
+export default async function middleware(request: NextRequest) {
+  // 1. Security layer (Arcjet)
+  if (process.env.ARCJET_KEY) {
+    const decision = await aj.protect(request)
+
+    if (decision.isDenied()) {
+      return NextResponse.json(
+        { error: 'Forbidden', reason: decision.reason },
+        { status: 403 }
+      )
+    }
+  }
+
+  // 2. Authentication layer
+  const authResponse = await handleAuth(request)
+  if (authResponse) return authResponse
+
+  // 3. i18n routing layer
+  return i18nMiddleware(request)
+}
+
+export const config = {
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico|monitoring).*)',
+  ],
+}
+```
+
+## Security Layer (Arcjet)
+
+### Bot Detection
+
+```typescript
+// Detect and block automated traffic
+detectBot({
+  mode: 'LIVE',
+  block: [
+    'AUTOMATED',         // Scrapers, automation tools
+    'LIKELY_AUTOMATED',  // Suspicious patterns
+  ],
+  allow: [
+    'SEARCH_ENGINE',     // Google, Bing
+    'PREVIEW',           // Social media previews
+    'MONITOR',           // Uptime monitors
+  ],
+})
+```
+
+### Rate Limiting
+
+```typescript
+// Token bucket rate limiting
+tokenBucket({
+  mode: 'LIVE',
+  refillRate: 10,       // Add 10 tokens
+  interval: '10s',      // Every 10 seconds
+  capacity: 100,        // Max 100 tokens
+})
+```
+
+### Shield WAF
+
+```typescript
+// Web Application Firewall
+shield({
+  mode: 'LIVE',  // Blocks attacks
+  // Protects against: SQL injection, XSS, path traversal, etc.
+})
+```
+
+[Full Arcjet guide →](/integrations/arcjet)
+
+## Authentication Layer
+
+### Route Protection
+
+```typescript
+// src/middleware.ts
+import { auth } from '@/libs/auth'
+
+async function handleAuth(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // Extract locale from pathname
+  const locale = pathname.split('/')[1]
+
+  // Protected routes
+  const protectedRoutes = [
+    `/${locale}/dashboard`,
+    `/${locale}/settings`,
+    `/${locale}/profile`,
+  ]
+
+  // Check if route is protected
+  const isProtected = protectedRoutes.some(route =>
+    pathname.startsWith(route)
+  )
+
+  if (!isProtected) {
+    return null  // Not protected, continue
+  }
+
+  // Check authentication
+  const session = await auth.getCurrentSession()
+
+  if (!session) {
+    // Redirect to sign-in
+    const signInUrl = new URL(`/${locale}/sign-in`, request.url)
+    signInUrl.searchParams.set('redirect', pathname)
+    return NextResponse.redirect(signInUrl)
+  }
+
+  return null  // Authenticated, continue
+}
+```
+
+### Auth Pages Redirect
+
+```typescript
+// Redirect authenticated users away from auth pages
+async function handleAuth(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  const locale = pathname.split('/')[1]
+
+  // Auth pages
+  const authPages = [
+    `/${locale}/sign-in`,
+    `/${locale}/sign-up`,
+    `/${locale}/forgot-password`,
+  ]
+
+  const isAuthPage = authPages.some(page => pathname === page)
+
+  if (isAuthPage) {
+    const session = await auth.getCurrentSession()
+
+    if (session) {
+      // Already authenticated, redirect to dashboard
+      return NextResponse.redirect(
+        new URL(`/${locale}/dashboard`, request.url)
+      )
+    }
+  }
+
+  // ... protected routes check
+}
+```
+
+## i18n Layer
+
+### Locale Detection
+
+```typescript
+// Automatic locale detection
+const i18nMiddleware = createMiddleware({
+  locales: ['en', 'fr', 'es', 'de'],
+  defaultLocale: 'en',
+  localePrefix: 'always',
+})
+```
+
+**Detection priority:**
+1. URL locale (`/fr/dashboard`)
+2. Cookie (`NEXT_LOCALE=fr`)
+3. Accept-Language header
+4. Default locale (`en`)
+
+### Locale Redirection
+
+```typescript
+// Middleware automatically redirects:
+/dashboard → /en/dashboard (default locale)
+/fr → /fr (French homepage)
+```
+
+### Locale Persistence
+
+```typescript
+// Cookie: NEXT_LOCALE
+// Remembers user's language choice
+// Used on subsequent visits
+```
+
+[Full i18n guide →](/guides/i18n)
+
+## Matcher Configuration
+
+### Exclude Paths
+
+```typescript
+export const config = {
+  matcher: [
+    // Include all routes
+    '/((?!api|_next/static|_next/image|favicon.ico|monitoring).*)',
+  ],
+}
+```
+
+**Excluded:**
+- `/api/*` - API routes (handled separately)
+- `/_next/static/*` - Static assets
+- `/_next/image/*` - Image optimization
+- `/favicon.ico` - Favicon
+- `/monitoring` - Sentry Spotlight
+
+### Custom Matchers
+
+```typescript
+// Multiple matchers
+export const config = {
+  matcher: [
+    '/dashboard/:path*',      // Dashboard routes
+    '/settings/:path*',       // Settings routes
+    '/(en|fr|es|de)/:path*',  // i18n routes
+  ],
+}
+```
+
+## Request Modification
+
+### Headers
+
+```typescript
+export default async function middleware(request: NextRequest) {
+  const response = NextResponse.next()
+
+  // Add custom headers
+  response.headers.set('X-Custom-Header', 'value')
+  response.headers.set('X-Frame-Options', 'DENY')
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+
+  return response
+}
+```
+
+### Cookies
+
+```typescript
+export default async function middleware(request: NextRequest) {
+  const response = NextResponse.next()
+
+  // Set cookie
+  response.cookies.set('session-id', sessionId, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24 * 30, // 30 days
+  })
+
+  // Read cookie
+  const sessionId = request.cookies.get('session-id')?.value
+
+  return response
+}
+```
+
+### Redirects
+
+```typescript
+export default async function middleware(request: NextRequest) {
+  // Redirect
+  if (condition) {
+    return NextResponse.redirect(new URL('/new-url', request.url))
+  }
+
+  // Rewrite
+  if (anotherCondition) {
+    return NextResponse.rewrite(new URL('/rewritten-url', request.url))
+  }
+
+  return NextResponse.next()
+}
+```
+
+## Route-Specific Logic
+
+### API Rate Limiting
+
+```typescript
+export default async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // Strict rate limiting for API
+  if (pathname.startsWith('/api/')) {
+    const decision = await apiRateLimiter.protect(request)
+
+    if (decision.isDenied()) {
+      return NextResponse.json(
+        { error: 'Too many requests' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': decision.reason.retryAfter.toString(),
+          },
+        }
+      )
+    }
+  }
+
+  return NextResponse.next()
+}
+```
+
+### Admin Protection
+
+```typescript
+export default async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // Extra protection for admin routes
+  if (pathname.startsWith('/admin')) {
+    const session = await auth.getCurrentSession()
+
+    if (!session || session.user.role !== 'admin') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
+      )
+    }
+  }
+
+  return NextResponse.next()
+}
+```
+
+## Performance Considerations
+
+### Edge Runtime
+
+```typescript
+// Middleware runs on Edge runtime
+export const config = {
+  runtime: 'edge',  // Fast, globally distributed
+}
+```
+
+**Benefits:**
+- Low latency worldwide
+- Fast response times
+- Auto-scaling
+
+**Limitations:**
+- No Node.js APIs
+- Limited npm packages
+- No filesystem access
+
+### Caching
+
+```typescript
+// Cache decisions
+const cache = new Map()
+
+export default async function middleware(request: NextRequest) {
+  const cacheKey = `${request.method}:${request.url}`
+
+  // Check cache
+  if (cache.has(cacheKey)) {
+    return cache.get(cacheKey)
+  }
+
+  // Process request
+  const response = await processRequest(request)
+
+  // Cache response
+  cache.set(cacheKey, response)
+
+  return response
+}
+```
+
+## Logging
+
+### Request Logging
+
+```typescript
+import { logger } from '@/libs/Logger'
+
+export default async function middleware(request: NextRequest) {
+  const startTime = Date.now()
+
+  logger.info('Request started', {
+    method: request.method,
+    url: request.url,
+    userAgent: request.headers.get('user-agent'),
+  })
+
+  const response = NextResponse.next()
+
+  logger.info('Request completed', {
+    method: request.method,
+    url: request.url,
+    status: response.status,
+    duration: Date.now() - startTime,
+  })
+
+  return response
+}
+```
+
+### Error Logging
+
+```typescript
+export default async function middleware(request: NextRequest) {
+  try {
+    return await processRequest(request)
+  } catch (error) {
+    logger.error('Middleware error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      url: request.url,
+    })
+
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+```
+
+## Testing
+
+### Unit Tests
+
+```typescript
+// tests/middleware.test.ts
+import { NextRequest } from 'next/server'
+import middleware from '@/middleware'
+
+describe('middleware', () => {
+  it('redirects unauthenticated users from protected routes', async () => {
+    const request = new NextRequest(
+      new URL('http://localhost:3000/en/dashboard')
+    )
+
+    const response = await middleware(request)
+
+    expect(response.status).toBe(307)
+    expect(response.headers.get('location')).toContain('/sign-in')
+  })
+
+  it('allows authenticated users to access protected routes', async () => {
+    const request = new NextRequest(
+      new URL('http://localhost:3000/en/dashboard'),
+      {
+        headers: {
+          cookie: 'session=valid-session-id',
+        },
+      }
+    )
+
+    const response = await middleware(request)
+
+    expect(response.status).toBe(200)
+  })
+})
+```
+
+### E2E Tests
+
+```typescript
+// tests/e2e/middleware.e2e.ts
+import { test, expect } from '@playwright/test'
+
+test('middleware protects dashboard route', async ({ page }) => {
+  // Try to access protected route without auth
+  await page.goto('/dashboard')
+
+  // Should redirect to sign-in
+  await expect(page).toHaveURL(/\/sign-in/)
+})
+
+test('middleware allows access after authentication', async ({ page, context }) => {
+  // Sign in
+  await page.goto('/sign-in')
+  await page.fill('[name="email"]', 'test@example.com')
+  await page.fill('[name="password"]', 'password')
+  await page.click('button[type="submit"]')
+
+  // Should access dashboard
+  await expect(page).toHaveURL(/\/dashboard/)
+})
+```
+
+## Best Practices
+
+✅ **DO:**
+
+- Keep middleware logic lightweight
+- Use Edge runtime for performance
+- Handle errors gracefully
+- Log important events
+- Test middleware thoroughly
+- Cache when possible
+- Use Arcjet for security
+- Protect sensitive routes
+- Implement proper rate limiting
+
+❌ **DON'T:**
+
+- Run heavy computations
+- Make unnecessary database calls
+- Skip error handling
+- Forget to log failures
+- Over-complicate logic
+- Skip security checks
+- Ignore performance
+- Block search engines
+- Skip testing
+
+## Common Patterns
+
+### Maintenance Mode
+
+```typescript
+export default async function middleware(request: NextRequest) {
+  if (process.env.MAINTENANCE_MODE === 'true') {
+    return new NextResponse(
+      '<h1>Under Maintenance</h1>',
+      {
+        status: 503,
+        headers: { 'Content-Type': 'text/html' },
+      }
+    )
+  }
+
+  return NextResponse.next()
+}
+```
+
+### Feature Flags
+
+```typescript
+export default async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  if (pathname.startsWith('/new-feature')) {
+    const featureEnabled = await checkFeatureFlag('new-feature')
+
+    if (!featureEnabled) {
+      return NextResponse.redirect(new URL('/404', request.url))
+    }
+  }
+
+  return NextResponse.next()
+}
+```
+
+### A/B Testing
+
+```typescript
+export default async function middleware(request: NextRequest) {
+  const variant = Math.random() < 0.5 ? 'A' : 'B'
+
+  const response = NextResponse.next()
+  response.cookies.set('ab-test-variant', variant)
+
+  return response
+}
+```
+
+## Resources
+
+- [Next.js Middleware Docs](https://nextjs.org/docs/app/building-your-application/routing/middleware)
+- [Arcjet Integration](/integrations/arcjet)
+- [i18n Guide](/guides/i18n)
+- [Authentication](/architecture/auth-system)
+
+## Next Steps
+
+- **[Authentication System](/architecture/auth-system)** - Auth architecture
+- **[App Router](/architecture/app-router)** - Routing patterns
+- **[Multi-Tenancy](/architecture/multi-tenancy)** - Tenant isolation

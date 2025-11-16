@@ -1,0 +1,26 @@
+{
+  "index": {
+    "title": "Overview",
+    "type": "page"
+  },
+  "unit": {
+    "title": "Unit Testing",
+    "type": "page"
+  },
+  "integration": {
+    "title": "Integration Testing",
+    "type": "page"
+  },
+  "e2e": {
+    "title": "E2E Testing",
+    "type": "page"
+  },
+  "storybook": {
+    "title": "Storybook",
+    "type": "page"
+  },
+  "local-ci": {
+    "title": "Testing CI Locally",
+    "type": "page"
+  }
+}

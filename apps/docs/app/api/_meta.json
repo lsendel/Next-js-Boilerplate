@@ -1,0 +1,22 @@
+{
+  "index": {
+    "title": "API Reference",
+    "type": "page"
+  },
+  "authentication": {
+    "title": "Authentication Endpoints",
+    "type": "page"
+  },
+  "routes": {
+    "title": "API Routes",
+    "type": "page"
+  },
+  "services": {
+    "title": "Services Layer",
+    "type": "page"
+  },
+  "validation": {
+    "title": "Request Validation",
+    "type": "page"
+  }
+}

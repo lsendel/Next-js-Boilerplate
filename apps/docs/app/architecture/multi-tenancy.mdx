@@ -1,0 +1,645 @@
+# Multi-Tenancy Architecture
+
+Complete multi-tenant architecture with data isolation, tenant detection, and scalability patterns.
+
+## Overview
+
+The boilerplate implements a **shared database, shared schema** multi-tenancy model:
+
+- **Data Isolation** - Row-level tenant filtering
+- **Automatic Tenant Detection** - From session/context
+- **Repository Pattern** - Enforced tenant isolation
+- **Type Safety** - TypeScript ensures tenant filtering
+- **Performance** - Indexed tenant columns
+- **Scalability** - Ready for thousands of tenants
+
+## Multi-Tenancy Model
+
+### Shared Database, Shared Schema
+
+```
+┌─────────────────────────────────────┐
+│         PostgreSQL Database          │
+│                                      │
+│  ┌────────────────────────────┐    │
+│  │         Users Table          │    │
+│  ├────────┬─────────┬──────────┤    │
+│  │ id     │ name    │ tenant_id│    │
+│  ├────────┼─────────┼──────────┤    │
+│  │ user1  │ Alice   │ tenant-a │    │ ← Tenant A
+│  │ user2  │ Bob     │ tenant-a │    │ ← Tenant A
+│  │ user3  │ Charlie │ tenant-b │    │ ← Tenant B
+│  │ user4  │ Diana   │ tenant-b │    │ ← Tenant B
+│  └────────┴─────────┴──────────┘    │
+│                                      │
+│  ┌────────────────────────────┐    │
+│  │         Posts Table          │    │
+│  ├────────┬─────────┬──────────┤    │
+│  │ id     │ title   │ tenant_id│    │
+│  ├────────┼─────────┼──────────┤    │
+│  │ post1  │ Hello   │ tenant-a │    │
+│  │ post2  │ World   │ tenant-b │    │
+│  └────────┴─────────┴──────────┘    │
+└─────────────────────────────────────┘
+```
+
+**Benefits:**
+- Simple setup
+- Cost-effective
+- Easy to manage
+- Good performance
+
+**Trade-offs:**
+- Requires careful filtering
+- Shared resource limits
+- Cross-tenant queries possible (risk)
+
+## Schema Design
+
+### Tenant ID in Every Table
+
+```typescript
+// src/models/Schema.ts
+import { pgTable, text, timestamp, index } from 'drizzle-orm/pg-core'
+
+export const users = pgTable('users', {
+  id: text('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  name: text('name'),
+  tenantId: text('tenant_id').notNull(),  // ← Required
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  // Index for fast tenant filtering
+  tenantIdx: index('users_tenant_idx').on(table.tenantId),
+}))
+
+export const posts = pgTable('posts', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  content: text('content'),
+  authorId: text('author_id').notNull(),
+  tenantId: text('tenant_id').notNull(),  // ← Required
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  tenantIdx: index('posts_tenant_idx').on(table.tenantId),
+  authorIdx: index('posts_author_idx').on(table.authorId),
+}))
+
+export const comments = pgTable('comments', {
+  id: text('id').primaryKey(),
+  postId: text('post_id').notNull(),
+  userId: text('user_id').notNull(),
+  content: text('content').notNull(),
+  tenantId: text('tenant_id').notNull(),  // ← Required
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  tenantIdx: index('comments_tenant_idx').on(table.tenantId),
+  postIdx: index('comments_post_idx').on(table.postId),
+}))
+```
+
+### Indexes for Performance
+
+```typescript
+// ALWAYS index tenant_id for fast filtering
+(table) => ({
+  tenantIdx: index('table_tenant_idx').on(table.tenantId),
+})
+```
+
+## Tenant Detection
+
+### From User Session
+
+```typescript
+// src/libs/auth/getCurrentUser.ts
+export async function getCurrentUser() {
+  const session = await getCurrentSession()
+  if (!session) return null
+
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, session.userId),
+  })
+
+  return user  // Contains tenantId
+}
+```
+
+### In Server Components
+
+```typescript
+// app/[locale]/dashboard/page.tsx
+import { getCurrentUser } from '@/libs/auth'
+
+export default async function DashboardPage() {
+  const user = await getCurrentUser()
+  if (!user) redirect('/sign-in')
+
+  const tenantId = user.tenantId  // ← Tenant context
+
+  // Use tenantId for queries
+  const posts = await postRepository.findByTenant(tenantId)
+
+  return <Dashboard posts={posts} />
+}
+```
+
+### In API Routes
+
+```typescript
+// app/api/posts/route.ts
+import { getCurrentUser } from '@/libs/auth'
+
+export async function GET(request: Request) {
+  const user = await getCurrentUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const tenantId = user.tenantId  // ← Tenant context
+
+  const posts = await postRepository.findByTenant(tenantId)
+
+  return NextResponse.json(posts)
+}
+```
+
+### In Server Actions
+
+```typescript
+'use server'
+
+import { getCurrentUser } from '@/libs/auth'
+
+export async function createPost(formData: FormData) {
+  const user = await getCurrentUser()
+  if (!user) throw new Error('Unauthorized')
+
+  const tenantId = user.tenantId  // ← Tenant context
+
+  const post = await postRepository.create({
+    title: formData.get('title') as string,
+    content: formData.get('content') as string,
+    authorId: user.id,
+    tenantId,  // ← Enforce tenant
+  })
+
+  return post
+}
+```
+
+## Repository Pattern
+
+### Repository with Tenant Filtering
+
+```typescript
+// src/server/db/repositories/post.repository.ts
+import { eq, and } from 'drizzle-orm'
+import { posts } from '@/models/Schema'
+import { db } from '@/libs/DB'
+
+export class PostRepository {
+  // ALWAYS filter by tenant
+  async findByTenant(tenantId: string) {
+    return db.query.posts.findMany({
+      where: eq(posts.tenantId, tenantId),
+      orderBy: (posts, { desc }) => [desc(posts.createdAt)],
+    })
+  }
+
+  // ALWAYS include tenant in find by ID
+  async findById(id: string, tenantId: string) {
+    return db.query.posts.findFirst({
+      where: and(
+        eq(posts.id, id),
+        eq(posts.tenantId, tenantId)  // ← Critical security check
+      ),
+    })
+  }
+
+  // ALWAYS require tenant in create
+  async create(data: typeof posts.$inferInsert) {
+    // tenantId must be in data
+    if (!data.tenantId) {
+      throw new Error('tenantId required')
+    }
+
+    const [post] = await db.insert(posts).values(data).returning()
+    return post
+  }
+
+  // ALWAYS filter by tenant in update
+  async update(id: string, tenantId: string, data: Partial<typeof posts.$inferInsert>) {
+    const [post] = await db
+      .update(posts)
+      .set(data)
+      .where(and(
+        eq(posts.id, id),
+        eq(posts.tenantId, tenantId)  // ← Prevent cross-tenant updates
+      ))
+      .returning()
+
+    return post
+  }
+
+  // ALWAYS filter by tenant in delete
+  async delete(id: string, tenantId: string) {
+    await db
+      .delete(posts)
+      .where(and(
+        eq(posts.id, id),
+        eq(posts.tenantId, tenantId)  // ← Prevent cross-tenant deletes
+      ))
+  }
+}
+```
+
+### Service Layer Enforcement
+
+```typescript
+// src/server/api/services/post.service.ts
+import { PostRepository } from '@/server/db/repositories/post.repository'
+import { getCurrentUser } from '@/libs/auth'
+
+const postRepository = new PostRepository()
+
+export class PostService {
+  async getPost(id: string) {
+    // Get tenant from current user
+    const user = await getCurrentUser()
+    if (!user) throw new Error('Unauthorized')
+
+    // Repository enforces tenant filtering
+    return postRepository.findById(id, user.tenantId)
+  }
+
+  async createPost(data: { title: string; content: string }) {
+    const user = await getCurrentUser()
+    if (!user) throw new Error('Unauthorized')
+
+    return postRepository.create({
+      ...data,
+      tenantId: user.tenantId,  // ← Auto-inject tenant
+      authorId: user.id,
+    })
+  }
+
+  async updatePost(id: string, data: { title?: string; content?: string }) {
+    const user = await getCurrentUser()
+    if (!user) throw new Error('Unauthorized')
+
+    return postRepository.update(id, user.tenantId, data)
+  }
+
+  async deletePost(id: string) {
+    const user = await getCurrentUser()
+    if (!user) throw new Error('Unauthorized')
+
+    await postRepository.delete(id, user.tenantId)
+  }
+}
+```
+
+## Data Isolation
+
+### Query-Level Isolation
+
+```typescript
+// ✅ ALWAYS include tenant filter
+const posts = await db.query.posts.findMany({
+  where: and(
+    eq(posts.published, true),
+    eq(posts.tenantId, tenantId)  // ← Required
+  ),
+})
+
+// ❌ NEVER query without tenant filter
+const posts = await db.query.posts.findMany({
+  where: eq(posts.published, true),
+  // Missing tenantId filter - security risk!
+})
+```
+
+### Join-Level Isolation
+
+```typescript
+// When joining, ensure all tables filter by tenant
+const postsWithComments = await db.query.posts.findMany({
+  where: eq(posts.tenantId, tenantId),
+  with: {
+    comments: {
+      // Comments automatically filtered by same tenant
+      where: eq(comments.tenantId, tenantId),
+    },
+  },
+})
+```
+
+### Transaction-Level Isolation
+
+```typescript
+await db.transaction(async (tx) => {
+  // All operations in transaction use same tenant
+  const user = await tx.query.users.findFirst({
+    where: and(
+      eq(users.id, userId),
+      eq(users.tenantId, tenantId)
+    ),
+  })
+
+  await tx.insert(posts).values({
+    title: 'New Post',
+    tenantId,  // ← Same tenant
+    authorId: user.id,
+  })
+})
+```
+
+## Tenant Provisioning
+
+### Create New Tenant
+
+```typescript
+// src/server/api/services/tenant.service.ts
+import { generateId } from '@/utils/Helpers'
+
+export class TenantService {
+  async createTenant(name: string, adminEmail: string) {
+    const tenantId = generateId()
+
+    // Create admin user
+    const admin = await db.insert(users).values({
+      id: generateId(),
+      email: adminEmail,
+      name: 'Admin',
+      tenantId,
+      role: 'admin',
+    }).returning()
+
+    // Create tenant metadata (if you have a tenants table)
+    await db.insert(tenants).values({
+      id: tenantId,
+      name,
+      createdAt: new Date(),
+    })
+
+    return { tenant: { id: tenantId, name }, admin: admin[0] }
+  }
+}
+```
+
+### Tenant Onboarding
+
+```typescript
+export async function onboardTenant(tenantId: string) {
+  // Create default data for new tenant
+  await db.transaction(async (tx) => {
+    // Create default categories
+    await tx.insert(categories).values([
+      { id: generateId(), name: 'General', tenantId },
+      { id: generateId(), name: 'Announcements', tenantId },
+    ])
+
+    // Create welcome post
+    await tx.insert(posts).values({
+      id: generateId(),
+      title: 'Welcome!',
+      content: 'Welcome to your new workspace',
+      tenantId,
+    })
+  })
+}
+```
+
+## Cross-Tenant Operations
+
+### Admin Operations
+
+```typescript
+// Only for platform admins with special permissions
+export class AdminService {
+  async getAllTenants() {
+    // Platform admin can see all tenants
+    const admin = await getCurrentUser()
+    if (admin?.role !== 'platform-admin') {
+      throw new Error('Unauthorized')
+    }
+
+    // Query without tenant filter (allowed for platform admins)
+    return db.query.tenants.findMany()
+  }
+
+  async getTenantStats(tenantId: string) {
+    const admin = await getCurrentUser()
+    if (admin?.role !== 'platform-admin') {
+      throw new Error('Unauthorized')
+    }
+
+    const users = await db.query.users.findMany({
+      where: eq(users.tenantId, tenantId),
+    })
+
+    const posts = await db.query.posts.findMany({
+      where: eq(posts.tenantId, tenantId),
+    })
+
+    return {
+      tenantId,
+      userCount: users.length,
+      postCount: posts.length,
+    }
+  }
+}
+```
+
+## Performance Optimization
+
+### Indexes
+
+```typescript
+// CRITICAL: Always index tenant_id
+export const posts = pgTable('posts', {
+  // ... columns
+}, (table) => ({
+  // Composite index for common queries
+  tenantCreatedIdx: index('posts_tenant_created_idx')
+    .on(table.tenantId, table.createdAt),
+
+  // Separate index for tenant
+  tenantIdx: index('posts_tenant_idx').on(table.tenantId),
+}))
+```
+
+### Query Optimization
+
+```typescript
+// ✅ Good: Indexed tenant filter
+const posts = await db.query.posts.findMany({
+  where: eq(posts.tenantId, tenantId),  // Uses index
+  limit: 10,
+})
+
+// ✅ Better: Composite index usage
+const posts = await db.query.posts.findMany({
+  where: eq(posts.tenantId, tenantId),
+  orderBy: (posts, { desc }) => [desc(posts.createdAt)],  // Uses composite index
+  limit: 10,
+})
+```
+
+### Pagination with Tenant
+
+```typescript
+async function getPaginatedPosts(
+  tenantId: string,
+  page: number,
+  pageSize: number
+) {
+  const offset = (page - 1) * pageSize
+
+  return db.query.posts.findMany({
+    where: eq(posts.tenantId, tenantId),
+    limit: pageSize,
+    offset,
+    orderBy: (posts, { desc }) => [desc(posts.createdAt)],
+  })
+}
+```
+
+## Security Best Practices
+
+✅ **DO:**
+
+- Include `tenantId` in ALL tables
+- ALWAYS filter by `tenantId` in queries
+- Index `tenantId` columns
+- Validate tenant in repositories
+- Auto-inject `tenantId` in services
+- Test cross-tenant isolation
+- Use transactions for multi-table operations
+- Log tenant context in errors
+
+❌ **DON'T:**
+
+- Skip `tenantId` in any table
+- Query without tenant filter
+- Trust client-provided `tenantId`
+- Allow cross-tenant updates/deletes
+- Skip indexes on `tenantId`
+- Mix tenant data in responses
+- Forget to filter joins by tenant
+- Share sessions across tenants
+
+## Testing
+
+### Unit Tests
+
+```typescript
+// tests/repositories/post.repository.test.ts
+import { PostRepository } from '@/server/db/repositories/post.repository'
+
+describe('PostRepository', () => {
+  const repository = new PostRepository()
+  const tenantA = 'tenant-a'
+  const tenantB = 'tenant-b'
+
+  it('only returns posts for specified tenant', async () => {
+    // Create posts for different tenants
+    await repository.create({ title: 'Post A', tenantId: tenantA })
+    await repository.create({ title: 'Post B', tenantId: tenantB })
+
+    // Query tenant A
+    const postsA = await repository.findByTenant(tenantA)
+
+    // Should only see tenant A posts
+    expect(postsA).toHaveLength(1)
+    expect(postsA[0].tenantId).toBe(tenantA)
+  })
+
+  it('prevents cross-tenant access', async () => {
+    const post = await repository.create({
+      title: 'Post A',
+      tenantId: tenantA,
+    })
+
+    // Try to access from different tenant
+    const result = await repository.findById(post.id, tenantB)
+
+    // Should not find the post
+    expect(result).toBeUndefined()
+  })
+})
+```
+
+### E2E Tests
+
+```typescript
+// tests/e2e/multi-tenancy.e2e.ts
+import { test, expect } from '@playwright/test'
+
+test('users cannot access other tenant data', async ({ page, context }) => {
+  // Sign in as user from tenant A
+  await page.goto('/sign-in')
+  await page.fill('[name="email"]', 'usera@tenant-a.com')
+  await page.fill('[name="password"]', 'password')
+  await page.click('button[type="submit"]')
+
+  // Try to access post from tenant B (should fail)
+  await page.goto('/posts/tenant-b-post-id')
+
+  // Should see 404 or unauthorized
+  await expect(page.locator('text=Not found')).toBeVisible()
+})
+```
+
+## Monitoring
+
+### Tenant Metrics
+
+```typescript
+// Track per-tenant metrics
+import { logger } from '@/libs/Logger'
+
+export async function logTenantActivity(
+  tenantId: string,
+  action: string,
+  metadata?: Record<string, any>
+) {
+  logger.info('Tenant activity', {
+    tenantId,
+    action,
+    ...metadata,
+  })
+}
+```
+
+### Audit Logging
+
+```typescript
+// Audit cross-tenant access attempts
+export async function auditTenantAccess(
+  userId: string,
+  tenantId: string,
+  resourceId: string,
+  action: string
+) {
+  logger.warn('Tenant access audit', {
+    userId,
+    tenantId,
+    resourceId,
+    action,
+  })
+}
+```
+
+## Resources
+
+- [Database Architecture](/architecture/database)
+- [Authentication System](/architecture/auth-system)
+- [Repository Pattern](/guides/database/repositories)
+
+## Next Steps
+
+- **[Database Guide](/guides/database)** - Database patterns
+- **[App Router](/architecture/app-router)** - Routing architecture
+- **[Middleware](/architecture/middleware)** - Request pipeline

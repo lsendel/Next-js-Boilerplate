@@ -1,0 +1,566 @@
+# Internationalization (i18n)
+
+Comprehensive internationalization with next-intl and Crowdin for automated translation management.
+
+## Overview
+
+The boilerplate includes production-ready i18n with:
+
+- **next-intl** - Type-safe translations for Next.js
+- **Automatic Language Detection** - Browser language + URL-based routing
+- **Crowdin Integration** - Automated translation workflow
+- **Machine Translation** - AI-powered first drafts
+- **Multiple Languages** - English, French, Spanish, German, Japanese, Chinese
+- **SEO Optimized** - Localized URLs and metadata
+- **Type Safety** - Full TypeScript support
+
+## Quick Start
+
+### View in Different Languages
+
+The app is already configured with multiple languages:
+
+```bash
+# English (default)
+http://localhost:3000/en
+
+# French
+http://localhost:3000/fr
+
+# Spanish
+http://localhost:3000/es
+
+# German
+http://localhost:3000/de
+```
+
+### Add New Translation
+
+1. **Edit source file:**
+   ```json
+   // src/locales/en.json
+   {
+     "HomePage": {
+       "welcome": "Welcome to our app",
+       "get_started": "Get Started"
+     }
+   }
+   ```
+
+2. **Use in component:**
+   ```typescript
+   'use client'
+
+   import { useTranslations } from 'next-intl'
+
+   export function WelcomeBanner() {
+     const t = useTranslations('HomePage')
+
+     return (
+       <div>
+         <h1>{t('welcome')}</h1>
+         <button>{t('get_started')}</button>
+       </div>
+     )
+   }
+   ```
+
+3. **Translations auto-sync via Crowdin** (when pushed to main branch)
+
+## Supported Languages
+
+### Default Configuration
+
+```typescript
+// src/utils/AppConfig.ts
+export const AppConfig = {
+  locales: [
+    { id: 'en', name: 'English' },
+    { id: 'fr', name: 'Français' },
+    { id: 'es', name: 'Español' },
+    { id: 'de', name: 'Deutsch' },
+    { id: 'ja', name: '日本語' },
+    { id: 'zh', name: '中文' },
+  ],
+  defaultLocale: 'en',
+}
+```
+
+### Add New Language
+
+[Learn how to add languages →](/guides/i18n/setup#adding-languages)
+
+## Features
+
+### Type-Safe Translations
+
+```typescript
+// Full autocomplete and type checking
+const t = useTranslations('HomePage')
+
+t('welcome')      // ✅ Type-safe
+t('invalid_key')  // ❌ TypeScript error
+```
+
+### Parameters
+
+```json
+{
+  "greeting": "Hello, {name}!",
+  "items_count": "You have {count} items"
+}
+```
+
+```typescript
+t('greeting', { name: 'John' })  // "Hello, John!"
+t('items_count', { count: 5 })   // "You have 5 items"
+```
+
+### Pluralization
+
+```json
+{
+  "items": "{count, plural, =0 {No items} =1 {One item} other {# items}}"
+}
+```
+
+```typescript
+t('items', { count: 0 })  // "No items"
+t('items', { count: 1 })  // "One item"
+t('items', { count: 5 })  // "5 items"
+```
+
+### Date Formatting
+
+```typescript
+import { useFormatter } from 'next-intl'
+
+const format = useFormatter()
+
+format.dateTime(new Date(), {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
+})
+// English: "January 15, 2024"
+// French:  "15 janvier 2024"
+// Spanish: "15 de enero de 2024"
+```
+
+### Number Formatting
+
+```typescript
+import { useFormatter } from 'next-intl'
+
+const format = useFormatter()
+
+// Currency
+format.number(1234.56, { style: 'currency', currency: 'USD' })
+// English: "$1,234.56"
+// French:  "1 234,56 $US"
+
+// Percentage
+format.number(0.85, { style: 'percent' })
+// "85%"
+```
+
+### Rich Text
+
+```json
+{
+  "terms": "I agree to the <link>Terms of Service</link>"
+}
+```
+
+```typescript
+t.rich('terms', {
+  link: (chunks) => <a href="/terms">{chunks}</a>
+})
+// Renders: "I agree to the <a href="/terms">Terms of Service</a>"
+```
+
+## Routing
+
+### Locale Detection
+
+Automatic language detection:
+
+1. **URL locale** - `/fr/dashboard`
+2. **Cookie** - Previously selected language
+3. **Browser language** - `Accept-Language` header
+4. **Default** - English fallback
+
+### Language Switcher
+
+```typescript
+'use client'
+
+import { useLocale } from 'next-intl'
+import { usePathname, useRouter } from '@/libs/I18nNavigation'
+import { AppConfig } from '@/utils/AppConfig'
+
+export function LanguageSwitcher() {
+  const locale = useLocale()
+  const pathname = usePathname()
+  const router = useRouter()
+
+  const handleChange = (newLocale: string) => {
+    router.push(pathname, { locale: newLocale })
+    router.refresh()
+  }
+
+  return (
+    <select value={locale} onChange={(e) => handleChange(e.target.value)}>
+      {AppConfig.locales.map((loc) => (
+        <option key={loc.id} value={loc.id}>
+          {loc.name}
+        </option>
+      ))}
+    </select>
+  )
+}
+```
+
+### Navigation
+
+Type-safe navigation with locale:
+
+```typescript
+import { Link, redirect } from '@/libs/I18nNavigation'
+
+// Link component
+<Link href="/dashboard">Dashboard</Link>
+// Renders: /en/dashboard (or current locale)
+
+// Programmatic navigation
+redirect('/dashboard')
+// Redirects to: /fr/dashboard (current locale)
+```
+
+## Translation Files
+
+### File Structure
+
+```
+src/locales/
+├── en.json          # English (source) - edit this file
+├── fr.json          # French - auto-generated by Crowdin
+├── es.json          # Spanish - auto-generated
+├── de.json          # German - auto-generated
+├── ja.json          # Japanese - auto-generated
+└── zh.json          # Chinese - auto-generated
+```
+
+### Organization
+
+```json
+{
+  "HomePage": {
+    "title": "Welcome",
+    "subtitle": "Get started with our platform"
+  },
+  "Dashboard": {
+    "title": "Dashboard",
+    "stats": {
+      "users": "Users",
+      "revenue": "Revenue"
+    }
+  },
+  "Auth": {
+    "sign_in": "Sign In",
+    "sign_out": "Sign Out",
+    "email": "Email",
+    "password": "Password"
+  }
+}
+```
+
+### Naming Conventions
+
+✅ **Good:**
+```json
+{
+  "button_save": "Save",
+  "form_email_label": "Email Address",
+  "error_required": "This field is required"
+}
+```
+
+❌ **Bad:**
+```json
+{
+  "btn1": "Save",              // Non-descriptive
+  "email": "Email Address",    // Too generic
+  "err": "Required"            // Ambiguous
+}
+```
+
+## Usage Patterns
+
+### Client Components
+
+```typescript
+'use client'
+
+import { useTranslations } from 'next-intl'
+
+export function SignInForm() {
+  const t = useTranslations('Auth')
+
+  return (
+    <form>
+      <label>{t('email')}</label>
+      <input type="email" />
+
+      <label>{t('password')}</label>
+      <input type="password" />
+
+      <button>{t('sign_in')}</button>
+    </form>
+  )
+}
+```
+
+### Server Components
+
+```typescript
+import { getTranslations } from 'next-intl/server'
+
+export default async function DashboardPage() {
+  const t = await getTranslations('Dashboard')
+
+  return (
+    <div>
+      <h1>{t('title')}</h1>
+      <p>{t('subtitle')}</p>
+    </div>
+  )
+}
+```
+
+### Metadata (SEO)
+
+```typescript
+import { getTranslations } from 'next-intl/server'
+
+export async function generateMetadata({ params: { locale } }) {
+  const t = await getTranslations({ locale, namespace: 'HomePage' })
+
+  return {
+    title: t('meta_title'),
+    description: t('meta_description'),
+  }
+}
+```
+
+### Server Actions
+
+```typescript
+'use server'
+
+import { getTranslations } from 'next-intl/server'
+
+export async function updateProfile(formData: FormData) {
+  const t = await getTranslations('Profile')
+
+  // Use translations in server logic
+  const message = t('success_message')
+
+  return { success: true, message }
+}
+```
+
+## Crowdin Workflow
+
+### Automated Translation Pipeline
+
+1. **Developer updates** `src/locales/en.json`
+2. **Pushes to main branch**
+3. **GitHub Action uploads** changes to Crowdin
+4. **Translators receive** notifications
+5. **Translations completed** (human + AI)
+6. **GitHub Action downloads** translations
+7. **Pull Request created** with updates
+8. **Review and merge**
+
+[Full Crowdin guide →](/integrations/crowdin)
+
+## Validation
+
+### Check Translation Completeness
+
+```bash
+# Verify all languages have same keys
+pnpm --filter web check:i18n
+```
+
+Output:
+```bash
+✅ All translations complete
+
+Languages checked:
+- en: 250 keys
+- fr: 250 keys
+- es: 250 keys
+- de: 250 keys
+
+No missing or extra keys found.
+```
+
+## Best Practices
+
+✅ **DO:**
+
+- Edit only `en.json` (source file)
+- Use namespaces to organize translations
+- Provide context for ambiguous strings
+- Use descriptive translation keys
+- Include parameters for dynamic content
+- Test all languages locally
+- Review machine translations
+- Use pluralization for counts
+
+❌ **DON'T:**
+
+- Edit translated files (`fr.json`, `es.json`) directly
+- Use hardcoded strings in components
+- Skip context for translators
+- Mix languages in one file
+- Forget to add new languages to AppConfig
+- Commit auto-translated strings without review
+- Use overly short/generic keys
+
+## Common Patterns
+
+### Form Validation
+
+```json
+{
+  "validation": {
+    "required": "This field is required",
+    "email_invalid": "Please enter a valid email",
+    "password_short": "Password must be at least 8 characters",
+    "password_mismatch": "Passwords do not match"
+  }
+}
+```
+
+### Error Messages
+
+```json
+{
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "Network error. Check your connection.",
+    "unauthorized": "You are not authorized to perform this action.",
+    "not_found": "The requested resource was not found."
+  }
+}
+```
+
+### Success Messages
+
+```json
+{
+  "success": {
+    "profile_updated": "Profile updated successfully",
+    "password_changed": "Password changed successfully",
+    "email_sent": "Verification email sent to {email}"
+  }
+}
+```
+
+### Navigation
+
+```json
+{
+  "nav": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "settings": "Settings",
+    "sign_out": "Sign Out"
+  }
+}
+```
+
+## Troubleshooting
+
+### Translations Not Showing
+
+1. **Check locale file exists:**
+   ```bash
+   ls src/locales/fr.json
+   ```
+
+2. **Verify translation key:**
+   ```json
+   // Should exist in en.json
+   "HomePage": {
+     "welcome": "Welcome"
+   }
+   ```
+
+3. **Check namespace:**
+   ```typescript
+   // Namespace must match JSON structure
+   const t = useTranslations('HomePage')  // ✅
+   const t = useTranslations('Home')      // ❌
+   ```
+
+### Language Switcher Not Working
+
+1. **Verify AppConfig:**
+   ```typescript
+   // All locales must be listed
+   locales: [
+     { id: 'en', name: 'English' },
+     { id: 'fr', name: 'Français' },
+   ]
+   ```
+
+2. **Check middleware:**
+   ```typescript
+   // Must include i18n routing
+   export const middleware = createMiddleware(i18nConfig)
+   ```
+
+### Type Errors
+
+1. **Regenerate types:**
+   ```bash
+   pnpm --filter web build
+   ```
+
+2. **Restart TypeScript server:**
+   - VSCode: Cmd/Ctrl + Shift + P → "Restart TypeScript Server"
+
+## Performance
+
+### Bundle Size
+
+Translations are loaded per-language:
+
+- **English route** → Loads `en.json` only
+- **French route** → Loads `fr.json` only
+- No impact on bundle size
+
+### Caching
+
+Translations are cached:
+
+- **Build time** - Pre-rendered for static pages
+- **Runtime** - Cached in memory
+- **Client** - Cached in browser
+
+## Resources
+
+- [next-intl Documentation](https://next-intl-docs.vercel.app/)
+- [Crowdin Integration](/integrations/crowdin)
+- [Setup Guide](/guides/i18n/setup)
+- [Translation Management](/guides/i18n/translations)
+
+## Next Steps
+
+- **[Setup Guide](/guides/i18n/setup)** - Configure languages
+- **[Managing Translations](/guides/i18n/translations)** - Translation workflow
+- **[Crowdin Workflow](/guides/i18n/crowdin)** - Automated translations

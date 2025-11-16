@@ -1,0 +1,22 @@
+{
+  "index": {
+    "title": "Overview",
+    "type": "page"
+  },
+  "audit": {
+    "title": "Security Audit",
+    "type": "page"
+  },
+  "arcjet": {
+    "title": "Arcjet Protection",
+    "type": "page"
+  },
+  "headers": {
+    "title": "Security Headers",
+    "type": "page"
+  },
+  "csrf": {
+    "title": "CSRF Protection",
+    "type": "page"
+  }
+}

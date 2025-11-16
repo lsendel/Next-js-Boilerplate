@@ -1,0 +1,460 @@
+# Architecture Overview
+
+The Next.js Boilerplate follows a clean, layered architecture with clear separation of concerns and strong type safety throughout.
+
+## Core Principles
+
+### 1. Layer-Based Organization
+
+Code is organized by execution environment and responsibility:
+
+```
+┌─────────────────────────────────────────┐
+│         /app (Next.js App Router)       │
+│       Pages, Layouts, API Routes        │
+└───────────────┬─────────────────────────┘
+                │
+      ┌─────────┴──────────┐
+      │                    │
+      ▼                    ▼
+┌──────────┐          ┌──────────┐
+│ /client  │          │ /server  │
+│Components│          │ Database │
+│  Hooks   │          │ Services │
+│Providers │          │   API    │
+└─────┬────┘          └─────┬────┘
+      │                     │
+      └──────────┬──────────┘
+                 ▼
+           ┌───────────┐
+           │  /shared  │
+           │   Types   │
+           │   Utils   │
+           │Validators │
+           └───────────┘
+```
+
+### 2. Dependency Direction Rules
+
+**Strict unidirectional dependencies:**
+
+- ✅ `/app` CAN import from any layer
+- ✅ `/client` CAN import from `/shared`
+- ✅ `/server` CAN import from `/shared`
+- ❌ `/client` CANNOT import from `/server`
+- ❌ `/shared` CANNOT import from `/client` or `/server`
+
+### 3. Type Safety First
+
+- **TypeScript strict mode** enabled
+- **T3 Env** for type-safe environment variables
+- **Zod schemas** for runtime validation
+- **DrizzleORM** for type-safe database queries
+- **Type-safe routing** with next-intl
+
+### 4. Colocation
+
+Related files are kept together:
+- Tests next to source (`.test.ts`, `.test.tsx`)
+- Stories next to components (`.stories.tsx`)
+- Styles with components (CSS-in-JS or Tailwind)
+
+### 5. No Circular Dependencies
+
+The build will fail if circular dependencies are detected, ensuring clean architecture.
+
+## Key Architectural Components
+
+### [Authentication System](/architecture/auth-system)
+
+**Modular, provider-agnostic design:**
+- Factory pattern for provider switching
+- Unified component API
+- Security features (CSRF, session fingerprinting, rate limiting)
+- Zero code changes to switch providers
+
+### [App Router](/architecture/app-router)
+
+**Next.js 16 App Router with:**
+- Route groups for organization
+- i18n routing with locale segments
+- Parallel routes
+- Intercepting routes
+- Server and client components
+
+### [Database Layer](/architecture/database)
+
+**Type-safe ORM with repository pattern:**
+- DrizzleORM for schema definition
+- Repository pattern for data access
+- Service layer for business logic
+- Automated migrations
+- Multi-tenancy support
+
+### [Middleware Pipeline](/architecture/middleware)
+
+**Layered middleware execution:**
+1. CORS preflight handling
+2. Tenant context resolution
+3. Arcjet security (bot detection, rate limiting)
+4. Authentication (multi-provider)
+5. i18n routing
+6. Security headers
+
+### [Multi-Tenancy](/architecture/multi-tenancy)
+
+**Built-in multi-tenant support:**
+- Subdomain routing
+- Custom domain mapping
+- Tenant-scoped data
+- Team memberships with roles
+
+## Directory Structure
+
+```
+apps/web/src/
+├── app/                    # Next.js App Router
+│   └── [locale]/           # i18n routing
+│       ├── (marketing)/    # Public pages
+│       ├── (auth)/         # Protected pages
+│       └── api/            # API routes
+│
+├── client/                 # Client-side only
+│   ├── components/         # React components
+│   ├── hooks/              # Client hooks
+│   ├── providers/          # Client providers
+│   └── styles/             # Client styles
+│
+├── server/                 # Server-side only
+│   ├── api/                # Backend API
+│   │   ├── controllers/    # Request handlers
+│   │   ├── routes/         # Route definitions
+│   │   └── services/       # Business logic
+│   ├── db/                 # Database
+│   │   ├── models/         # Drizzle schemas
+│   │   └── repositories/   # Data access
+│   ├── constants/          # Server constants
+│   └── lib/                # Server utilities
+│
+├── shared/                 # Shared code
+│   ├── config/             # Configuration
+│   ├── constants/          # Constants
+│   ├── utils/              # Utilities
+│   ├── validators/         # Zod schemas
+│   └── hooks/              # Shared hooks
+│
+├── middleware/             # Middleware
+│   ├── layers/             # Middleware layers
+│   └── utils/              # Middleware utilities
+│
+├── libs/                   # 3rd party configs
+│   ├── auth/               # Authentication
+│   ├── Arcjet.ts           # Security
+│   ├── DB.ts               # Database
+│   ├── Env.ts              # Environment
+│   ├── I18n.ts             # Internationalization
+│   └── Logger.ts           # Logging
+│
+├── locales/                # Translation files
+└── templates/              # Page templates
+```
+
+## Request Flow
+
+### Server-Side Rendering (SSR)
+
+```
+1. User Request → Next.js
+2. Middleware Pipeline
+   ├── Tenant Resolution
+   ├── Security (Arcjet)
+   ├── Authentication
+   └── i18n Routing
+3. Page/Layout Server Component
+4. Data Fetching (Server)
+   ├── Database Query (Repository)
+   └── External APIs (Service)
+5. Component Rendering
+6. HTML Response
+```
+
+### API Request
+
+```
+1. API Request → Next.js API Route
+2. Middleware Pipeline
+   ├── Security (Arcjet)
+   ├── Rate Limiting
+   └── Authentication
+3. Controller
+   ├── Validation (Zod)
+   └── Business Logic (Service)
+4. Service
+   └── Data Access (Repository)
+5. JSON Response
+```
+
+### Client-Side Navigation
+
+```
+1. User Interaction
+2. Client Component
+3. API Call (fetch/SWR)
+4. State Update
+5. Re-render
+```
+
+## Design Patterns
+
+### Repository Pattern
+
+**Data access abstraction:**
+
+```typescript
+// Repository (data access)
+class UserRepository {
+  async findById(id: string) {
+    return db.query.users.findFirst({ where: eq(users.id, id) })
+  }
+}
+
+// Service (business logic)
+class UserService {
+  async getUser(id: string) {
+    const user = await userRepository.findById(id)
+    if (!user) throw new Error('User not found')
+    return user
+  }
+}
+
+// Controller (HTTP handling)
+async function GET(request: Request) {
+  const user = await userService.getUser(userId)
+  return Response.json(user)
+}
+```
+
+### Factory Pattern
+
+**Authentication provider abstraction:**
+
+```typescript
+// Factory creates provider instance
+const authProvider = AuthFactory.getProvider()
+
+// Unified API works with any provider
+const user = await authProvider.getCurrentUser()
+```
+
+### Adapter Pattern
+
+**Provider-specific implementations:**
+
+```typescript
+// Each provider implements the same interface
+class ClerkAdapter implements AuthAdapter {
+  async getCurrentUser() { /* Clerk-specific */ }
+}
+
+class CloudflareAdapter implements AuthAdapter {
+  async getCurrentUser() { /* Cloudflare-specific */ }
+}
+```
+
+### Dependency Injection
+
+**Services receive dependencies:**
+
+```typescript
+class EmailService {
+  constructor(
+    private userRepository: UserRepository,
+    private logger: Logger
+  ) {}
+}
+```
+
+## State Management
+
+### Server State
+
+- **Server Components** for data fetching
+- **Suspense** for loading states
+- **Error Boundaries** for error handling
+
+### Client State
+
+- **React State** (`useState`, `useReducer`)
+- **URL State** (query params)
+- **Form State** (React Hook Form)
+- **Optional:** Zustand, Jotai for complex client state
+
+### Global State
+
+- **Context API** for theme, auth, tenant
+- **Providers** wrap app at root level
+
+## Security Architecture
+
+### Defense in Depth
+
+Multiple layers of security:
+
+1. **Arcjet Shield** - WAF, bot detection
+2. **Rate Limiting** - Token bucket algorithm
+3. **CSRF Protection** - Token-based
+4. **Authentication** - Multi-provider support
+5. **Session Security** - Fingerprinting, rotation
+6. **Input Validation** - Zod schemas
+7. **SQL Injection Prevention** - Parameterized queries
+8. **XSS Prevention** - React auto-escaping
+9. **Security Headers** - CSP, HSTS, etc.
+
+[Learn more about security →](/guides/security)
+
+## Performance Optimizations
+
+### Build Time
+
+- **React Compiler** - Automatic memoization
+- **Turbopack** - Fast bundler (development)
+- **SWC** - Fast compilation
+- **Tree Shaking** - Remove unused code
+
+### Runtime
+
+- **Server Components** - Zero JS for static content
+- **Streaming SSR** - Progressive rendering
+- **Image Optimization** - Next.js Image component
+- **Font Optimization** - Next.js Font optimization
+- **Code Splitting** - Automatic route-based splitting
+
+### Database
+
+- **Connection Pooling** - Reuse connections
+- **Prepared Statements** - Query optimization
+- **Indexes** - Fast lookups
+- **Query Optimization** - Drizzle query builder
+
+## Testing Strategy
+
+### Unit Tests
+
+- **Vitest** - Fast unit testing
+- **Browser Mode** - For React components
+- **Colocated** - Tests next to source
+
+### Integration Tests
+
+- **Playwright** - For integration tests
+- **API Testing** - Test server routes
+- **Database Testing** - With test helpers
+
+### E2E Tests
+
+- **Playwright** - Full browser automation
+- **Checkly** - Synthetic monitoring in production
+
+[Learn more about testing →](/guides/testing)
+
+## Monitoring & Observability
+
+### Error Tracking
+
+- **Sentry** - Error monitoring
+- **Spotlight** - Development error UI
+
+### Logging
+
+- **LogTape** - Structured logging
+- **Better Stack** - Log aggregation
+
+### Analytics
+
+- **PostHog** - Product analytics
+- **Checkly** - Uptime monitoring
+
+[Learn more about operations →](/operations)
+
+## Deployment Architecture
+
+### Static Generation
+
+- Marketing pages pre-rendered
+- Revalidated on demand (ISR)
+
+### Server-Side Rendering
+
+- Dashboard pages rendered on request
+- With streaming for fast TTFB
+
+### API Routes
+
+- Serverless functions
+- Edge runtime for performance-critical routes
+
+[Learn more about deployment →](/guides/deployment)
+
+## Best Practices
+
+### Code Organization
+
+✅ **DO:**
+- Use absolute imports (`@/`)
+- Colocate related files
+- Follow naming conventions
+- Keep components small and focused
+- Separate concerns (data, logic, UI)
+
+❌ **DON'T:**
+- Use relative imports (`../../`)
+- Create circular dependencies
+- Mix client and server code
+- Create god components
+- Bypass type safety with `any`
+
+### Performance
+
+✅ **DO:**
+- Use Server Components by default
+- Add `'use client'` only when needed
+- Lazy load heavy components
+- Optimize images
+- Minimize bundle size
+
+❌ **DON'T:**
+- Make everything a Client Component
+- Import large libraries on client
+- Skip image optimization
+- Ignore bundle size
+
+### Security
+
+✅ **DO:**
+- Validate all input (Zod)
+- Use parameterized queries
+- Implement CSRF protection
+- Rotate sessions
+- Use security headers
+
+❌ **DON'T:**
+- Trust user input
+- Use string interpolation in queries
+- Skip authentication checks
+- Store secrets in code
+- Disable security features
+
+## Next Steps
+
+- **[Authentication System](/architecture/auth-system)** - Modular auth design
+- **[App Router](/architecture/app-router)** - Next.js routing patterns
+- **[Database Layer](/architecture/database)** - DB architecture
+- **[Middleware](/architecture/middleware)** - Request pipeline
+- **[Multi-Tenancy](/architecture/multi-tenancy)** - Tenant isolation
+
+## Resources
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [DrizzleORM Documentation](https://orm.drizzle.team/docs/overview)
+- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
+- [CLAUDE.md](/CLAUDE.md) - Project-specific guidance

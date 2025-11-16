@@ -1,0 +1,335 @@
+# Authentication
+
+The Next.js Boilerplate features a unique **modular authentication system** that lets you switch between providers without changing code.
+
+## Key Features
+
+- 🔄 **Provider Switching** - Change auth providers via environment variable
+- 🔒 **Multiple Providers** - Clerk, Cloudflare Access, AWS Cognito supported
+- 🛡️ **Security Built-in** - CSRF, session fingerprinting, rate limiting
+- ⚡ **Zero Code Changes** - Switch providers without modifying application code
+- 🧪 **Test Mode** - Form-based auth for E2E testing
+
+## Supported Providers
+
+### [Clerk (Default)](/guides/authentication/clerk)
+
+**Full-featured authentication with UI components:**
+- Pre-built sign-in/sign-up components
+- Multi-factor authentication (MFA)
+- Social OAuth (Google, GitHub, etc.)
+- Passkeys / WebAuthn support
+- User impersonation
+- Keyless development mode
+
+**Best for:** Production apps needing complete auth solution
+
+### [Cloudflare Access](/guides/authentication/cloudflare)
+
+**JWT-based authentication with Cloudflare Zero Trust:**
+- JWT token verification
+- Custom UI components
+- Profile management
+- SSO integration
+- Zero Trust security model
+
+**Best for:** Apps deployed on Cloudflare, enterprise SSO
+
+### [AWS Cognito](/guides/authentication/cognito)
+
+**OAuth2 with AWS ecosystem:**
+- User pools
+- Social providers
+- MFA support
+- AWS integration
+
+**Best for:** AWS-deployed apps, existing Cognito users
+
+## Quick Start
+
+### 1. Choose Your Provider
+
+Set the environment variable:
+
+```bash
+# .env.local
+NEXT_PUBLIC_AUTH_PROVIDER=clerk      # Default
+# NEXT_PUBLIC_AUTH_PROVIDER=cloudflare
+# NEXT_PUBLIC_AUTH_PROVIDER=cognito
+# NEXT_PUBLIC_AUTH_PROVIDER=test      # E2E testing only
+```
+
+### 2. Configure Provider
+
+Each provider needs specific configuration:
+
+**Clerk:**
+```bash
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_key
+CLERK_SECRET_KEY=sk_test_your_secret
+```
+
+**Cloudflare:**
+```bash
+NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN=your-team.cloudflareaccess.com
+NEXT_PUBLIC_CLOUDFLARE_AUDIENCE=your_audience_tag
+NEXT_PUBLIC_CLOUDFLARE_VERIFY_JWT=true
+```
+
+**Cognito:**
+```bash
+NEXT_PUBLIC_COGNITO_USER_POOL_ID=your_pool_id
+NEXT_PUBLIC_COGNITO_CLIENT_ID=your_client_id
+NEXT_PUBLIC_COGNITO_DOMAIN=your_domain
+```
+
+### 3. Use Unified Components
+
+The same components work with all providers:
+
+```tsx
+import {
+  SignInComponent,
+  SignOutButtonComponent,
+  UserProfileComponent
+} from '@/libs/auth/components'
+
+export default function MyPage() {
+  return (
+    <div>
+      <SignInComponent />
+      <SignOutButtonComponent />
+      <UserProfileComponent />
+    </div>
+  )
+}
+```
+
+### 4. Server-Side Usage
+
+```tsx
+import { getCurrentUser, isAuthenticated } from '@/libs/auth'
+
+export default async function ServerComponent() {
+  const user = await getCurrentUser()
+  const authenticated = await isAuthenticated()
+
+  if (!authenticated) {
+    return <div>Please sign in</div>
+  }
+
+  return <div>Welcome, {user.email}!</div>
+}
+```
+
+## Architecture
+
+### Factory Pattern
+
+```typescript
+// apps/web/src/libs/auth/factory.ts
+class AuthFactory {
+  private static instance: AuthAdapter
+
+  static getProvider(): AuthAdapter {
+    if (!this.instance) {
+      const provider = process.env.NEXT_PUBLIC_AUTH_PROVIDER
+
+      switch (provider) {
+        case 'clerk':
+          this.instance = new ClerkAdapter()
+          break
+        case 'cloudflare':
+          this.instance = new CloudflareAdapter()
+          break
+        case 'cognito':
+          this.instance = new CognitoAdapter()
+          break
+        default:
+          this.instance = new ClerkAdapter()
+      }
+    }
+    return this.instance
+  }
+}
+```
+
+### Adapter Interface
+
+All providers implement the same interface:
+
+```typescript
+interface AuthAdapter {
+  // Server-side methods
+  getCurrentUser(): Promise<User | null>
+  getSession(): Promise<Session | null>
+  signOut(): Promise<void>
+
+  // Components
+  SignIn: React.ComponentType
+  SignUp: React.ComponentType
+  SignOutButton: React.ComponentType
+  UserProfile: React.ComponentType
+  AuthProvider: React.ComponentType
+}
+```
+
+### Unified Components
+
+Export provider-specific components under common names:
+
+```typescript
+// apps/web/src/libs/auth/components.tsx
+const provider = AuthFactory.getProvider()
+
+export const SignInComponent = provider.SignIn
+export const SignUpComponent = provider.SignUp
+export const SignOutButtonComponent = provider.SignOutButton
+export const UserProfileComponent = provider.UserProfile
+export const AuthProvider = provider.AuthProvider
+```
+
+## Security Features
+
+### CSRF Protection
+
+Token-based CSRF protection:
+
+```typescript
+// apps/web/src/libs/auth/security/csrf.ts
+import { generateCSRFToken, validateCSRFToken } from '@/libs/auth/security/csrf'
+
+// Generate token
+const token = await generateCSRFToken(sessionId)
+
+// Validate token
+const valid = await validateCSRFToken(token, sessionId)
+```
+
+### Session Fingerprinting
+
+Browser fingerprinting for session security:
+
+```typescript
+// Detects session hijacking attempts
+import { generateFingerprint, validateFingerprint } from '@/libs/auth/security/session-fingerprint'
+
+const fingerprint = generateFingerprint(request)
+const valid = validateFingerprint(session, fingerprint)
+```
+
+### Rate Limiting
+
+Prevent brute force attacks:
+
+```typescript
+// apps/web/src/libs/auth/security/rate-limit.ts
+import { checkRateLimit } from '@/libs/auth/security/rate-limit'
+
+const allowed = await checkRateLimit(userId, 'login')
+if (!allowed) {
+  throw new Error('Too many login attempts')
+}
+```
+
+### Password Breach Detection
+
+Check passwords against known breaches:
+
+```typescript
+import { checkPasswordBreach } from '@/libs/auth/security/password-breach'
+
+const breached = await checkPasswordBreach(password)
+if (breached) {
+  throw new Error('Password found in data breach')
+}
+```
+
+[Learn more about security features →](/guides/authentication/security)
+
+## Protected Routes
+
+Configure protected routes in middleware:
+
+```typescript
+// apps/web/src/middleware.ts
+export const config = {
+  matcher: [
+    '/dashboard/:path*',  // Protected
+    '/api/:path*',        // Requires auth
+  ],
+}
+```
+
+## Switching Providers
+
+### Step 1: Update Environment
+
+```bash
+# From Clerk to Cloudflare
+NEXT_PUBLIC_AUTH_PROVIDER=cloudflare
+```
+
+### Step 2: Add Provider Config
+
+```bash
+# Cloudflare-specific config
+NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN=your-team.cloudflareaccess.com
+NEXT_PUBLIC_CLOUDFLARE_AUDIENCE=your_audience_tag
+```
+
+### Step 3: Restart Server
+
+```bash
+pnpm dev
+```
+
+**That's it!** No code changes needed.
+
+[Learn more about switching →](/guides/authentication/switching)
+
+## Provider Comparison
+
+| Feature | Clerk | Cloudflare | Cognito |
+|---------|-------|------------|---------|
+| Pre-built UI | ✅ | Custom | Custom |
+| Social OAuth | ✅ | via IdP | ✅ |
+| MFA | ✅ | via IdP | ✅ |
+| Passkeys | ✅ | ❌ | ❌ |
+| Free Tier | ✅ | ✅ | ✅ |
+| Self-hosted | ❌ | ❌ | ❌ |
+| Custom UI | ✅ | ✅ | ✅ |
+| SSO | ✅ | ✅ | ✅ |
+| Implementation | ✅ Complete | ✅ Complete | ⚠️ Stub |
+
+## Best Practices
+
+✅ **DO:**
+- Use environment variables for provider switching
+- Implement CSRF protection
+- Enable session fingerprinting
+- Rate limit authentication attempts
+- Check for password breaches
+- Rotate sessions after privilege escalation
+
+❌ **DON'T:**
+- Hardcode provider-specific code in components
+- Skip CSRF protection
+- Store passwords in plain text
+- Trust client-side authentication
+- Use weak session IDs
+
+## Next Steps
+
+- **[Clerk Setup](/guides/authentication/clerk)** - Default provider configuration
+- **[Cloudflare Access](/guides/authentication/cloudflare)** - Cloudflare-specific setup
+- **[AWS Cognito](/guides/authentication/cognito)** - Cognito configuration
+- **[Switching Providers](/guides/authentication/switching)** - How to switch
+- **[Security Features](/guides/authentication/security)** - Deep dive into security
+
+## Resources
+
+- [Authentication Architecture](/architecture/auth-system)
+- [Clerk Documentation](https://clerk.com/docs)
+- [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/identity/users/)
+- [AWS Cognito Documentation](https://docs.aws.amazon.com/cognito/)
