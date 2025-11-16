@@ -115,6 +115,9 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
       - name: Run unit tests
         run: pnpm test
         env:
