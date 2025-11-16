@@ -207,7 +207,7 @@ Optional features (easy to add):
 
 ### Requirements
 
-- Node.js 22+ and npm
+- Node.js 20+ and pnpm 8+
 
 ### Getting started
 
@@ -216,7 +216,13 @@ Run the following command on your local environment:
 ```shell
 git clone --depth=1 https://github.com/ixartz/Next-js-Boilerplate.git my-project-name
 cd my-project-name
-npm install
+pnpm install
+```
+
+**Alternatively, use the Makefile for easier setup:**
+
+```shell
+make setup  # Installs dependencies, Playwright browsers, and runs migrations
 ```
 
 For your information, all dependencies are updated every month.
@@ -224,10 +230,28 @@ For your information, all dependencies are updated every month.
 Then, you can run the project locally in development mode with live reload by executing:
 
 ```shell
-npm run dev
+make dev
+# Or use pnpm directly:
+pnpm dev
 ```
 
 Open http://localhost:3000 with your favorite browser to see your project. For your information, the project is already pre-configured with a local database using PGlite. No extra setup is required to run the project locally.
+
+### Quick Commands with Makefile
+
+This project includes a comprehensive Makefile for easier development:
+
+```shell
+make help          # Show all available commands
+make dev           # Start development server
+make test          # Run tests
+make lint          # Lint code
+make db-studio     # Open database GUI
+make ready         # Check if ready to commit
+make ship          # Prepare for deployment
+```
+
+Run `make help` to see all 60+ available commands organized by category.
 
 Need advanced features? Multi-tenancy & Teams, Roles & Permissions, Shadcn UI, End-to-End Typesafety with oRPC, Stripe Payment, Light / Dark mode. Try [Next.js Boilerplate Pro](https://nextjs-boilerplate.com/pro-saas-starter-kit).
 
@@ -260,54 +284,67 @@ After defining the environment variables in your GitHub Actions, your localizati
 
 ### Project structure
 
+This is a **pnpm monorepo** with the following structure:
+
 ```shell
 .
+├── Makefile                        # Quick commands for development
 ├── README.md                       # README file
+├── CLAUDE.md                       # AI assistant context file
+├── pnpm-workspace.yaml             # Monorepo configuration
 ├── .github                         # GitHub folder
 │   ├── actions                     # Reusable actions
 │   └── workflows                   # GitHub Actions workflows
-├── .storybook                      # Storybook folder
 ├── .vscode                         # VSCode configuration
-├── migrations                      # Database migrations
-├── public                          # Public assets folder
-├── src
-│   ├── app                         # Next JS App (App Router)
-│   ├── components                  # React components
-│   ├── libs                        # 3rd party libraries configuration
-│   ├── locales                     # Locales folder (i18n messages)
-│   ├── models                      # Database models
-│   ├── styles                      # Styles folder
-│   ├── templates                   # Templates folder
-│   ├── types                       # Type definitions
-│   ├── utils                       # Utilities folder
-│   └── validations                 # Validation schemas
-├── tests
-│   ├── e2e                         # E2E tests, also includes Monitoring as Code
-│   └── integration                 # Integration tests
-├── next.config.ts                  # Next JS configuration
-└── tsconfig.json                   # TypeScript configuration
+├── apps
+│   ├── web                         # Main Next.js application
+│   │   ├── .storybook              # Storybook folder
+│   │   ├── migrations              # Database migrations
+│   │   ├── public                  # Public assets folder
+│   │   ├── src
+│   │   │   ├── app                 # Next JS App (App Router)
+│   │   │   ├── components          # React components
+│   │   │   ├── libs                # 3rd party libraries configuration
+│   │   │   ├── locales             # Locales folder (i18n messages)
+│   │   │   ├── models              # Database models
+│   │   │   ├── styles              # Styles folder
+│   │   │   ├── templates           # Templates folder
+│   │   │   ├── types               # Type definitions
+│   │   │   ├── utils               # Utilities folder
+│   │   │   └── validations         # Validation schemas
+│   │   ├── tests
+│   │   │   ├── e2e                 # E2E tests, also includes Monitoring as Code
+│   │   │   └── integration         # Integration tests
+│   │   ├── next.config.ts          # Next JS configuration
+│   │   └── tsconfig.json           # TypeScript configuration
+│   └── docs                        # Documentation site (Nextra)
+│       ├── app                     # Documentation content
+│       ├── next.config.mjs         # Nextra configuration
+│       └── theme.config.tsx        # Nextra theme
 ```
 
 ### Customization
 
 You can easily configure Next js Boilerplate by searching the entire project for `FIXME:` to make quick customizations. Here are some of the most important files to customize:
 
-- `public/apple-touch-icon.png`, `public/favicon.ico`, `public/favicon-16x16.png` and `public/favicon-32x32.png`: your website favicon
-- `src/utils/AppConfig.ts`: configuration file
-- `src/templates/BaseTemplate.tsx`: default theme
-- `next.config.ts`: Next.js configuration
-- `.env`: default environment variables
+- `apps/web/public/apple-touch-icon.png`, `apps/web/public/favicon.ico`, etc.: your website favicon
+- `apps/web/src/utils/AppConfig.ts`: configuration file
+- `apps/web/src/templates/BaseTemplate.tsx`: default theme
+- `apps/web/next.config.ts`: Next.js configuration
+- `apps/web/.env`: default environment variables
 
 You have full access to the source code for further customization. The provided code is just an example to help you start your project. The sky's the limit 🚀.
 
 ### Change database schema
 
-To modify the database schema in the project, you can update the schema file located at `./src/models/Schema.ts`. This file defines the structure of your database tables using the Drizzle ORM library.
+To modify the database schema in the project, you can update the schema file located at `apps/web/src/models/Schema.ts`. This file defines the structure of your database tables using the Drizzle ORM library.
 
 After making changes to the schema, generate a migration by running the following command:
 
 ```shell
-npm run db:generate
+make db-generate
+# Or using pnpm:
+pnpm --filter web db:generate
 ```
 
 This will create a migration file that reflects your schema changes.
@@ -315,7 +352,9 @@ This will create a migration file that reflects your schema changes.
 After making sure your database is running, you can apply the generated migration using:
 
 ```shell
-npm run db:migrate
+make db-migrate
+# Or using pnpm:
+pnpm --filter web db:migrate
 ```
 
 There is no need to restart the Next.js server for the changes to take effect.
