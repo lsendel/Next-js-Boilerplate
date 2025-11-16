@@ -1,0 +1,263 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      skip-migrations:
+        description: Skip database migrations (emergency hotfix only)
+        type: boolean
+        default: false
+        required: false
+      skip-snapshot:
+        description: Skip pre-deploy snapshot (not recommended)
+        type: boolean
+        default: false
+        required: false
+
+permissions:
+  contents: read
+  deployments: write
+
+env:
+  ENVIRONMENT: production
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Pre-deploy checklist
+        run: |
+          echo "## 🚀 Production Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Pre-Deploy Checklist" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Validation
+          if npm run db:validate; then
+            echo "- ✅ Schema validation passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ⚠️  Schema validation warnings" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Show commit info
+          echo "- 📝 Commit: \`$(git rev-parse --short HEAD)\`" >> $GITHUB_STEP_SUMMARY
+          echo "- 👤 Author: $(git log -1 --format='%an')" >> $GITHUB_STEP_SUMMARY
+          echo "- 📅 Date: $(git log -1 --format='%ai')" >> $GITHUB_STEP_SUMMARY
+
+          # Show recent migrations
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Recent Migrations" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          ls -1t migrations/*.sql 2>/dev/null | head -3 || echo "No migrations found"
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Create Neon branch snapshot (backup)
+        if: ${{ !inputs.skip-snapshot }}
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📸 Pre-Deploy Snapshot" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -n "$NEON_API_KEY" ] && [ -n "$NEON_PROJECT_ID" ]; then
+            # Install Neon CLI
+            npm install -g neonctl@latest
+
+            # Create snapshot branch
+            SNAPSHOT_NAME="pre-deploy-$(date +%Y%m%d-%H%M%S)"
+
+            if neon branches create \
+              --name "$SNAPSHOT_NAME" \
+              --project-id "$NEON_PROJECT_ID" 2>&1; then
+              echo "- ✅ Snapshot created: \`$SNAPSHOT_NAME\`" >> $GITHUB_STEP_SUMMARY
+              echo "- ℹ️  Rollback: \`./scripts/db/rollback.sh production\`" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- ⚠️  Snapshot creation failed (non-blocking)" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "- ⚠️  Neon credentials not configured, skipping snapshot" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Run database migrations (with circuit breaker)
+        if: ${{ !inputs.skip-migrations }}
+        timeout-minutes: 5
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
+          GRAFANA_LOKI_URL: ${{ secrets.GRAFANA_LOKI_URL }}
+          PAGERDUTY_INTEGRATION_KEY: ${{ secrets.PAGERDUTY_INTEGRATION_KEY }}
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🗄️ Database Migration" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -z "$DATABASE_URL" ]; then
+            echo "- ❌ DATABASE_URL_PROD not set" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+          # Run migration with 5-minute timeout
+          START_TIME=$(date +%s)
+
+          if npm run db:migrate:prod; then
+            END_TIME=$(date +%s)
+            DURATION=$((END_TIME - START_TIME))
+            echo "- ✅ Migrations completed in ${DURATION}s" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ Migration failed - DEPLOYMENT ABORTED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 🔴 Rollback Required" >> $GITHUB_STEP_SUMMARY
+            echo "Run: \`./scripts/db/rollback.sh production\`" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: Build application
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Application Build" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if npm run build; then
+            echo "- ✅ Build successful" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ❌ Build failed" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: Deploy to Production (Canary 10%)
+        id: deploy-canary
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🚀 Deployment (Canary)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Install Vercel CLI
+          npm install -g vercel@latest
+
+          # Deploy to production
+          DEPLOYMENT_URL=$(vercel deploy \
+            --prod \
+            --token=$VERCEL_TOKEN \
+            --build-env DATABASE_URL="${{ secrets.DATABASE_URL_PROD }}" \
+            --yes 2>&1 | grep -oP 'https://[^\s]+' | tail -1)
+
+          echo "url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          echo "- 🌐 Canary URL: [$DEPLOYMENT_URL]($DEPLOYMENT_URL)" >> $GITHUB_STEP_SUMMARY
+          echo "- ⏳ Monitoring canary for 5 minutes..." >> $GITHUB_STEP_SUMMARY
+
+      - name: Monitor canary deployment
+        timeout-minutes: 5
+        env:
+          CANARY_URL: ${{ steps.deploy-canary.outputs.url }}
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Canary Monitoring" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Monitor for 5 minutes with health checks every 30 seconds
+          for i in {1..10}; do
+            echo "Check $i/10..."
+
+            # Basic health check
+            if curl -f -s -o /dev/null "$CANARY_URL"; then
+              echo "✅ Health check $i passed"
+            else
+              echo "❌ Health check $i failed"
+              echo "- ❌ Canary health check failed at iteration $i" >> $GITHUB_STEP_SUMMARY
+              exit 1
+            fi
+
+            # Wait 30 seconds between checks
+            [ $i -lt 10 ] && sleep 30
+          done
+
+          echo "- ✅ All canary health checks passed" >> $GITHUB_STEP_SUMMARY
+
+      - name: Full production rollout
+        id: deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Full Rollout" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Promote canary to full production
+          # (With Vercel, the --prod flag already deploys to production)
+          # This step is for documentation and other platforms
+
+          echo "- ✅ Production deployment complete" >> $GITHUB_STEP_SUMMARY
+          echo "- 🌐 Production URL: [${{ steps.deploy-canary.outputs.url }}](${{ steps.deploy-canary.outputs.url }})" >> $GITHUB_STEP_SUMMARY
+
+      - name: Post-deploy drift check
+        if: always()
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔍 Post-Deploy Verification" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if npm run db:check-drift; then
+            echo "- ✅ No drift detected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ⚠️  Drift detected - immediate review required" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Post-deploy summary
+        if: success()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Monitor error rates in production dashboard" >> $GITHUB_STEP_SUMMARY
+          echo "2. Check user reports for issues" >> $GITHUB_STEP_SUMMARY
+          echo "3. Update deployment log in incident tracker" >> $GITHUB_STEP_SUMMARY
+          echo "4. Close deployment ticket" >> $GITHUB_STEP_SUMMARY
+
+      - name: Rollback instructions
+        if: failure()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ❌ Deployment Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Immediate Actions:" >> $GITHUB_STEP_SUMMARY
+          echo "1. **Database rollback** (if migrations ran):" >> $GITHUB_STEP_SUMMARY
+          echo "   \`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "   ./scripts/db/rollback.sh production" >> $GITHUB_STEP_SUMMARY
+          echo "   \`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "2. **Check logs** for error details" >> $GITHUB_STEP_SUMMARY
+          echo "3. **Notify team** in #incidents Slack channel" >> $GITHUB_STEP_SUMMARY
+          echo "4. **Create incident report**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Rollback Guide:" >> $GITHUB_STEP_SUMMARY
+          echo "See: \`scripts/db/ROLLBACK_GUIDE.md\`" >> $GITHUB_STEP_SUMMARY

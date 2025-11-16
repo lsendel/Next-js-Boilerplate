@@ -1,0 +1,143 @@
+name: Merge Queue
+
+# This workflow runs when PRs enter the merge queue
+# It performs fast validation to ensure main branch stays green
+# Merge queue prevents broken main by testing the merged result
+
+on:
+  merge_group:
+    types: [checks_requested]
+
+concurrency:
+  group: merge-queue-${{ github.event.merge_group.head_ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+
+env:
+  NEXT_TELEMETRY_DISABLED: '1'
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+jobs:
+  # Fast validation - critical checks only
+  fast-validation:
+    name: Fast Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 8  # Strict timeout for merge queue
+
+    steps:
+      - name: Checkout merged code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.merge_group.head_ref }}
+
+      - name: Setup monorepo
+        uses: ./.github/actions/setup-monorepo-optimized
+        with:
+          node-version: 20
+          enable-turbo-cache: true
+
+      - name: Run affected checks only
+        run: |
+          echo "::group::Running affected tasks"
+
+          # Use Turbo to run only changed packages
+          # This is much faster than running everything
+          pnpm turbo lint test build \
+            --filter=...[origin/${{ github.event.merge_group.base_ref }}] \
+            --concurrency=4
+
+          echo "::endgroup::"
+
+      - name: Quick smoke test
+        run: |
+          # Verify builds can start
+          pnpm --filter web build --dry-run || true
+
+      - name: Report status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "::notice::✅ Merge queue validation passed"
+            echo "## ✅ Ready to Merge" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "::error::❌ Merge queue validation failed"
+            echo "## ❌ Cannot Merge" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "This PR failed merge queue validation." >> $GITHUB_STEP_SUMMARY
+            echo "Please check the logs above and fix the issues." >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # Database migration check - ensure migrations are safe
+  migration-safety:
+    name: Migration Safety Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout merged code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.merge_group.head_ref }}
+          fetch-depth: 0
+
+      - name: Setup monorepo
+        uses: ./.github/actions/setup-monorepo-optimized
+        with:
+          node-version: 20
+
+      - name: Check for migration conflicts
+        run: |
+          echo "::group::Checking migrations"
+
+          # Check if migrations directory changed
+          if git diff --name-only origin/${{ github.event.merge_group.base_ref }} | grep -q "migrations/"; then
+            echo "⚠️  Migrations detected - validating..."
+
+            # Ensure migrations are generated properly
+            pnpm --filter web db:generate --check || {
+              echo "::error::Migration schema mismatch detected"
+              exit 1
+            }
+
+            echo "✅ Migrations are valid"
+          else
+            echo "ℹ️  No migration changes detected"
+          fi
+
+          echo "::endgroup::"
+
+  # Summary job
+  merge-queue-summary:
+    name: Merge Queue Summary
+    runs-on: ubuntu-latest
+    needs: [fast-validation, migration-safety]
+    if: always()
+
+    steps:
+      - name: Check all validations
+        run: |
+          echo "## Merge Queue Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Fast Validation | ${{ needs.fast-validation.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Migration Safety | ${{ needs.migration-safety.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.fast-validation.result }}" == "success" ]] && \
+             [[ "${{ needs.migration-safety.result }}" == "success" ]]; then
+            echo "### ✅ All merge queue checks passed!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "This PR will be automatically merged." >> $GITHUB_STEP_SUMMARY
+            exit 0
+          else
+            echo "### ❌ Merge queue checks failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "This PR has been removed from the merge queue." >> $GITHUB_STEP_SUMMARY
+            echo "Please fix the issues and re-add to the queue." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi

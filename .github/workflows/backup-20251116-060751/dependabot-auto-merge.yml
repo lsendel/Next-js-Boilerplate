@@ -1,0 +1,147 @@
+name: Dependabot Auto-Merge
+
+# Automatically approve and merge Dependabot PRs for minor/patch updates
+# This saves ~10 hours/month of manual dependency updates
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-approve:
+    name: Auto-approve safe updates
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Display update info
+        run: |
+          echo "::notice::Dependabot update detected"
+          echo "Package: ${{ steps.metadata.outputs.dependency-names }}"
+          echo "Update type: ${{ steps.metadata.outputs.update-type }}"
+          echo "Previous version: ${{ steps.metadata.outputs.previous-version }}"
+          echo "New version: ${{ steps.metadata.outputs.new-version }}"
+
+      - name: Auto-approve patch updates
+        if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
+        run: |
+          gh pr review --approve "$PR_URL"
+          echo "::notice::✅ Auto-approved patch update"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Auto-approve minor updates
+        if: |
+          steps.metadata.outputs.update-type == 'version-update:semver-minor' &&
+          !contains(steps.metadata.outputs.dependency-names, 'next') &&
+          !contains(steps.metadata.outputs.dependency-names, 'react')
+        run: |
+          gh pr review --approve "$PR_URL"
+          echo "::notice::✅ Auto-approved minor update"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  auto-merge:
+    name: Auto-merge if tests pass
+    needs: auto-approve
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+
+      - name: Wait for CI to complete
+        run: |
+          echo "::notice::Waiting for CI checks to complete..."
+          sleep 30  # Give CI time to start
+
+      - name: Enable auto-merge for safe updates
+        if: |
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+          (steps.metadata.outputs.update-type == 'version-update:semver-minor' &&
+           !contains(steps.metadata.outputs.dependency-names, 'next') &&
+           !contains(steps.metadata.outputs.dependency-names, 'react'))
+        run: |
+          gh pr merge --auto --squash "$PR_URL"
+          echo "::notice::✅ Auto-merge enabled (will merge when CI passes)"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add comment for manual review
+        if: |
+          steps.metadata.outputs.update-type == 'version-update:semver-major' ||
+          contains(steps.metadata.outputs.dependency-names, 'next') ||
+          contains(steps.metadata.outputs.dependency-names, 'react')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `⚠️ **Manual review required**
+
+              This is a **${{ steps.metadata.outputs.update-type }}** update for a critical dependency.
+
+              **Package:** ${{ steps.metadata.outputs.dependency-names }}
+              **Previous:** ${{ steps.metadata.outputs.previous-version }}
+              **New:** ${{ steps.metadata.outputs.new-version }}
+
+              Please review the changelog and test thoroughly before merging.
+              `
+            });
+
+  security-alert:
+    name: Security vulnerability alert
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+
+      - name: Check for security updates
+        if: contains(steps.metadata.outputs.alert-state, 'OPEN')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `🚨 **Security Alert**
+
+              This PR addresses a security vulnerability.
+
+              **Severity:** High priority - please review and merge ASAP.
+
+              **Package:** ${{ steps.metadata.outputs.dependency-names }}
+              **CVE:** Check GitHub Security tab for details
+
+              @security-team - please review
+              `
+            });
+
+            // Add security label
+            github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['security', 'priority: high']
+            });

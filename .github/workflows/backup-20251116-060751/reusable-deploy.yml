@@ -1,0 +1,173 @@
+name: Reusable Deployment Workflow
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Deployment environment (staging|production)'
+        required: true
+        type: string
+      cloud-provider:
+        description: 'Cloud provider (aws|azure|gcp|cloudflare)'
+        required: true
+        type: string
+      run-migrations:
+        description: Run database migrations after deployment
+        required: false
+        type: boolean
+        default: true
+      create-backup:
+        description: Create database backup before deployment
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: false
+      AWS_SECRET_ACCESS_KEY:
+        required: false
+      AZURE_CREDENTIALS:
+        required: false
+      GCP_SA_KEY:
+        required: false
+      CLOUDFLARE_API_TOKEN:
+        required: false
+      CLOUDFLARE_ACCOUNT_ID:
+        required: false
+      DATABASE_URL:
+        required: true
+    outputs:
+      deployment-url:
+        description: URL of the deployed application
+        value: ${{ jobs.deploy.outputs.url }}
+
+jobs:
+  pre-deploy:
+    name: Pre-deployment checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Validate environment configuration
+        run: |
+          echo "Deploying to ${{ inputs.environment }} on ${{ inputs.cloud-provider }}"
+
+      - name: Create database backup
+        if: inputs.create-backup
+        run: |
+          echo "Creating database backup before deployment..."
+          # Backup logic would go here
+
+  deploy:
+    name: Deploy to ${{ inputs.cloud-provider }}
+    runs-on: ubuntu-latest
+    needs: pre-deploy
+    timeout-minutes: 30
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ steps.deploy.outputs.url }}
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # AWS Deployment
+      - name: Configure AWS credentials
+        if: inputs.cloud-provider == 'aws'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Deploy to AWS
+        if: inputs.cloud-provider == 'aws'
+        id: deploy-aws
+        run: |
+          echo "Deploying to AWS ECS..."
+          # AWS deployment logic
+          echo "url=https://app.example.com" >> $GITHUB_OUTPUT
+
+      # Azure Deployment
+      - name: Azure Login
+        if: inputs.cloud-provider == 'azure'
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure
+        if: inputs.cloud-provider == 'azure'
+        id: deploy-azure
+        run: |
+          echo "Deploying to Azure App Service..."
+          # Azure deployment logic
+          echo "url=https://app.azurewebsites.net" >> $GITHUB_OUTPUT
+
+      # GCP Deployment
+      - name: Authenticate to Google Cloud
+        if: inputs.cloud-provider == 'gcp'
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Deploy to GCP
+        if: inputs.cloud-provider == 'gcp'
+        id: deploy-gcp
+        run: |
+          echo "Deploying to GCP Cloud Run..."
+          # GCP deployment logic
+          echo "url=https://app.run.app" >> $GITHUB_OUTPUT
+
+      # Cloudflare Deployment
+      - name: Deploy to Cloudflare
+        if: inputs.cloud-provider == 'cloudflare'
+        id: deploy-cloudflare
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: nextjs-boilerplate
+          directory: .next
+          branch: main
+
+      # Set output URL
+      - name: Set deployment URL
+        id: deploy
+        run: |
+          if [ "${{ inputs.cloud-provider }}" == "aws" ]; then
+            echo "url=${{ steps.deploy-aws.outputs.url }}" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.cloud-provider }}" == "azure" ]; then
+            echo "url=${{ steps.deploy-azure.outputs.url }}" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.cloud-provider }}" == "gcp" ]; then
+            echo "url=${{ steps.deploy-gcp.outputs.url }}" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.cloud-provider }}" == "cloudflare" ]; then
+            echo "url=${{ steps.deploy-cloudflare.outputs.url }}" >> $GITHUB_OUTPUT
+          fi
+
+  post-deploy:
+    name: Post-deployment tasks
+    runs-on: ubuntu-latest
+    needs: deploy
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Run database migrations
+        if: inputs.run-migrations
+        run: |
+          echo "Running database migrations..."
+          # Migration logic would go here
+
+      - name: Smoke tests
+        run: |
+          echo "Running smoke tests on ${{ needs.deploy.outputs.url }}..."
+          # Smoke test logic
+
+      - name: Notify deployment
+        run: |
+          echo "✅ Deployment to ${{ inputs.environment }} completed successfully!"
+          echo "URL: ${{ needs.deploy.outputs.url }}"

@@ -1,0 +1,142 @@
+name: Setup Monorepo (Optimized)
+description: Advanced setup for pnpm monorepo with multi-layer caching
+
+inputs:
+  node-version:
+    description: Node.js version
+    required: false
+    default: '20'
+  enable-turbo-cache:
+    description: Enable Turbo remote caching
+    required: false
+    default: 'true'
+  restore-nextjs-cache:
+    description: Restore Next.js build cache
+    required: false
+    default: 'true'
+
+outputs:
+  cache-hit:
+    description: Whether cache was hit
+    value: ${{ steps.cache-deps.outputs.cache-hit }}
+  pnpm-version:
+    description: pnpm version installed
+    value: ${{ steps.setup-pnpm.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    # Setup Node.js
+    - name: Setup Node.js ${{ inputs.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    # Setup pnpm
+    - name: Setup pnpm
+      id: setup-pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+        run_install: false
+
+    # Get pnpm store path
+    - name: Get pnpm store directory
+      id: pnpm-store
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+    # Cache Layer 1: pnpm store (global packages)
+    - name: Cache pnpm store
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+
+    # Cache Layer 2: node_modules (faster installs)
+    - name: Cache node_modules
+      id: cache-deps
+      uses: actions/cache@v4
+      with:
+        path: |
+          node_modules
+          apps/*/node_modules
+          apps/*/node_modules/.cache
+        key: ${{ runner.os }}-deps-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('**/package.json') }}
+        restore-keys: |
+          ${{ runner.os }}-deps-${{ hashFiles('**/pnpm-lock.yaml') }}-
+          ${{ runner.os }}-deps-
+
+    # Install dependencies (only if not cached)
+    - name: Install dependencies
+      if: steps.cache-deps.outputs.cache-hit != 'true'
+      shell: bash
+      run: pnpm install --frozen-lockfile --prefer-offline
+
+    # Cache Layer 3: Turbo cache (build artifacts)
+    - name: Cache Turbo
+      if: inputs.enable-turbo-cache == 'true'
+      uses: actions/cache@v4
+      with:
+        path: |
+          .turbo
+          apps/*/.turbo
+        key: ${{ runner.os }}-turbo-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-turbo-
+
+    # Cache Layer 4: Next.js cache (build cache)
+    - name: Cache Next.js
+      if: inputs.restore-nextjs-cache == 'true'
+      uses: actions/cache@v4
+      with:
+        path: |
+          apps/web/.next/cache
+          apps/docs/.next/cache
+        key: ${{ runner.os }}-nextjs-${{ hashFiles('apps/**/pnpm-lock.yaml') }}-${{ hashFiles('apps/**/*.ts', 'apps/**/*.tsx', 'apps/**/*.js', 'apps/**/*.jsx') }}
+        restore-keys: |
+          ${{ runner.os }}-nextjs-${{ hashFiles('apps/**/pnpm-lock.yaml') }}-
+          ${{ runner.os }}-nextjs-
+
+    # Cache Layer 5: Playwright browsers (E2E tests)
+    - name: Cache Playwright browsers
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ hashFiles('apps/web/package.json') }}
+        restore-keys: |
+          ${{ runner.os }}-playwright-
+
+    # Output cache statistics
+    - name: Cache statistics
+      shell: bash
+      run: |
+        echo "::group::Cache Statistics"
+        echo "pnpm store: ${{ steps.pnpm-store.outputs.STORE_PATH }}"
+        echo "Dependencies cached: ${{ steps.cache-deps.outputs.cache-hit }}"
+        echo "pnpm version: ${{ steps.setup-pnpm.outputs.version }}"
+        echo "Node version: ${{ inputs.node-version }}"
+
+        if [ -d "node_modules" ]; then
+          echo "node_modules size: $(du -sh node_modules | cut -f1)"
+        fi
+
+        if [ -d ".turbo" ]; then
+          echo "Turbo cache size: $(du -sh .turbo | cut -f1)"
+        fi
+        echo "::endgroup::"
+
+    # Verify installation
+    - name: Verify installation
+      shell: bash
+      run: |
+        echo "::group::Environment Info"
+        node -v
+        pnpm -v
+        echo "Installed packages:"
+        pnpm list --depth 0 || true
+        echo "::endgroup::"
