@@ -52,12 +52,15 @@ jobs:
             .env.development
             .env.test
             **/*.env
+          files_ignore: |
+            apps/web/.env
 
       - name: Check for .env files
         if: steps.changed.outputs.any_changed == 'true'
         run: |
           echo "::error::Environment files detected in PR! Never commit .env files."
           echo "Changed files: ${{ steps.changed.outputs.all_changed_files }}"
+          echo "Note: apps/web/.env is intentionally tracked (contains example values only)"
           exit 1
 
   prevent-secrets:
