@@ -70,11 +70,18 @@ runs:
           ${{ runner.os }}-deps-${{ hashFiles('**/pnpm-lock.yaml') }}-
           ${{ runner.os }}-deps-
 
-    # Install dependencies (only if not cached)
+    # Install dependencies
+    # Note: Always run install to ensure proper symlinks, even with cache hit
     - name: Install dependencies
-      if: steps.cache-deps.outputs.cache-hit != 'true'
       shell: bash
-      run: pnpm install --frozen-lockfile --prefer-offline
+      run: |
+        if [ "${{ steps.cache-deps.outputs.cache-hit }}" == "true" ]; then
+          echo "Cache hit - running install with --offline to setup symlinks"
+          pnpm install --frozen-lockfile --offline --prefer-offline
+        else
+          echo "Cache miss - running full install"
+          pnpm install --frozen-lockfile --prefer-offline
+        fi
 
     # Cache Layer 3: Turbo cache (build artifacts)
     - name: Cache Turbo

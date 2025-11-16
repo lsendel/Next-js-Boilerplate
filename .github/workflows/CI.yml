@@ -208,9 +208,12 @@ jobs:
           restore-nextjs-cache: true
 
       - name: Build ${{ matrix.app }}
-        run: pnpm --filter ${{ matrix.app }} build
-        env:
-          DATABASE_URL: postgresql://localhost/mock
+        run: |
+          if [ "${{ matrix.app }}" == "web" ]; then
+            pnpm --filter web build-local
+          else
+            pnpm --filter ${{ matrix.app }} build
+          fi
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
