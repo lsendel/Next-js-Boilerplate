@@ -1,4 +1,3 @@
-import type { LocalizationResource } from '@clerk/types';
 import type { LocalePrefixMode } from 'next-intl/routing';
 import { enUS, frFR } from '@clerk/localizations';
 
@@ -19,7 +18,7 @@ export const AppConfig = {
   localePrefix,
 };
 
-const supportedLocales: Record<string, LocalizationResource> = {
+const supportedLocales: Record<string, typeof enUS> = {
   en: enUS,
   fr: frFR,
 };
