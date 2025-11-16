@@ -257,7 +257,7 @@ jobs:
           path: apps/web/.next
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Run E2E tests (shard ${{ matrix.shard }}/4)
         run: pnpm --filter web test:e2e --shard=${{ matrix.shard }}/4
@@ -291,7 +291,7 @@ jobs:
         with:
           node-version: 20
 
-      - name: Run npm audit
+      - name: Run pnpm audit
         run: pnpm audit --audit-level=moderate
         continue-on-error: true
 
