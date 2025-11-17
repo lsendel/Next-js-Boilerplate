@@ -115,8 +115,12 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install Playwright browsers
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+
       - name: Run unit tests
-        run: pnpm test
+        run: pnpm --filter web test
         env:
           CI: true
 
@@ -125,7 +129,7 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/coverage-final.json
+          files: ./apps/web/coverage/coverage-final.json
           flags: unit
           name: unit-tests
           fail_ci_if_error: false
@@ -208,9 +212,12 @@ jobs:
           restore-nextjs-cache: true
 
       - name: Build ${{ matrix.app }}
-        run: pnpm --filter ${{ matrix.app }} build
-        env:
-          DATABASE_URL: postgresql://localhost/mock
+        run: |
+          if [ "${{ matrix.app }}" == "web" ]; then
+            pnpm --filter web build-local
+          else
+            pnpm --filter ${{ matrix.app }} build
+          fi
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
