@@ -116,10 +116,11 @@ jobs:
           node-version: 20
 
       - name: Install Playwright browsers
+        working-directory: apps/web
         run: npx playwright install --with-deps chromium
 
       - name: Run unit tests
-        run: pnpm test
+        run: pnpm --filter web test
         env:
           CI: true
 
@@ -128,7 +129,7 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/coverage-final.json
+          files: ./apps/web/coverage/coverage-final.json
           flags: unit
           name: unit-tests
           fail_ci_if_error: false

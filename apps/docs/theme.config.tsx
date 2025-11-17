@@ -1,7 +1,6 @@
 import { usePathname } from 'next/navigation'
-import type { DocsThemeConfig } from 'nextra-theme-docs'
 
-const config: DocsThemeConfig = {
+const config = {
   logo: <span className="font-bold text-xl">Next.js Boilerplate</span>,
   project: {
     link: 'https://github.com/ixartz/Next-js-Boilerplate',
