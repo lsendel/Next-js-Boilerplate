@@ -774,7 +774,7 @@ async function findUserByIdIncludingDeleted(id: number) {
   const { users } = await import("@/server/db/models/Schema");
   const { eq } = await import("drizzle-orm");
 
-  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  const result = await (db as any).select().from(users).where(eq(users.id, id)).limit(1);
 
   return result[0] || null;
 }
