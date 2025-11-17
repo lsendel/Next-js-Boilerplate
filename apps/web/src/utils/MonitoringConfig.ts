@@ -13,31 +13,31 @@
 export const MonitoringConfig = {
   // Sentry - Error tracking and performance monitoring
   sentry: {
-    enabled: process.env.NEXT_PUBLIC_ENABLE_SENTRY === "true",
+    enabled: process.env.NEXT_PUBLIC_ENABLE_SENTRY === 'true',
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV,
     // Only enable in production by default
-    defaultEnabled: process.env.NODE_ENV === "production",
+    defaultEnabled: process.env.NODE_ENV === 'production',
     // Sample rate for performance monitoring (0.0 to 1.0)
-    tracesSampleRate: parseFloat(
-      process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE || "0.1",
+    tracesSampleRate: Number.parseFloat(
+      process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE || '0.1',
     ),
     // Sample rate for session replay (0.0 to 1.0)
-    replaysSessionSampleRate: parseFloat(
-      process.env.NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE || "0.1",
+    replaysSessionSampleRate: Number.parseFloat(
+      process.env.NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE || '0.1',
     ),
-    replaysOnErrorSampleRate: parseFloat(
-      process.env.NEXT_PUBLIC_SENTRY_REPLAYS_ERROR_SAMPLE_RATE || "1.0",
+    replaysOnErrorSampleRate: Number.parseFloat(
+      process.env.NEXT_PUBLIC_SENTRY_REPLAYS_ERROR_SAMPLE_RATE || '1.0',
     ),
   },
 
   // PostHog - Product analytics and feature flags
   posthog: {
-    enabled: process.env.NEXT_PUBLIC_ENABLE_POSTHOG === "true",
+    enabled: process.env.NEXT_PUBLIC_ENABLE_POSTHOG === 'true',
     apiKey: process.env.NEXT_PUBLIC_POSTHOG_KEY,
-    apiHost: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://app.posthog.com",
+    apiHost: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com',
     // Only enable in production by default
-    defaultEnabled: process.env.NODE_ENV === "production",
+    defaultEnabled: process.env.NODE_ENV === 'production',
     // Capture pageviews automatically
     capturePageview: true,
     // Capture performance metrics
@@ -46,12 +46,12 @@ export const MonitoringConfig = {
 
   // Cloudflare Analytics - Privacy-friendly web analytics
   cloudflare: {
-    enabled: process.env.NEXT_PUBLIC_ENABLE_CF_ANALYTICS === "true",
+    enabled: process.env.NEXT_PUBLIC_ENABLE_CF_ANALYTICS === 'true',
     token: process.env.NEXT_PUBLIC_CF_ANALYTICS_TOKEN,
     // Always enabled in production if token is provided
     defaultEnabled:
-      process.env.NODE_ENV === "production" &&
-      !!process.env.NEXT_PUBLIC_CF_ANALYTICS_TOKEN,
+      process.env.NODE_ENV === 'production'
+      && !!process.env.NEXT_PUBLIC_CF_ANALYTICS_TOKEN,
     // Use Cloudflare Web Analytics (privacy-friendly, no cookies)
     webAnalytics: true,
     // Use Cloudflare Analytics Engine for custom events
@@ -66,7 +66,7 @@ export const MonitoringConfig = {
     // Respect user's Do Not Track preference
     respectDoNotTrack: true,
     // Enable debug mode for troubleshooting
-    debug: process.env.NODE_ENV === "development",
+    debug: process.env.NODE_ENV === 'development',
   },
 } as const;
 
@@ -77,7 +77,7 @@ export function isMonitoringEnabled(): boolean {
   const { sentry, posthog, cloudflare, global } = MonitoringConfig;
 
   // Respect environment
-  if (process.env.NODE_ENV === "development" && !global.enableInDevelopment) {
+  if (process.env.NODE_ENV === 'development' && !global.enableInDevelopment) {
     return false;
   }
 
@@ -89,7 +89,7 @@ export function isMonitoringEnabled(): boolean {
  * Helper function to check if a specific monitoring service is enabled
  */
 export function isServiceEnabled(
-  service: "sentry" | "posthog" | "cloudflare",
+  service: 'sentry' | 'posthog' | 'cloudflare',
 ): boolean {
   const config = MonitoringConfig[service];
 
@@ -105,7 +105,7 @@ export function isServiceEnabled(
 /**
  * Helper function to get monitoring configuration for a specific service
  */
-export function getServiceConfig<T extends "sentry" | "posthog" | "cloudflare">(
+export function getServiceConfig<T extends 'sentry' | 'posthog' | 'cloudflare'>(
   service: T,
 ): (typeof MonitoringConfig)[T] {
   return MonitoringConfig[service];
@@ -114,11 +114,11 @@ export function getServiceConfig<T extends "sentry" | "posthog" | "cloudflare">(
 /**
  * Type-safe monitoring event tracking
  */
-export interface MonitoringEvent {
+export type MonitoringEvent = {
   name: string;
   properties?: Record<string, unknown>;
   timestamp?: number;
-}
+};
 
 /**
  * Universal event tracking function
@@ -129,30 +129,30 @@ export function trackEvent(event: MonitoringEvent): void {
 
   // Track in PostHog
   if (
-    isServiceEnabled("posthog") &&
-    typeof window !== "undefined" &&
-    (window as any).posthog
+    isServiceEnabled('posthog')
+    && typeof window !== 'undefined'
+    && (window as any).posthog
   ) {
     (window as any).posthog.capture(name, properties);
   }
 
   // Track in Cloudflare Analytics Engine
   if (
-    isServiceEnabled("cloudflare") &&
-    typeof window !== "undefined" &&
-    (window as any).cfAnalytics
+    isServiceEnabled('cloudflare')
+    && typeof window !== 'undefined'
+    && (window as any).cfAnalytics
   ) {
     (window as any).cfAnalytics.track(name, { ...properties, timestamp });
   }
 
   // Track in Sentry as breadcrumb
   if (
-    isServiceEnabled("sentry") &&
-    typeof window !== "undefined" &&
-    (window as any).Sentry
+    isServiceEnabled('sentry')
+    && typeof window !== 'undefined'
+    && (window as any).Sentry
   ) {
     (window as any).Sentry.addBreadcrumb({
-      category: "event",
+      category: 'event',
       message: name,
       data: properties,
       timestamp: timestamp / 1000,

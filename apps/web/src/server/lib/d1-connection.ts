@@ -1,7 +1,7 @@
-import { drizzle } from "drizzle-orm/d1";
-import type { D1Database } from "@cloudflare/workers-types";
-import * as schema from "@/server/db/models/SchemaD1";
-import { dbLogger } from "@/libs/Logger";
+import { drizzle } from 'drizzle-orm/d1';
+import type { D1Database } from '@cloudflare/workers-types';
+import * as schema from '@/server/db/models/SchemaD1';
+import { dbLogger } from '@/libs/Logger';
 
 /**
  * Create a Drizzle ORM instance for Cloudflare D1
@@ -13,8 +13,8 @@ export function createD1Connection(d1: D1Database) {
   try {
     return drizzle(d1, { schema });
   } catch (error) {
-    dbLogger.error("Failed to create D1 database connection", { error });
-    throw new Error("D1 database connection failed");
+    dbLogger.error('Failed to create D1 database connection', { error });
+    throw new Error('D1 database connection failed');
   }
 }
 
@@ -46,9 +46,9 @@ export async function getD1(
   const env = (globalThis as any).env;
 
   if (!env?.DB) {
-    dbLogger.error("D1 database binding not found in environment");
+    dbLogger.error('D1 database binding not found in environment');
     throw new Error(
-      "D1 database binding not found. Make sure wrangler.jsonc has d1_databases configured.",
+      'D1 database binding not found. Make sure wrangler.jsonc has d1_databases configured.',
     );
   }
 

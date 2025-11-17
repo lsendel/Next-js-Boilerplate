@@ -1,10 +1,10 @@
-import type { NextFetchEvent, NextRequest } from "next/server";
-import type { AuthMiddlewareConfig } from "./types";
-import { ClerkAdapter } from "./adapters/ClerkAdapter";
-import { CloudflareAdapter } from "./adapters/CloudflareAdapter";
-import { CognitoAdapter } from "./adapters/CognitoAdapter";
-import { createTestMiddleware } from "./adapters/TestAdapter.server";
-import { AuthFactory } from "./factory";
+import type { NextFetchEvent, NextRequest } from 'next/server';
+import type { AuthMiddlewareConfig } from './types';
+import { ClerkAdapter } from './adapters/ClerkAdapter';
+import { CloudflareAdapter } from './adapters/CloudflareAdapter';
+import { CognitoAdapter } from './adapters/CognitoAdapter';
+import { createTestMiddleware } from './adapters/TestAdapter.server';
+import { AuthFactory } from './factory';
 
 /**
  * Create auth middleware based on the current provider
@@ -13,16 +13,16 @@ export function createAuthMiddleware(config: AuthMiddlewareConfig) {
   const provider = AuthFactory.getProviderType();
 
   switch (provider) {
-    case "clerk":
+    case 'clerk':
       return ClerkAdapter.createMiddleware(config);
 
-    case "cloudflare":
+    case 'cloudflare':
       return CloudflareAdapter.createMiddleware(config);
 
-    case "cognito":
+    case 'cognito':
       return CognitoAdapter.createMiddleware(config);
 
-    case "test":
+    case 'test':
       return createTestMiddleware(config);
 
     default:
@@ -42,7 +42,7 @@ export async function executeAuthMiddleware(
   const middleware = createAuthMiddleware(config);
 
   // Clerk middleware has a different signature
-  if (AuthFactory.getProviderType() === "clerk") {
+  if (AuthFactory.getProviderType() === 'clerk') {
     // Clerk middleware expects (request, event)
     return (middleware as any)(request, event);
   }

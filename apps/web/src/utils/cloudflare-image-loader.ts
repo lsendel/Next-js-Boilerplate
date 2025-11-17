@@ -13,11 +13,11 @@
  * @see https://developers.cloudflare.com/images/
  */
 
-export interface CloudflareImageLoaderProps {
+export type CloudflareImageLoaderProps = {
   src: string;
   width: number;
   quality?: number;
-}
+};
 
 /**
  * Cloudflare Images loader function
@@ -35,18 +35,18 @@ export default function cloudflareImageLoader({
   quality = 75,
 }: CloudflareImageLoaderProps): string {
   // If the image is already a full URL (external), return as-is
-  if (src.startsWith("http://") || src.startsWith("https://")) {
+  if (src.startsWith('http://') || src.startsWith('https://')) {
     return src;
   }
 
   // For local images, use Cloudflare's image resizing
   // Format: /cdn-cgi/image/width=<width>,quality=<quality>,format=auto/<src>
-  const params = [`width=${width}`, `quality=${quality}`, "format=auto"];
+  const params = [`width=${width}`, `quality=${quality}`, 'format=auto'];
 
   // Remove leading slash from src if present
-  const normalizedSrc = src.startsWith("/") ? src.slice(1) : src;
+  const normalizedSrc = src.startsWith('/') ? src.slice(1) : src;
 
-  return `/cdn-cgi/image/${params.join(",")}/${normalizedSrc}`;
+  return `/cdn-cgi/image/${params.join(',')}/${normalizedSrc}`;
 }
 
 /**

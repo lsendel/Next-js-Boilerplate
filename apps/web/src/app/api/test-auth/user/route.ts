@@ -1,8 +1,8 @@
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { SESSION_COOKIE } from "@/libs/auth/adapters/TestAdapter.server";
-import { authLogger } from "@/libs/Logger";
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { SESSION_COOKIE } from '@/libs/auth/adapters/TestAdapter.server';
+import { authLogger } from '@/libs/Logger';
 
 /**
  * API endpoint to get current user for test authentication
@@ -14,7 +14,7 @@ export async function GET(_request: NextRequest) {
     const cookieValue = cookieStore.get(SESSION_COOKIE)?.value;
 
     if (!cookieValue) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
     try {
@@ -30,11 +30,11 @@ export async function GET(_request: NextRequest) {
         imageUrl: userData.imageUrl,
       });
     } catch (parseError) {
-      authLogger.error("Error parsing user cookie", { error: parseError });
-      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+      authLogger.error('Error parsing user cookie', { error: parseError });
+      return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
     }
   } catch (error) {
-    authLogger.error("Error getting user", { error });
-    return NextResponse.json({ error: "Failed to get user" }, { status: 500 });
+    authLogger.error('Error getting user', { error });
+    return NextResponse.json({ error: 'Failed to get user' }, { status: 500 });
   }
 }

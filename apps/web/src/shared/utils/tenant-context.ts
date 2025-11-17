@@ -1,7 +1,7 @@
-import type { ReadonlyHeaders } from "next/dist/server/web/spec-extension/adapters/headers";
-import type { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
-import { cookies, headers } from "next/headers";
-import { routing } from "@/libs/I18nRouting";
+import type { ReadonlyHeaders } from 'next/dist/server/web/spec-extension/adapters/headers';
+import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
+import { cookies, headers } from 'next/headers';
+import { routing } from '@/libs/I18nRouting';
 import {
   DEFAULT_TENANT_SLUG,
   TENANT_DOMAIN_HEADER,
@@ -10,8 +10,8 @@ import {
   TENANT_SLUG_COOKIE,
   TENANT_SLUG_HEADER,
   TENANT_SOURCE_HEADER,
-} from "@/shared/constants/tenant";
-import type { TenantResolutionSource } from "@/shared/constants/tenant";
+} from '@/shared/constants/tenant';
+import type { TenantResolutionSource } from '@/shared/constants/tenant';
 
 export type TenantRuntimeContext = {
   slug: string;
@@ -22,10 +22,10 @@ export type TenantRuntimeContext = {
 
 const isPromise = (value: unknown): value is Promise<unknown> => {
   return (
-    typeof value === "object" &&
-    value !== null &&
-    "then" in value &&
-    typeof (value as any).then === "function"
+    typeof value === 'object'
+    && value !== null
+    && 'then' in value
+    && typeof (value as any).then === 'function'
   );
 };
 
@@ -48,11 +48,11 @@ const getCookiesSafe = (): ReadonlyRequestCookies | null => {
 };
 
 const normalizePath = (path: string) => {
-  if (!path || path === "/") {
-    return "/";
+  if (!path || path === '/') {
+    return '/';
   }
 
-  return path.startsWith("/") ? path : `/${path}`;
+  return path.startsWith('/') ? path : `/${path}`;
 };
 
 const shouldPrefixSlug = (context: TenantRuntimeContext) => {
@@ -60,7 +60,7 @@ const shouldPrefixSlug = (context: TenantRuntimeContext) => {
     return false;
   }
 
-  if (context.domain || context.source === "domain") {
+  if (context.domain || context.source === 'domain') {
     return false;
   }
 
@@ -72,7 +72,7 @@ const buildLocaleSegment = (normalizedPath: string, locale: string) => {
     return normalizedPath;
   }
 
-  if (normalizedPath === "/") {
+  if (normalizedPath === '/') {
     return `/${locale}`;
   }
 
@@ -85,21 +85,21 @@ export const getTenantRuntimeContext = (
   const headerList = getHeadersSafe();
   const cookieStore = getCookiesSafe();
 
-  const slug =
-    overrides?.slug ??
-    headerList?.get(TENANT_SLUG_HEADER) ??
-    cookieStore?.get(TENANT_SLUG_COOKIE)?.value ??
-    DEFAULT_TENANT_SLUG;
+  const slug
+    = overrides?.slug
+      ?? headerList?.get(TENANT_SLUG_HEADER)
+      ?? cookieStore?.get(TENANT_SLUG_COOKIE)?.value
+      ?? DEFAULT_TENANT_SLUG;
 
-  const locale =
-    overrides?.locale ??
-    headerList?.get(TENANT_LOCALE_HEADER) ??
-    cookieStore?.get(TENANT_LOCALE_COOKIE)?.value ??
-    routing.defaultLocale;
+  const locale
+    = overrides?.locale
+      ?? headerList?.get(TENANT_LOCALE_HEADER)
+      ?? cookieStore?.get(TENANT_LOCALE_COOKIE)?.value
+      ?? routing.defaultLocale;
 
-  const source = (overrides?.source ??
-    headerList?.get(TENANT_SOURCE_HEADER) ??
-    "default") as TenantResolutionSource;
+  const source = (overrides?.source
+    ?? headerList?.get(TENANT_SOURCE_HEADER)
+    ?? 'default') as TenantResolutionSource;
 
   const domain = overrides?.domain ?? headerList?.get(TENANT_DOMAIN_HEADER);
 
@@ -124,7 +124,7 @@ export const buildTenantPath = (
     return localizedPath;
   }
 
-  if (localizedPath === "/") {
+  if (localizedPath === '/') {
     return `/${tenantContext.slug}`;
   }
 

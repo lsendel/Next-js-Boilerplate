@@ -1,9 +1,9 @@
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import type * as schema from "@/server/db/models/Schema";
-import { Env } from "@/libs/Env";
-import { createDbConnection } from "@/server/lib/db-connection";
-import type { D1DrizzleInstance } from "@/server/lib/d1-connection";
-import { createD1Connection } from "@/server/lib/d1-connection";
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type * as schema from '@/server/db/models/Schema';
+import { Env } from '@/libs/Env';
+import { createDbConnection } from '@/server/lib/db-connection';
+import type { D1DrizzleInstance } from '@/server/lib/d1-connection';
+import { createD1Connection } from '@/server/lib/d1-connection';
 
 /**
  * Unified database entrypoint.
@@ -40,7 +40,7 @@ const createDb = (): DbInstance => {
 const db: DbInstance = globalForDb.drizzle ?? createDb();
 
 // Only store in global during development to prevent hot reload issues
-if (Env.NODE_ENV !== "production") {
+if (Env.NODE_ENV !== 'production') {
   globalForDb.drizzle = db;
 }
 

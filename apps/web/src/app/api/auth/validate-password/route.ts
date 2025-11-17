@@ -5,20 +5,20 @@
  * Protected by rate limiting and CSRF
  */
 
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-import { verifyCsrfToken } from "@/libs/auth/security/csrf";
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { verifyCsrfToken } from '@/libs/auth/security/csrf';
 import {
   getPasswordValidationMessage,
   validatePassword,
-} from "@/libs/auth/security/password-breach";
+} from '@/libs/auth/security/password-breach';
 import {
   checkAuthRateLimit,
   formatRateLimitError,
   getClientIdentifier,
   getRateLimitHeaders,
-} from "@/libs/auth/security/rate-limit";
-import { securityLogger } from "@/libs/Logger";
+} from '@/libs/auth/security/rate-limit';
+import { securityLogger } from '@/libs/Logger';
 
 /**
  * POST /api/auth/validate-password
@@ -32,20 +32,20 @@ export async function POST(request: NextRequest) {
     const csrfValid = await verifyCsrfToken(request);
     if (!csrfValid) {
       return NextResponse.json(
-        { error: "Invalid CSRF token", code: "CSRF_TOKEN_INVALID" },
+        { error: 'Invalid CSRF token', code: 'CSRF_TOKEN_INVALID' },
         { status: 403 },
       );
     }
 
     // Rate limiting
     const clientId = getClientIdentifier(request);
-    const rateLimit = await checkAuthRateLimit(clientId, "signUp");
+    const rateLimit = await checkAuthRateLimit(clientId, 'signUp');
 
     if (rateLimit.blocked) {
       return NextResponse.json(
         {
           error: formatRateLimitError(rateLimit),
-          code: "RATE_LIMIT_EXCEEDED",
+          code: 'RATE_LIMIT_EXCEEDED',
         },
         {
           status: 429,
@@ -58,9 +58,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { password } = body;
 
-    if (!password || typeof password !== "string") {
+    if (!password || typeof password !== 'string') {
       return NextResponse.json(
-        { error: "Password is required", code: "INVALID_REQUEST" },
+        { error: 'Password is required', code: 'INVALID_REQUEST' },
         { status: 400 },
       );
     }
@@ -87,11 +87,11 @@ export async function POST(request: NextRequest) {
       },
     );
   } catch (error) {
-    securityLogger.error("Password validation error", { error });
+    securityLogger.error('Password validation error', { error });
     return NextResponse.json(
       {
-        error: "Password validation failed",
-        code: "VALIDATION_ERROR",
+        error: 'Password validation failed',
+        code: 'VALIDATION_ERROR',
       },
       { status: 500 },
     );

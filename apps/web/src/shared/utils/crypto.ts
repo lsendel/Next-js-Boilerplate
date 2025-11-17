@@ -8,15 +8,15 @@
  * Generate a random string (browser-safe)
  */
 export function generateRandomString(length: number): string {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
+  const chars
+    = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
   const randomValues = new Uint8Array(length);
 
-  if (typeof window !== "undefined" && window.crypto) {
+  if (typeof window !== 'undefined' && window.crypto) {
     // Browser
     window.crypto.getRandomValues(randomValues);
-  } else if (typeof globalThis.crypto !== "undefined") {
+  } else if (typeof globalThis.crypto !== 'undefined') {
     // Node.js 19+
     globalThis.crypto.getRandomValues(randomValues);
   } else {

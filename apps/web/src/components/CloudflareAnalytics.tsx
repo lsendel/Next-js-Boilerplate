@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import Script from "next/script";
-import { isServiceEnabled, getServiceConfig } from "@/utils/MonitoringConfig";
+import { useEffect } from 'react';
+import Script from 'next/script';
+import { isServiceEnabled, getServiceConfig } from '@/utils/MonitoringConfig';
 
 /**
  * Cloudflare Web Analytics Component
@@ -18,8 +18,8 @@ import { isServiceEnabled, getServiceConfig } from "@/utils/MonitoringConfig";
  * Cloudflare Dashboard > Analytics > Web Analytics
  */
 export function CloudflareAnalytics() {
-  const enabled = isServiceEnabled("cloudflare");
-  const config = getServiceConfig("cloudflare");
+  const enabled = isServiceEnabled('cloudflare');
+  const config = getServiceConfig('cloudflare');
 
   useEffect(() => {
     if (enabled && config.token) {
@@ -37,7 +37,7 @@ export function CloudflareAnalytics() {
                 url: window.location.href,
                 referrer: document.referrer,
               });
-              navigator.sendBeacon("/api/analytics", data);
+              navigator.sendBeacon('/api/analytics', data);
             }
           },
         };
@@ -80,10 +80,12 @@ export function CloudflareAnalytics() {
  * ```
  */
 export function useCloudflareAnalytics() {
-  const enabled = isServiceEnabled("cloudflare");
+  const enabled = isServiceEnabled('cloudflare');
 
   const track = (eventName: string, properties?: Record<string, unknown>) => {
-    if (!enabled) return;
+    if (!enabled) {
+      return;
+    }
 
     const cfAnalytics = (window as any).cfAnalytics;
     if (cfAnalytics?.track) {

@@ -1,19 +1,19 @@
-import type { AsyncSink } from "@logtape/logtape";
+import type { AsyncSink } from '@logtape/logtape';
 import {
   configure,
   fromAsyncSink,
   getConsoleSink,
   getJsonLinesFormatter,
   getLogger,
-} from "@logtape/logtape";
-import { Env } from "./Env";
+} from '@logtape/logtape';
+import { Env } from './Env';
 
 const betterStackSink: AsyncSink = async (record) => {
   await fetch(`https://${Env.NEXT_PUBLIC_BETTER_STACK_INGESTING_HOST}`, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${Env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN}`,
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${Env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN}`,
     },
     body: JSON.stringify(record),
   });
@@ -26,50 +26,50 @@ await configure({
   },
   loggers: [
     {
-      category: ["logtape", "meta"],
-      sinks: ["console"],
-      lowestLevel: "warning",
+      category: ['logtape', 'meta'],
+      sinks: ['console'],
+      lowestLevel: 'warning',
     },
     {
-      category: ["app"],
+      category: ['app'],
       sinks:
-        Env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN &&
-        Env.NEXT_PUBLIC_BETTER_STACK_INGESTING_HOST
-          ? ["console", "betterStack"]
-          : ["console"],
-      lowestLevel: "debug",
+        Env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN
+        && Env.NEXT_PUBLIC_BETTER_STACK_INGESTING_HOST
+          ? ['console', 'betterStack']
+          : ['console'],
+      lowestLevel: 'debug',
     },
     {
-      category: ["app", "db"],
+      category: ['app', 'db'],
       sinks:
-        Env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN &&
-        Env.NEXT_PUBLIC_BETTER_STACK_INGESTING_HOST
-          ? ["console", "betterStack"]
-          : ["console"],
-      lowestLevel: "debug",
+        Env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN
+        && Env.NEXT_PUBLIC_BETTER_STACK_INGESTING_HOST
+          ? ['console', 'betterStack']
+          : ['console'],
+      lowestLevel: 'debug',
     },
     {
-      category: ["app", "auth"],
+      category: ['app', 'auth'],
       sinks:
-        Env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN &&
-        Env.NEXT_PUBLIC_BETTER_STACK_INGESTING_HOST
-          ? ["console", "betterStack"]
-          : ["console"],
-      lowestLevel: "debug",
+        Env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN
+        && Env.NEXT_PUBLIC_BETTER_STACK_INGESTING_HOST
+          ? ['console', 'betterStack']
+          : ['console'],
+      lowestLevel: 'debug',
     },
     {
-      category: ["app", "security"],
+      category: ['app', 'security'],
       sinks:
-        Env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN &&
-        Env.NEXT_PUBLIC_BETTER_STACK_INGESTING_HOST
-          ? ["console", "betterStack"]
-          : ["console"],
-      lowestLevel: "debug",
+        Env.NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN
+        && Env.NEXT_PUBLIC_BETTER_STACK_INGESTING_HOST
+          ? ['console', 'betterStack']
+          : ['console'],
+      lowestLevel: 'debug',
     },
   ],
 });
 
-export const logger = getLogger(["app"]);
-export const dbLogger = getLogger(["app", "db"]);
-export const authLogger = getLogger(["app", "auth"]);
-export const securityLogger = getLogger(["app", "security"]);
+export const logger = getLogger(['app']);
+export const dbLogger = getLogger(['app', 'db']);
+export const authLogger = getLogger(['app', 'auth']);
+export const securityLogger = getLogger(['app', 'security']);

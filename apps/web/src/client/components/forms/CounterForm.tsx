@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { incrementCounter } from "@/libs/api/counter";
-import { CounterValidation } from "@/shared/validators/counter.validator";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { incrementCounter } from '@/libs/api/counter';
+import { CounterValidation } from '@/shared/validators/counter.validator';
 
 export const CounterForm = () => {
-  const t = useTranslations("CounterForm");
+  const t = useTranslations('CounterForm');
   const form = useForm({
     resolver: zodResolver(CounterValidation),
     defaultValues: {
@@ -25,21 +25,21 @@ export const CounterForm = () => {
 
   return (
     <form onSubmit={handleIncrement}>
-      <p>{t("presentation")}</p>
+      <p>{t('presentation')}</p>
       <div>
         <label className="text-sm font-bold text-gray-700" htmlFor="increment">
-          {t("label_increment")}
+          {t('label_increment')}
           <input
             id="increment"
             type="number"
             className="ml-2 w-32 appearance-none rounded-sm border border-gray-200 px-2 py-1 text-sm leading-tight text-gray-700 focus:ring-3 focus:ring-blue-300/50 focus:outline-hidden"
-            {...form.register("increment", { valueAsNumber: true })}
+            {...form.register('increment', { valueAsNumber: true })}
           />
         </label>
 
         {form.formState.errors.increment && (
           <div className="my-2 text-xs text-red-500 italic">
-            {t("error_increment_range")}
+            {t('error_increment_range')}
           </div>
         )}
       </div>
@@ -50,7 +50,7 @@ export const CounterForm = () => {
           type="submit"
           disabled={form.formState.isSubmitting}
         >
-          {t("button_increment")}
+          {t('button_increment')}
         </button>
       </div>
     </form>

@@ -4,9 +4,9 @@
  * Data access layer for session management
  */
 
-import { and, count, eq, gt, lt, ne } from "drizzle-orm";
-import { db } from "@/server/db/DB";
-import { sessions } from "@/server/db/models/Schema";
+import { and, count, eq, gt, lt, ne } from 'drizzle-orm';
+import { db } from '@/server/db/DB';
+import { sessions } from '@/server/db/models/Schema';
 
 /**
  * Session type based on database schema

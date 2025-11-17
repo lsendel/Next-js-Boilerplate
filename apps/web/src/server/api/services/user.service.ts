@@ -5,22 +5,22 @@
  * Orchestrates repositories and implements domain rules
  */
 
-import { randomBytes } from "node:crypto";
-import bcrypt from "bcryptjs";
-import * as userRepo from "@/server/db/repositories/user.repository";
-import * as sessionRepo from "@/server/db/repositories/session.repository";
+import { randomBytes } from 'node:crypto';
+import bcrypt from 'bcryptjs';
+import * as userRepo from '@/server/db/repositories/user.repository';
+import * as sessionRepo from '@/server/db/repositories/session.repository';
 import {
   checkPasswordBreach,
   validatePasswordStrength,
-} from "@/libs/auth/security/password-breach";
-import { db } from "@/libs/DB";
-import { passwordResetTokens } from "@/server/db/models/Schema";
-import { securityLogger } from "@/server/lib/security-logger";
-import type { NewUser, User } from "@/server/db/repositories/user.repository";
+} from '@/libs/auth/security/password-breach';
+import { db } from '@/libs/DB';
+import { passwordResetTokens } from '@/server/db/models/Schema';
+import { securityLogger } from '@/server/lib/security-logger';
+import type { NewUser, User } from '@/server/db/repositories/user.repository';
 import type {
   NewSession,
   Session,
-} from "@/server/db/repositories/session.repository";
+} from '@/server/db/repositories/session.repository';
 
 /**
  * Hash password using bcrypt with 12 rounds (OWASP recommended)
@@ -53,7 +53,7 @@ const verifyPassword = async (
  * @returns Token and expiration date
  */
 const generatePasswordResetToken = (): { token: string; expiresAt: Date } => {
-  const token = randomBytes(32).toString("hex");
+  const token = randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
   return { token, expiresAt };
 };
@@ -68,37 +68,37 @@ export class UserServiceError extends Error {
     public statusCode: number = 400,
   ) {
     super(message);
-    this.name = "UserServiceError";
+    this.name = 'UserServiceError';
   }
 }
 
 export class ConflictError extends UserServiceError {
   constructor(message: string) {
-    super(message, "CONFLICT", 409);
+    super(message, 'CONFLICT', 409);
   }
 }
 
 export class ValidationError extends UserServiceError {
   constructor(message: string) {
-    super(message, "VALIDATION_ERROR", 400);
+    super(message, 'VALIDATION_ERROR', 400);
   }
 }
 
 export class SecurityError extends UserServiceError {
   constructor(message: string) {
-    super(message, "SECURITY_ERROR", 403);
+    super(message, 'SECURITY_ERROR', 403);
   }
 }
 
 export class NotFoundError extends UserServiceError {
   constructor(message: string) {
-    super(message, "NOT_FOUND", 404);
+    super(message, 'NOT_FOUND', 404);
   }
 }
 
 export class UnauthorizedError extends UserServiceError {
   constructor(message: string) {
-    super(message, "UNAUTHORIZED", 401);
+    super(message, 'UNAUTHORIZED', 401);
   }
 }
 
@@ -162,20 +162,20 @@ export class UserService {
     // eslint-disable-next-line regexp/no-super-linear-backtracking
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(data.email)) {
-      throw new ValidationError("Invalid email format");
+      throw new ValidationError('Invalid email format');
     }
 
     // 2. Check if user already exists
     const exists = await userRepo.userExists(data.email.toLowerCase());
     if (exists) {
-      throw new ConflictError("Email already registered");
+      throw new ConflictError('Email already registered');
     }
 
     // 3. Validate password strength
     const passwordCheck = validatePasswordStrength(data.password);
     if (!passwordCheck.valid) {
       throw new ValidationError(
-        `Password requirements not met: ${passwordCheck.feedback.join(", ")}`,
+        `Password requirements not met: ${passwordCheck.feedback.join(', ')}`,
       );
     }
 
@@ -184,8 +184,8 @@ export class UserService {
     if (breachResult.breached) {
       // Log security event
       await securityLogger.logSuspiciousActivity(
-        "User attempted to register with breached password",
-        ipAddress || "unknown",
+        'User attempted to register with breached password',
+        ipAddress || 'unknown',
         { email: data.email, occurrences: breachResult.occurrences },
       );
 
@@ -206,8 +206,8 @@ export class UserService {
       displayName:
         data.firstName && data.lastName
           ? `${data.firstName} ${data.lastName}`
-          : data.firstName || data.email.split("@")[0],
-      authProvider: "local",
+          : data.firstName || data.email.split('@')[0],
+      authProvider: 'local',
       isActive: true,
       isEmailVerified: false,
     };
@@ -228,7 +228,7 @@ export class UserService {
     await securityLogger.logAuthSuccess(
       user.id,
       user.email,
-      ipAddress || "unknown",
+      ipAddress || 'unknown',
     );
 
     return { user, session };
@@ -250,22 +250,22 @@ export class UserService {
       // Log failed attempt
       await securityLogger.logAuthFailure(
         data.email,
-        data.ipAddress || "unknown",
-        "Invalid credentials",
+        data.ipAddress || 'unknown',
+        'Invalid credentials',
       );
 
-      throw new UnauthorizedError("Invalid email or password");
+      throw new UnauthorizedError('Invalid email or password');
     }
 
     // 2. Check if account is active
     if (!user.isActive) {
       await securityLogger.logAuthFailure(
         data.email,
-        data.ipAddress || "unknown",
-        "Account deactivated",
+        data.ipAddress || 'unknown',
+        'Account deactivated',
       );
 
-      throw new UnauthorizedError("Account is deactivated");
+      throw new UnauthorizedError('Account is deactivated');
     }
 
     // 3. Verify password
@@ -274,11 +274,11 @@ export class UserService {
     if (!isValid) {
       await securityLogger.logAuthFailure(
         data.email,
-        data.ipAddress || "unknown",
-        "Invalid password",
+        data.ipAddress || 'unknown',
+        'Invalid password',
       );
 
-      throw new UnauthorizedError("Invalid email or password");
+      throw new UnauthorizedError('Invalid email or password');
     }
 
     // 4. Update last login
@@ -300,7 +300,7 @@ export class UserService {
     await securityLogger.logAuthSuccess(
       user.id,
       user.email,
-      data.ipAddress || "unknown",
+      data.ipAddress || 'unknown',
     );
 
     return { user, session };
@@ -317,13 +317,13 @@ export class UserService {
     const user = await userRepo.findUserById(userId);
 
     if (!user) {
-      throw new NotFoundError("User not found");
+      throw new NotFoundError('User not found');
     }
 
     const updated = await userRepo.updateUser(userId, data);
 
     if (!updated) {
-      throw new Error("Failed to update user");
+      throw new Error('Failed to update user');
     }
 
     return updated;
@@ -345,21 +345,21 @@ export class UserService {
     const user = await userRepo.findUserById(userId);
 
     if (!user || !user.passwordHash) {
-      throw new NotFoundError("User not found");
+      throw new NotFoundError('User not found');
     }
 
     // 2. Verify old password
     const isValid = await verifyPassword(data.oldPassword, user.passwordHash);
 
     if (!isValid) {
-      throw new UnauthorizedError("Current password is incorrect");
+      throw new UnauthorizedError('Current password is incorrect');
     }
 
     // 3. Validate new password
     const passwordCheck = validatePasswordStrength(data.newPassword);
     if (!passwordCheck.valid) {
       throw new ValidationError(
-        `Password requirements not met: ${passwordCheck.feedback.join(", ")}`,
+        `Password requirements not met: ${passwordCheck.feedback.join(', ')}`,
       );
     }
 
@@ -384,7 +384,7 @@ export class UserService {
     await securityLogger.logPasswordChanged(
       userId,
       user.email,
-      ipAddress || "unknown",
+      ipAddress || 'unknown',
     );
   }
 
@@ -406,12 +406,12 @@ export class UserService {
       // Still log the attempt
       await securityLogger.logPasswordResetRequest(
         email,
-        ipAddress || "unknown",
+        ipAddress || 'unknown',
       );
 
       // Return dummy token to prevent timing attacks
       return {
-        token: "dummy",
+        token: 'dummy',
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
       };
     }
@@ -429,7 +429,7 @@ export class UserService {
       expiresAt,
     });
 
-    await securityLogger.logPasswordResetRequest(email, ipAddress || "unknown");
+    await securityLogger.logPasswordResetRequest(email, ipAddress || 'unknown');
 
     return { token, expiresAt };
   }
@@ -441,7 +441,7 @@ export class UserService {
     const user = await userRepo.findUserById(userId);
 
     if (!user) {
-      throw new NotFoundError("User not found");
+      throw new NotFoundError('User not found');
     }
 
     return user;
@@ -467,7 +467,7 @@ export class UserService {
    * Generate a secure session token
    */
   private generateSessionToken(): string {
-    return randomBytes(32).toString("hex");
+    return randomBytes(32).toString('hex');
   }
 }
 

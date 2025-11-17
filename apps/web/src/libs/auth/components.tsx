@@ -3,7 +3,7 @@
  * These components wrap the auth adapter's render methods
  */
 
-import { getAuthAdapter } from "./index";
+import { getAuthAdapter } from './index';
 
 /**
  * Auth Provider Component

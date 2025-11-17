@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import Image from "next/image";
+import type { ReactNode } from 'react';
+import Image from 'next/image';
 
 export type AlternatingFeature = {
   title: string;
@@ -58,10 +58,10 @@ export function FeaturesAlternating({
             return (
               <div
                 key={`${feature.title}-${feature.image.src}`}
-                className={`grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16 ${!isEven ? "lg:grid-flow-dense" : ""}`}
+                className={`grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16 ${!isEven ? 'lg:grid-flow-dense' : ''}`}
               >
                 {/* Image */}
-                <div className={!isEven ? "lg:col-start-2" : ""}>
+                <div className={!isEven ? 'lg:col-start-2' : ''}>
                   <div className="relative aspect-[4/3] overflow-hidden rounded-2xl shadow-xl lg:aspect-[16/10]">
                     <Image
                       src={feature.image.src}
@@ -75,7 +75,7 @@ export function FeaturesAlternating({
 
                 {/* Content */}
                 <div
-                  className={`flex flex-col justify-center ${!isEven ? "lg:col-start-1 lg:row-start-1" : ""}`}
+                  className={`flex flex-col justify-center ${!isEven ? 'lg:col-start-1 lg:row-start-1' : ''}`}
                 >
                   {feature.icon && (
                     <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-white">
@@ -93,7 +93,7 @@ export function FeaturesAlternating({
 
                   {feature.benefits && feature.benefits.length > 0 && (
                     <ul className="mt-8 space-y-3">
-                      {feature.benefits.map((benefit) => (
+                      {feature.benefits.map(benefit => (
                         <li
                           key={`${feature.title}-${benefit}`}
                           className="flex gap-3"

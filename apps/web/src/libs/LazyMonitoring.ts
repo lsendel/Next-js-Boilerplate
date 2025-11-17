@@ -12,8 +12,8 @@
  * - Can add error boundary that eagerly loads Sentry on first error
  */
 
-import { logger } from "@/libs/Logger";
-import { getServiceConfig, isServiceEnabled } from "@/utils/MonitoringConfig";
+import { logger } from '@/libs/Logger';
+import { getServiceConfig, isServiceEnabled } from '@/utils/MonitoringConfig';
 
 let sentryInitialized = false;
 
@@ -23,22 +23,22 @@ let sentryInitialized = false;
  */
 async function initSentry() {
   // Skip if already initialized or on server
-  if (sentryInitialized || typeof window === "undefined") {
+  if (sentryInitialized || typeof window === 'undefined') {
     return;
   }
 
   // Skip if Sentry is disabled via feature flags
-  if (!isServiceEnabled("sentry")) {
+  if (!isServiceEnabled('sentry')) {
     return;
   }
 
   try {
-    const Sentry = await import("@sentry/nextjs");
-    const sentryConfig = getServiceConfig("sentry");
+    const Sentry = await import('@sentry/nextjs');
+    const sentryConfig = getServiceConfig('sentry');
 
     if (!sentryConfig.dsn) {
       logger.warn(
-        "LazyMonitoring: Sentry enabled but DSN is not configured. Skipping initialization.",
+        'LazyMonitoring: Sentry enabled but DSN is not configured. Skipping initialization.',
       );
       return;
     }
@@ -52,7 +52,7 @@ async function initSentry() {
         Sentry.consoleLoggingIntegration(),
         Sentry.browserTracingIntegration(),
 
-        ...(process.env.NODE_ENV === "development"
+        ...(process.env.NODE_ENV === 'development'
           ? [Sentry.spotlightBrowserIntegration()]
           : []),
       ],
@@ -78,11 +78,11 @@ async function initSentry() {
 
     sentryInitialized = true;
 
-    if (process.env.NODE_ENV === "development") {
-      logger.warn("LazyMonitoring: Sentry initialized after page load");
+    if (process.env.NODE_ENV === 'development') {
+      logger.warn('LazyMonitoring: Sentry initialized after page load');
     }
   } catch (error) {
-    logger.error("LazyMonitoring failed to initialize Sentry", { error });
+    logger.error('LazyMonitoring failed to initialize Sentry', { error });
   }
 }
 
@@ -90,10 +90,10 @@ async function initSentry() {
  * Auto-initialize Sentry after page load
  * Uses requestIdleCallback for better performance if available
  */
-if (typeof window !== "undefined") {
+if (typeof window !== 'undefined') {
   const initAfterLoad = () => {
     // Use requestIdleCallback to avoid blocking user interactions
-    if ("requestIdleCallback" in window) {
+    if ('requestIdleCallback' in window) {
       (window as any).requestIdleCallback(() => {
         initSentry();
       });
@@ -106,12 +106,12 @@ if (typeof window !== "undefined") {
   };
 
   // Initialize based on document ready state
-  if (document.readyState === "complete") {
+  if (document.readyState === 'complete') {
     // Page already loaded, initialize immediately
     initAfterLoad();
   } else {
     // Wait for page load
-    window.addEventListener("load", initAfterLoad);
+    window.addEventListener('load', initAfterLoad);
   }
 }
 
@@ -125,11 +125,11 @@ export async function captureException(error: Error) {
   }
 
   if (sentryInitialized) {
-    const Sentry = await import("@sentry/nextjs");
+    const Sentry = await import('@sentry/nextjs');
     Sentry.captureException(error);
   } else {
     // Fallback: log to console if Sentry failed to initialize
-    logger.error("LazyMonitoring: Sentry not available, logging error", {
+    logger.error('LazyMonitoring: Sentry not available, logging error', {
       error,
     });
   }
