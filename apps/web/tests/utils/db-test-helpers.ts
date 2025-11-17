@@ -39,7 +39,7 @@ export async function seedTestUser(data?: Partial<NewUser>): Promise<User> {
     ...data,
   };
 
-  const result = await db.insert(users).values(defaultUserData).returning();
+  const result = await (db as any).insert(users).values(defaultUserData).returning();
 
   if (!result[0]) {
     throw new Error('Failed to seed test user');
@@ -68,10 +68,10 @@ export async function cleanupTestUsers(): Promise<{
   usersDeleted: number;
 }> {
   // Delete all sessions first (due to foreign key constraints)
-  const deletedSessions = await db.delete(sessions).returning();
+  const deletedSessions = await (db as any).delete(sessions).returning();
 
   // Delete all users
-  const deletedUsers = await db.delete(users).returning();
+  const deletedUsers = await (db as any).delete(users).returning();
 
   return {
     sessionsDeleted: deletedSessions.length,
@@ -136,7 +136,7 @@ export async function seedMultipleTestUsers(
     return generateTestUser(customData);
   });
 
-  const result = await db.insert(users).values(usersToInsert).returning();
+  const result = await (db as any).insert(users).values(usersToInsert).returning();
 
   return result;
 }
@@ -148,7 +148,7 @@ export async function seedMultipleTestUsers(
  * @returns The user record or null if not found
  */
 export async function findTestUserByEmail(email: string): Promise<User | null> {
-  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  const result = await (db as any).select().from(users).where(eq(users.email, email)).limit(1);
 
   return result[0] || null;
 }
@@ -161,10 +161,10 @@ export async function findTestUserByEmail(email: string): Promise<User | null> {
  */
 export async function deleteTestUser(userId: number): Promise<boolean> {
   // Delete user's sessions first
-  await db.delete(sessions).where(eq(sessions.userId, userId));
+  await (db as any).delete(sessions).where(eq(sessions.userId, userId));
 
   // Delete user
-  const result = await db.delete(users).where(eq(users.id, userId)).returning();
+  const result = await (db as any).delete(users).where(eq(users.id, userId)).returning();
 
   return result.length > 0;
 }

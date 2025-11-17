@@ -1,13 +1,15 @@
 import type { MetadataRoute } from "next";
 import { getBaseUrl } from "@/shared/utils/helpers";
 
-export default function robots(): MetadataRoute.Robots {
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const baseUrl = await getBaseUrl();
+
   return {
     rules: {
       userAgent: "*",
       allow: "/",
       disallow: "/dashboard",
     },
-    sitemap: `${getBaseUrl()}/sitemap.xml`,
+    sitemap: `${baseUrl}/sitemap.xml`,
   };
 }

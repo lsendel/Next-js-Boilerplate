@@ -18,7 +18,7 @@ export type NewSession = typeof sessions.$inferInsert;
  * Create new session
  */
 export async function createSession(data: NewSession): Promise<Session> {
-  const result = await db.insert(sessions).values(data).returning();
+  const result = await (db as any).insert(sessions).values(data).returning();
 
   return result[0]!;
 }
@@ -29,7 +29,7 @@ export async function createSession(data: NewSession): Promise<Session> {
 export async function findSessionByToken(
   token: string,
 ): Promise<Session | null> {
-  const result = await db
+  const result = await (db as any)
     .select()
     .from(sessions)
     .where(eq(sessions.sessionToken, token))
@@ -42,7 +42,7 @@ export async function findSessionByToken(
  * Find session by ID
  */
 export async function findSessionById(id: number): Promise<Session | null> {
-  const result = await db
+  const result = await (db as any)
     .select()
     .from(sessions)
     .where(eq(sessions.id, id))
@@ -55,7 +55,7 @@ export async function findSessionById(id: number): Promise<Session | null> {
  * Find all sessions for a user
  */
 export async function findSessionsByUserId(userId: number): Promise<Session[]> {
-  return await db.select().from(sessions).where(eq(sessions.userId, userId));
+  return await (db as any).select().from(sessions).where(eq(sessions.userId, userId));
 }
 
 /**
@@ -64,7 +64,7 @@ export async function findSessionsByUserId(userId: number): Promise<Session[]> {
 export async function getActiveSessions(userId: number): Promise<Session[]> {
   const now = new Date();
 
-  return await db
+  return await (db as any)
     .select()
     .from(sessions)
     .where(and(eq(sessions.userId, userId), gt(sessions.expiresAt, now)));
@@ -74,7 +74,7 @@ export async function getActiveSessions(userId: number): Promise<Session[]> {
  * Update session's last activity timestamp
  */
 export async function updateActivity(id: number): Promise<void> {
-  await db
+  await (db as any)
     .update(sessions)
     .set({ lastActivityAt: new Date() })
     .where(eq(sessions.id, id));
@@ -84,7 +84,7 @@ export async function updateActivity(id: number): Promise<void> {
  * Delete session by ID
  */
 export async function deleteSession(id: number): Promise<boolean> {
-  const result = await db
+  const result = await (db as any)
     .delete(sessions)
     .where(eq(sessions.id, id))
     .returning();
@@ -96,7 +96,7 @@ export async function deleteSession(id: number): Promise<boolean> {
  * Delete session by token
  */
 export async function deleteSessionByToken(token: string): Promise<boolean> {
-  const result = await db
+  const result = await (db as any)
     .delete(sessions)
     .where(eq(sessions.sessionToken, token))
     .returning();
@@ -108,7 +108,7 @@ export async function deleteSessionByToken(token: string): Promise<boolean> {
  * Delete all sessions for a user
  */
 export async function deleteSessionsByUserId(userId: number): Promise<number> {
-  const result = await db
+  const result = await (db as any)
     .delete(sessions)
     .where(eq(sessions.userId, userId))
     .returning();
@@ -125,7 +125,7 @@ export async function deleteAllButCurrent(
   userId: number,
   currentSessionId: number,
 ): Promise<number> {
-  const result = await db
+  const result = await (db as any)
     .delete(sessions)
     .where(and(eq(sessions.userId, userId), ne(sessions.id, currentSessionId)))
     .returning();
@@ -139,7 +139,7 @@ export async function deleteAllButCurrent(
 export async function deleteExpiredSessions(): Promise<number> {
   const now = new Date();
 
-  const result = await db
+  const result = await (db as any)
     .delete(sessions)
     .where(lt(sessions.expiresAt, now))
     .returning();
@@ -153,7 +153,7 @@ export async function deleteExpiredSessions(): Promise<number> {
 export async function isSessionValid(token: string): Promise<boolean> {
   const now = new Date();
 
-  const result = await db
+  const result = await (db as any)
     .select({ count: count() })
     .from(sessions)
     .where(and(eq(sessions.sessionToken, token), gt(sessions.expiresAt, now)));
@@ -168,7 +168,7 @@ export async function extendSession(
   id: number,
   expiresAt: Date,
 ): Promise<Session | null> {
-  const result = await db
+  const result = await (db as any)
     .update(sessions)
     .set({ expiresAt })
     .where(eq(sessions.id, id))
@@ -181,7 +181,7 @@ export async function extendSession(
  * Get total session count
  */
 export async function getSessionCount(): Promise<number> {
-  const result = await db.select({ count: count() }).from(sessions);
+  const result = await (db as any).select({ count: count() }).from(sessions);
 
   return result[0]?.count || 0;
 }
@@ -192,7 +192,7 @@ export async function getSessionCount(): Promise<number> {
 export async function getActiveSessionCount(): Promise<number> {
   const now = new Date();
 
-  const result = await db
+  const result = await (db as any)
     .select({ count: count() })
     .from(sessions)
     .where(gt(sessions.expiresAt, now));

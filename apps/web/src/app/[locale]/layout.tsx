@@ -8,7 +8,6 @@ import { DemoBadge } from "@/client/components/ui/DemoBadge";
 import { PostHogProvider } from "@/client/providers/PostHogProvider";
 import { CloudflareAnalytics } from "@/components/CloudflareAnalytics";
 import { routing } from "@/libs/I18nRouting";
-import { getBaseUrl } from "@/shared/utils/helpers";
 import "@/styles/global.css";
 
 // Optimize font loading with Next.js font system
@@ -19,7 +18,14 @@ const inter = Inter({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const baseUrl = await getBaseUrl();
+  // Use static base URL for metadata to avoid request data dependency
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_ENV === "production" &&
+      process.env.VERCEL_PROJECT_PRODUCTION_URL &&
+      `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`) ||
+    (process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`) ||
+    "http://localhost:3000";
 
   return {
     metadataBase: new URL(baseUrl),

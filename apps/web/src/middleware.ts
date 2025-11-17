@@ -127,8 +127,11 @@ const isApiRequest = (pathname: string) => {
   );
 };
 
-// Currently, with database connections, Webpack is faster than Turbopack in production environment at runtime.
-// Then, unfortunately, Webpack doesn't support `proxy.ts` on Vercel yet, here is the error: "Error: ENOENT: no such file or directory, lstat '/vercel/path0/.next/server/proxy.js'"
+// NOTE: Middleware is configured with the `nodejs` runtime (see `config.runtime`).
+// In development it runs on the Next.js dev server, and in Cloudflare it runs
+// inside the Worker with Node compatibility enabled. Keep this layer:
+// - free of Node-only APIs like `fs`/`net`
+// - focused on lightweight concerns (tenant resolution, Arcjet, auth, i18n)
 export default async function middleware(
   request: NextRequest,
   event: NextFetchEvent,

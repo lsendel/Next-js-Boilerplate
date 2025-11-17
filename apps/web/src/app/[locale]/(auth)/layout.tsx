@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { setRequestLocale } from "next-intl/server";
 import { AuthProvider } from "@/libs/auth/components";
 
@@ -8,5 +9,9 @@ export default async function AuthLayout(props: {
   const { locale } = await props.params;
   setRequestLocale(locale);
 
-  return <AuthProvider locale={locale}>{props.children}</AuthProvider>;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AuthProvider locale={locale}>{props.children}</AuthProvider>
+    </Suspense>
+  );
 }

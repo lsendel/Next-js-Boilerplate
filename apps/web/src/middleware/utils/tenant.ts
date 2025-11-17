@@ -108,7 +108,7 @@ const getTenantBySlug = async (slug: string) => {
   }
 
   try {
-    const result = await db.query.tenants.findFirst({
+    const result = await (db as any).query.tenants.findFirst({
       where: eq(tenants.slug, normalized),
     });
 
@@ -136,7 +136,7 @@ const getTenantByDomain = async (domain: string) => {
   }
 
   try {
-    const result = await db.query.tenantDomains.findFirst({
+    const result = await (db as any).query.tenantDomains.findFirst({
       where: eq(tenantDomains.domain, normalized),
       with: {
         tenant: true,

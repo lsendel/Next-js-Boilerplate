@@ -39,7 +39,7 @@ export type NewUser = typeof users.$inferInsert;
  * ```
  */
 export async function findUserByEmail(email: string): Promise<User | null> {
-  const result = await db
+  const result = await (db as any)
     .select()
     .from(users)
     .where(and(eq(users.email, email), isNull(users.deletedAt)))
@@ -73,7 +73,7 @@ export async function findUserByEmail(email: string): Promise<User | null> {
  * ```
  */
 export async function findUserById(id: number): Promise<User | null> {
-  const result = await db
+  const result = await (db as any)
     .select()
     .from(users)
     .where(and(eq(users.id, id), isNull(users.deletedAt)))
@@ -114,7 +114,7 @@ export async function findUserByExternalId(
   externalId: string,
   authProvider: string,
 ): Promise<User | null> {
-  const result = await db
+  const result = await (db as any)
     .select()
     .from(users)
     .where(
@@ -160,7 +160,7 @@ export async function findUserByExternalId(
  * ```
  */
 export async function createUser(data: NewUser): Promise<User> {
-  const result = await db.insert(users).values(data).returning();
+  const result = await (db as any).insert(users).values(data).returning();
 
   if (!result[0]) {
     throw new Error("Failed to create user - no result returned from database");
@@ -206,7 +206,7 @@ export async function updateUser(
   id: number,
   data: Partial<NewUser>,
 ): Promise<User | null> {
-  const result = await db
+  const result = await (db as any)
     .update(users)
     .set({
       ...data,
@@ -249,7 +249,7 @@ export async function updateUser(
  * ```
  */
 export async function deleteUser(id: number): Promise<boolean> {
-  const result = await db
+  const result = await (db as any)
     .update(users)
     .set({
       deletedAt: new Date(),
@@ -294,7 +294,7 @@ export async function deleteUser(id: number): Promise<boolean> {
  * ```
  */
 export async function permanentlyDeleteUser(id: number): Promise<boolean> {
-  const result = await db.delete(users).where(eq(users.id, id)).returning();
+  const result = await (db as any).delete(users).where(eq(users.id, id)).returning();
 
   return result.length > 0;
 }
@@ -351,13 +351,13 @@ export async function findAllUsers(params: {
     : isNull(users.deletedAt);
 
   // Get total count
-  const totalResult = await db
+  const totalResult = await (db as any)
     .select({ count: count() })
     .from(users)
     .where(whereClause);
 
   // Get paginated results
-  const userResults = await db
+  const userResults = await (db as any)
     .select()
     .from(users)
     .where(whereClause)
@@ -404,7 +404,7 @@ export async function findAllUsers(params: {
  * ```
  */
 export async function updateLastLogin(id: number): Promise<void> {
-  await db
+  await (db as any)
     .update(users)
     .set({ lastLoginAt: new Date() })
     .where(eq(users.id, id));
@@ -446,7 +446,7 @@ export async function updateLastLogin(id: number): Promise<void> {
  * ```
  */
 export async function verifyEmail(id: number): Promise<User | null> {
-  const result = await db
+  const result = await (db as any)
     .update(users)
     .set({
       isEmailVerified: true,
@@ -465,7 +465,7 @@ export async function updatePassword(
   id: number,
   passwordHash: string,
 ): Promise<User | null> {
-  const result = await db
+  const result = await (db as any)
     .update(users)
     .set({
       passwordHash,
@@ -482,7 +482,7 @@ export async function updatePassword(
  * Check if user exists by email
  */
 export async function userExists(email: string): Promise<boolean> {
-  const result = await db
+  const result = await (db as any)
     .select({ count: count() })
     .from(users)
     .where(and(eq(users.email, email), isNull(users.deletedAt)));
@@ -494,7 +494,7 @@ export async function userExists(email: string): Promise<boolean> {
  * Mark user as inactive
  */
 export async function deactivateUser(id: number): Promise<User | null> {
-  const result = await db
+  const result = await (db as any)
     .update(users)
     .set({
       isActive: false,

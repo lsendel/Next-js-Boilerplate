@@ -1,5 +1,6 @@
 import { useTranslations } from "next-intl";
 import { AppConfig } from "@/shared/config/app.config";
+import { CopyrightYear } from "./CopyrightYear";
 
 export const BaseTemplate = (props: {
   leftNav: React.ReactNode;
@@ -37,7 +38,7 @@ export const BaseTemplate = (props: {
         <main>{props.children}</main>
 
         <footer className="border-t border-gray-300 py-8 text-center text-sm">
-          {`© Copyright ${new Date().getFullYear()} ${AppConfig.name}. `}
+          © Copyright <CopyrightYear /> {AppConfig.name}.{" "}
           {t.rich("made_with", {
             author: () => (
               <a

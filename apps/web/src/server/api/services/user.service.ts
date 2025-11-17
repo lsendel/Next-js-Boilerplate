@@ -423,7 +423,7 @@ export class UserService {
     const hashedToken = await bcrypt.hash(token, 10);
 
     // Store hashed token in database
-    await db.insert(passwordResetTokens).values({
+    await (db as any).insert(passwordResetTokens).values({
       userId: user.id,
       token: hashedToken,
       expiresAt,

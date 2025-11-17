@@ -2,26 +2,17 @@ import type { ReadonlyHeaders } from "next/dist/server/web/spec-extension/adapte
 import { headers } from "next/headers";
 import { buildTenantPath } from "./tenant-context";
 
-const isPromise = (value: unknown): value is Promise<unknown> => {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "then" in value &&
-    typeof (value as any).then === "function"
-  );
-};
-
-const getHeadersSafe = (): ReadonlyHeaders | null => {
+const getHeadersSafe = async (): Promise<ReadonlyHeaders | null> => {
   try {
-    const result = headers();
-    return isPromise(result) ? null : (result as ReadonlyHeaders);
+    const result = await headers();
+    return result;
   } catch {
     return null;
   }
 };
 
-export const getBaseUrl = () => {
-  const headerList = getHeadersSafe();
+export const getBaseUrl = async () => {
+  const headerList = await getHeadersSafe();
 
   let protocol: string | null = null;
   let host: string | null = null;

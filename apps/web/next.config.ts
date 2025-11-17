@@ -15,9 +15,9 @@ const baseConfig: NextConfig = {
   outputFileTracingIncludes: {
     '/': ['./migrations/**/*'],
   },
-  // Enable Component Caching (formerly PPR/experimental.ppr in Next.js 16+)
-  // This enables Partial Prerendering via component-level caching
-  cacheComponents: true,
+  // Disable Component Caching for now - incompatible with current architecture
+  // TODO: Re-enable when codebase patterns are updated for Next.js 16 Cache Components
+  cacheComponents: false,
   experimental: {
     turbopackFileSystemCacheForDev: true,
     // Enable Dynamic IO for composable caching
