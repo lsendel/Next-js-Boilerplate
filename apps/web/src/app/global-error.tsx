@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import NextError from 'next/error';
-import { useEffect } from 'react';
-import { captureException } from '@/libs/LazyMonitoring';
-import { routing } from '@/libs/I18nRouting';
+import NextError from "next/error";
+import { useEffect } from "react";
+import { captureException } from "@/libs/LazyMonitoring";
+import { routing } from "@/libs/I18nRouting";
 
 export default function GlobalError(props: {
   error: Error & { digest?: string };

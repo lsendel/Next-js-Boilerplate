@@ -1,6 +1,6 @@
-import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
-import { Hello } from '@/client/components/forms/Hello';
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { Hello } from "@/client/components/forms/Hello";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
@@ -8,11 +8,11 @@ export async function generateMetadata(props: {
   const { locale } = await props.params;
   const t = await getTranslations({
     locale,
-    namespace: 'Dashboard',
+    namespace: "Dashboard",
   });
 
   return {
-    title: t('meta_title'),
+    title: t("meta_title"),
   };
 }
 

@@ -1,7 +1,7 @@
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
-import { SESSION_COOKIE, users } from '@/libs/auth/adapters/TestAdapter.server';
-import { authLogger } from '@/libs/Logger';
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { SESSION_COOKIE, users } from "@/libs/auth/adapters/TestAdapter.server";
+import { authLogger } from "@/libs/Logger";
 
 /**
  * API endpoint to handle user authentication for test authentication
@@ -13,17 +13,17 @@ export async function POST(request: NextRequest) {
     const { email, password } = body;
 
     // Validate email format
-    if (!email || typeof email !== 'string' || !email.includes('@')) {
+    if (!email || typeof email !== "string" || !email.includes("@")) {
       return NextResponse.json(
-        { error: 'Please enter a valid email address' },
+        { error: "Please enter a valid email address" },
         { status: 400 },
       );
     }
 
     // Validate password
-    if (!password || typeof password !== 'string' || password.length < 8) {
+    if (!password || typeof password !== "string" || password.length < 8) {
       return NextResponse.json(
-        { error: 'Password must be at least 8 characters' },
+        { error: "Password must be at least 8 characters" },
         { status: 400 },
       );
     }
@@ -50,23 +50,23 @@ export async function POST(request: NextRequest) {
         imageUrl: null,
       };
       users.set(userId, user);
-      authLogger.info('Test auth: Auto-created user during sign-in', {
+      authLogger.info("Test auth: Auto-created user during sign-in", {
         userId,
         email,
       });
     } else if (user.password !== password) {
       // User exists but password doesn't match
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { error: "Invalid email or password" },
         { status: 401 },
       );
     }
 
     // Debug logging
-    console.log('[SignIn API] User signed in:', user.id);
-    console.log('[SignIn API] Total users in storage:', users.size);
+    console.log("[SignIn API] User signed in:", user.id);
+    console.log("[SignIn API] Total users in storage:", users.size);
 
-    authLogger.info('Test auth: User signed in', { userId: user.id, email });
+    authLogger.info("Test auth: User signed in", { userId: user.id, email });
 
     // Create response with session cookie
     const response = NextResponse.json({
@@ -92,20 +92,20 @@ export async function POST(request: NextRequest) {
 
     response.cookies.set(SESSION_COOKIE, cookieData, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: '/',
+      path: "/",
     });
 
-    console.log('[SignIn API] Set cookie with user data');
+    console.log("[SignIn API] Set cookie with user data");
 
     return response;
   } catch (error) {
-    authLogger.error('Error during sign in', {
+    authLogger.error("Error during sign in", {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
     });
-    return NextResponse.json({ error: 'Failed to sign in' }, { status: 500 });
+    return NextResponse.json({ error: "Failed to sign in" }, { status: 500 });
   }
 }

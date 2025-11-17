@@ -1,9 +1,9 @@
-import type { Metadata } from 'next';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
-import Image from 'next/image';
-import Link from 'next/link';
-import { buildLocalizedMetadata } from '@/shared/utils/metadata';
-import { getI18nPath } from '@/shared/utils/helpers';
+import type { Metadata } from "next";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import Image from "next/image";
+import Link from "next/link";
+import { buildLocalizedMetadata } from "@/shared/utils/metadata";
+import { getI18nPath } from "@/shared/utils/helpers";
 
 type IPortfolioProps = {
   params: Promise<{ locale: string }>;
@@ -15,18 +15,18 @@ export async function generateMetadata(
   const { locale } = await props.params;
   const t = await getTranslations({
     locale,
-    namespace: 'Portfolio',
+    namespace: "Portfolio",
   });
 
   return await buildLocalizedMetadata({
     locale,
-    path: '/portfolio',
-    title: t('meta_title'),
-    description: t('meta_description'),
+    path: "/portfolio",
+    title: t("meta_title"),
+    description: t("meta_description"),
     keywords: [
-      'Next.js portfolio',
-      'SaaS case studies',
-      'Next.js starter showcase',
+      "Next.js portfolio",
+      "SaaS case studies",
+      "Next.js starter showcase",
     ],
   });
 }
@@ -36,35 +36,35 @@ export default async function Portfolio(props: IPortfolioProps) {
   setRequestLocale(locale);
   const t = await getTranslations({
     locale,
-    namespace: 'Portfolio',
+    namespace: "Portfolio",
   });
   const buildHref = (path: string) => getI18nPath(path, locale);
 
   return (
     <>
-      <p>{t('presentation')}</p>
+      <p>{t("presentation")}</p>
 
       <div className="grid grid-cols-1 justify-items-start gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {Array.from(Array.from({ length: 6 }).keys()).map(elt => (
+        {Array.from(Array.from({ length: 6 }).keys()).map((elt) => (
           <Link
             className="hover:text-blue-700"
             key={elt}
             href={buildHref(`/portfolio/${elt}`)}
           >
-            {t('portfolio_name', { name: elt })}
+            {t("portfolio_name", { name: elt })}
           </Link>
         ))}
       </div>
 
       <div className="mt-5 text-center text-sm">
-        {`${t('error_reporting_powered_by')} `}
+        {`${t("error_reporting_powered_by")} `}
         <a
           className="text-blue-700 hover:border-b-2 hover:border-blue-700"
           href="https://sentry.io/for/nextjs/?utm_source=github&utm_medium=paid-community&utm_campaign=general-fy25q1-nextjs&utm_content=github-banner-nextjsboilerplate-logo"
         >
           Sentry
         </a>
-        {` - ${t('coverage_powered_by')} `}
+        {` - ${t("coverage_powered_by")} `}
         <a
           className="text-blue-700 hover:border-b-2 hover:border-blue-700"
           href="https://about.codecov.io/codecov-free-trial/?utm_source=github&utm_medium=paid-community&utm_campaign=general-fy25q1-nextjs&utm_content=github-banner-nextjsboilerplate-logo"

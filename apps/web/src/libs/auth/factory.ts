@@ -1,9 +1,9 @@
-import type { AuthProvider, IAuthAdapter } from './types';
-import { ClerkAdapter } from './adapters/ClerkAdapter';
-import { CloudflareAdapter } from './adapters/CloudflareAdapter';
-import { CognitoAdapter } from './adapters/CognitoAdapter';
-import { TestAdapter } from './adapters/TestAdapter';
-import { authLogger } from '@/libs/Logger';
+import type { AuthProvider, IAuthAdapter } from "./types";
+import { ClerkAdapter } from "./adapters/ClerkAdapter";
+import { CloudflareAdapter } from "./adapters/CloudflareAdapter";
+import { CognitoAdapter } from "./adapters/CognitoAdapter";
+import { TestAdapter } from "./adapters/TestAdapter";
+import { authLogger } from "@/libs/Logger";
 
 /**
  * Auth Provider Factory
@@ -26,27 +26,27 @@ export class AuthFactory {
    * Create a new auth adapter based on the AUTH_PROVIDER environment variable
    */
   private static createAdapter(): IAuthAdapter {
-    const provider = (process.env.NEXT_PUBLIC_AUTH_PROVIDER
-      || 'clerk') as AuthProvider;
+    const provider = (process.env.NEXT_PUBLIC_AUTH_PROVIDER ||
+      "clerk") as AuthProvider;
 
     switch (provider) {
-      case 'clerk':
+      case "clerk":
         return new ClerkAdapter();
 
-      case 'cloudflare':
+      case "cloudflare":
         return new CloudflareAdapter();
 
-      case 'cognito':
+      case "cognito":
         return new CognitoAdapter();
 
-      case 'test':
+      case "test":
         // TestAdapter works on both client and server
         // Uses server-side imports (next/headers) when needed
-        authLogger.info('Using TestAdapter for authentication (test mode)');
+        authLogger.info("Using TestAdapter for authentication (test mode)");
         return new TestAdapter();
 
       default:
-        authLogger.warn('Unknown auth provider, falling back to Clerk', {
+        authLogger.warn("Unknown auth provider, falling back to Clerk", {
           provider,
         });
         return new ClerkAdapter();
@@ -64,6 +64,6 @@ export class AuthFactory {
    * Get the current auth provider type
    */
   static getProviderType(): AuthProvider {
-    return (process.env.NEXT_PUBLIC_AUTH_PROVIDER || 'clerk') as AuthProvider;
+    return (process.env.NEXT_PUBLIC_AUTH_PROVIDER || "clerk") as AuthProvider;
   }
 }

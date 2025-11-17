@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import posthog from 'posthog-js';
-import { PostHogProvider as PHProvider } from 'posthog-js/react';
-import { useEffect } from 'react';
-import { getServiceConfig, isServiceEnabled } from '@/utils/MonitoringConfig';
-import { SuspendedPostHogPageView } from './PostHogPageView';
+import posthog from "posthog-js";
+import { PostHogProvider as PHProvider } from "posthog-js/react";
+import { useEffect } from "react";
+import { getServiceConfig, isServiceEnabled } from "@/utils/MonitoringConfig";
+import { SuspendedPostHogPageView } from "./PostHogPageView";
 
 // Singleton flag to prevent re-initialization
 let isPostHogInitialized = false;
 
 export const PostHogProvider = (props: { children: React.ReactNode }) => {
-  const enabled = isServiceEnabled('posthog');
-  const posthogConfig = getServiceConfig('posthog');
+  const enabled = isServiceEnabled("posthog");
+  const posthogConfig = getServiceConfig("posthog");
 
   useEffect(() => {
     if (!enabled || !posthogConfig.apiKey || isPostHogInitialized) {

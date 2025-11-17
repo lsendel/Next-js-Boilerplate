@@ -1,20 +1,20 @@
-import type { Metadata } from 'next';
-import dynamic from 'next/dynamic';
-import { setRequestLocale } from 'next-intl/server';
-import { StructuredData } from '@/client/components/StructuredData';
-import { buildLocalizedMetadata } from '@/shared/utils/metadata';
+import type { Metadata } from "next";
+import dynamic from "next/dynamic";
+import { setRequestLocale } from "next-intl/server";
+import { StructuredData } from "@/client/components/StructuredData";
+import { buildLocalizedMetadata } from "@/shared/utils/metadata";
 import {
   generateBreadcrumbSchema,
   generateFAQPageSchema,
   generateOrganizationSchema,
   generateProductSchema,
-} from '@/shared/utils/structuredData';
-import { getBaseUrl, getI18nPath } from '@/shared/utils/helpers';
+} from "@/shared/utils/structuredData";
+import { getBaseUrl, getI18nPath } from "@/shared/utils/helpers";
 
 // Dynamic imports for code splitting - reduces initial bundle size
 const CtaGradient = dynamic(
   () =>
-    import('@/client/components/marketing/CtaGradient').then(mod => ({
+    import("@/client/components/marketing/CtaGradient").then((mod) => ({
       default: mod.CtaGradient,
     })),
   {
@@ -24,7 +24,7 @@ const CtaGradient = dynamic(
 
 const CtaSimple = dynamic(
   () =>
-    import('@/client/components/marketing/CtaSimple').then(mod => ({
+    import("@/client/components/marketing/CtaSimple").then((mod) => ({
       default: mod.CtaSimple,
     })),
   {
@@ -34,7 +34,7 @@ const CtaSimple = dynamic(
 
 const FaqSection = dynamic(
   () =>
-    import('@/client/components/marketing/FaqSection').then(mod => ({
+    import("@/client/components/marketing/FaqSection").then((mod) => ({
       default: mod.FaqSection,
     })),
   {
@@ -44,7 +44,7 @@ const FaqSection = dynamic(
 
 const FeaturesAlternating = dynamic(
   () =>
-    import('@/client/components/marketing/FeaturesAlternating').then(mod => ({
+    import("@/client/components/marketing/FeaturesAlternating").then((mod) => ({
       default: mod.FeaturesAlternating,
     })),
   {
@@ -54,7 +54,7 @@ const FeaturesAlternating = dynamic(
 
 const FeaturesGrid = dynamic(
   () =>
-    import('@/client/components/marketing/FeaturesGrid').then(mod => ({
+    import("@/client/components/marketing/FeaturesGrid").then((mod) => ({
       default: mod.FeaturesGrid,
     })),
   {
@@ -64,7 +64,7 @@ const FeaturesGrid = dynamic(
 
 const HeroCentered = dynamic(
   () =>
-    import('@/client/components/marketing/HeroCentered').then(mod => ({
+    import("@/client/components/marketing/HeroCentered").then((mod) => ({
       default: mod.HeroCentered,
     })),
   {
@@ -74,7 +74,7 @@ const HeroCentered = dynamic(
 
 const PricingTable = dynamic(
   () =>
-    import('@/client/components/marketing/PricingTable').then(mod => ({
+    import("@/client/components/marketing/PricingTable").then((mod) => ({
       default: mod.PricingTable,
     })),
   {
@@ -84,7 +84,7 @@ const PricingTable = dynamic(
 
 const TestimonialsGrid = dynamic(
   () =>
-    import('@/client/components/marketing/TestimonialsGrid').then(mod => ({
+    import("@/client/components/marketing/TestimonialsGrid").then((mod) => ({
       default: mod.TestimonialsGrid,
     })),
   {
@@ -103,14 +103,14 @@ export async function generateMetadata(
 
   return await buildLocalizedMetadata({
     locale,
-    path: '/landing',
-    title: 'Next.js Boilerplate Landing Page Template',
+    path: "/landing",
+    title: "Next.js Boilerplate Landing Page Template",
     description:
-      'Showcase landing page components included with the Next.js Boilerplate.',
+      "Showcase landing page components included with the Next.js Boilerplate.",
     keywords: [
-      'Next.js landing page',
-      'SaaS landing page template',
-      'Next.js marketing components',
+      "Next.js landing page",
+      "SaaS landing page template",
+      "Next.js marketing components",
     ],
   });
 }
@@ -126,31 +126,31 @@ export default async function LandingPage(props: LandingPageProps) {
   setRequestLocale(locale);
 
   const baseUrl = await getBaseUrl();
-  const canonicalPath = await getI18nPath('/landing', locale);
+  const canonicalPath = await getI18nPath("/landing", locale);
   const canonicalUrl = new URL(canonicalPath, baseUrl).toString();
 
   // SEO Structured Data
   const organizationSchema = generateOrganizationSchema({
-    name: 'Next.js Boilerplate',
+    name: "Next.js Boilerplate",
     url: canonicalUrl,
     logo: `${baseUrl}/assets/images/nextjs-starter-logo.png`,
-    description: 'Demo landing page that ships with the Next.js Boilerplate.',
+    description: "Demo landing page that ships with the Next.js Boilerplate.",
     sameAs: [
-      'https://twitter.com/ixartz',
-      'https://github.com/ixartz/Next-js-Boilerplate',
+      "https://twitter.com/ixartz",
+      "https://github.com/ixartz/Next-js-Boilerplate",
     ],
   });
 
   const productSchema = generateProductSchema({
-    name: 'Next.js Boilerplate Landing Page',
+    name: "Next.js Boilerplate Landing Page",
     description:
-      'Pre-built marketing components for SaaS teams using Next.js Boilerplate.',
+      "Pre-built marketing components for SaaS teams using Next.js Boilerplate.",
     image: [`${baseUrl}/assets/images/nextjs-starter-banner.png`],
-    brand: 'Next.js Boilerplate',
+    brand: "Next.js Boilerplate",
     offers: {
       price: 0,
-      priceCurrency: 'USD',
-      availability: 'InStock',
+      priceCurrency: "USD",
+      availability: "InStock",
       url: canonicalUrl,
     },
     aggregateRating: {
@@ -162,24 +162,24 @@ export default async function LandingPage(props: LandingPageProps) {
   const faqSchema = generateFAQPageSchema({
     questions: [
       {
-        question: 'What is included in the free trial?',
+        question: "What is included in the free trial?",
         answer:
-          'The free trial includes full access to all features for 14 days, no credit card required.',
+          "The free trial includes full access to all features for 14 days, no credit card required.",
       },
       {
-        question: 'Can I cancel anytime?',
+        question: "Can I cancel anytime?",
         answer:
-          'Yes, you can cancel your subscription at any time. There are no long-term commitments.',
+          "Yes, you can cancel your subscription at any time. There are no long-term commitments.",
       },
     ],
   });
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     {
-      name: 'Home',
-      url: new URL(await getI18nPath('/', locale), baseUrl).toString(),
+      name: "Home",
+      url: new URL(await getI18nPath("/", locale), baseUrl).toString(),
     },
-    { name: 'Landing Page', url: canonicalUrl },
+    { name: "Landing Page", url: canonicalUrl },
   ]);
 
   return (
@@ -192,20 +192,20 @@ export default async function LandingPage(props: LandingPageProps) {
 
       {/* Hero Section */}
       <HeroCentered
-        badge={(
+        badge={
           <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 ring-1 ring-blue-700/10 ring-inset">
             New: AI-powered features
           </span>
-        )}
+        }
         title="Build amazing products faster than ever"
         description="The complete toolkit for modern SaaS applications. Authentication, database, payments, and more - all configured and ready to use."
         primaryCta={{
-          text: 'Start free trial',
-          href: '/sign-up',
+          text: "Start free trial",
+          href: "/sign-up",
         }}
         secondaryCta={{
-          text: 'View demo',
-          href: '/demo',
+          text: "View demo",
+          href: "/demo",
         }}
       />
 
@@ -231,9 +231,9 @@ export default async function LandingPage(props: LandingPageProps) {
                 />
               </svg>
             ),
-            title: 'Multi-Provider Authentication',
+            title: "Multi-Provider Authentication",
             description:
-              'Switch between Clerk, Cloudflare Access, or AWS Cognito with a single environment variable.',
+              "Switch between Clerk, Cloudflare Access, or AWS Cognito with a single environment variable.",
           },
           {
             icon: (
@@ -251,9 +251,9 @@ export default async function LandingPage(props: LandingPageProps) {
                 />
               </svg>
             ),
-            title: 'Type-Safe Database',
+            title: "Type-Safe Database",
             description:
-              'DrizzleORM with PostgreSQL, SQLite, and MySQL support. Local development with PGlite.',
+              "DrizzleORM with PostgreSQL, SQLite, and MySQL support. Local development with PGlite.",
           },
           {
             icon: (
@@ -271,9 +271,9 @@ export default async function LandingPage(props: LandingPageProps) {
                 />
               </svg>
             ),
-            title: 'Built-in Monitoring',
+            title: "Built-in Monitoring",
             description:
-              'Sentry error tracking, Better Stack logging, and Checkly uptime monitoring pre-configured.',
+              "Sentry error tracking, Better Stack logging, and Checkly uptime monitoring pre-configured.",
           },
           {
             icon: (
@@ -291,9 +291,9 @@ export default async function LandingPage(props: LandingPageProps) {
                 />
               </svg>
             ),
-            title: 'Internationalization',
+            title: "Internationalization",
             description:
-              'Multi-language support with next-intl and automatic translation management via Crowdin.',
+              "Multi-language support with next-intl and automatic translation management via Crowdin.",
           },
           {
             icon: (
@@ -311,9 +311,9 @@ export default async function LandingPage(props: LandingPageProps) {
                 />
               </svg>
             ),
-            title: 'Security First',
+            title: "Security First",
             description:
-              'Arcjet bot protection, rate limiting, and attack defense built-in from day one.',
+              "Arcjet bot protection, rate limiting, and attack defense built-in from day one.",
           },
           {
             icon: (
@@ -331,9 +331,9 @@ export default async function LandingPage(props: LandingPageProps) {
                 />
               </svg>
             ),
-            title: 'Fast by Default',
+            title: "Fast by Default",
             description:
-              'Lighthouse score optimization, bundle analysis, and Next.js 16+ performance features.',
+              "Lighthouse score optimization, bundle analysis, and Next.js 16+ performance features.",
           },
         ]}
       />
@@ -359,19 +359,19 @@ export default async function LandingPage(props: LandingPageProps) {
                 />
               </svg>
             ),
-            title: 'Developer Experience First',
+            title: "Developer Experience First",
             description:
-              'Type-safe code, comprehensive testing, and pre-configured development tools. Everything you need is already set up and ready to use.',
+              "Type-safe code, comprehensive testing, and pre-configured development tools. Everything you need is already set up and ready to use.",
             image: {
-              src: '/assets/images/nextjs-starter-banner.png',
-              alt: 'Developer tools screenshot',
+              src: "/assets/images/nextjs-starter-banner.png",
+              alt: "Developer tools screenshot",
             },
             benefits: [
-              'TypeScript with strict mode enabled',
-              'ESLint and Prettier pre-configured',
-              'Vitest for unit testing with browser mode',
-              'Playwright for E2E testing',
-              'Storybook for UI development',
+              "TypeScript with strict mode enabled",
+              "ESLint and Prettier pre-configured",
+              "Vitest for unit testing with browser mode",
+              "Playwright for E2E testing",
+              "Storybook for UI development",
             ],
           },
           {
@@ -390,19 +390,19 @@ export default async function LandingPage(props: LandingPageProps) {
                 />
               </svg>
             ),
-            title: 'Production Ready Out of the Box',
+            title: "Production Ready Out of the Box",
             description:
-              'Deploy with confidence using battle-tested infrastructure and monitoring solutions.',
+              "Deploy with confidence using battle-tested infrastructure and monitoring solutions.",
             image: {
-              src: '/assets/images/nextjs-starter-banner.png',
-              alt: 'Production dashboard screenshot',
+              src: "/assets/images/nextjs-starter-banner.png",
+              alt: "Production dashboard screenshot",
             },
             benefits: [
-              'Error monitoring with Sentry',
-              'Log management with Better Stack',
-              'Uptime monitoring with Checkly',
-              'Analytics with PostHog',
-              'Code coverage with Codecov',
+              "Error monitoring with Sentry",
+              "Log management with Better Stack",
+              "Uptime monitoring with Checkly",
+              "Analytics with PostHog",
+              "Code coverage with Codecov",
             ],
           },
         ]}
@@ -416,42 +416,42 @@ export default async function LandingPage(props: LandingPageProps) {
         testimonials={[
           {
             quote:
-              'This boilerplate saved us months of development time. The multi-provider auth system is brilliant!',
+              "This boilerplate saved us months of development time. The multi-provider auth system is brilliant!",
             author: {
-              name: 'Sarah Chen',
-              title: 'CTO',
-              company: 'TechStart Inc',
+              name: "Sarah Chen",
+              title: "CTO",
+              company: "TechStart Inc",
               avatar: {
-                src: '/assets/images/avatar-placeholder.png',
-                alt: 'Sarah Chen',
+                src: "/assets/images/avatar-placeholder.png",
+                alt: "Sarah Chen",
               },
             },
             rating: 5,
           },
           {
             quote:
-              'Finally, a Next.js starter that includes everything I actually need for a SaaS product. No more endless setup.',
+              "Finally, a Next.js starter that includes everything I actually need for a SaaS product. No more endless setup.",
             author: {
-              name: 'Marcus Johnson',
-              title: 'Founder',
-              company: 'AppVentures',
+              name: "Marcus Johnson",
+              title: "Founder",
+              company: "AppVentures",
               avatar: {
-                src: '/assets/images/avatar-placeholder.png',
-                alt: 'Marcus Johnson',
+                src: "/assets/images/avatar-placeholder.png",
+                alt: "Marcus Johnson",
               },
             },
             rating: 5,
           },
           {
             quote:
-              'The code quality is exceptional. Well-documented, type-safe, and easy to customize. Highly recommended!',
+              "The code quality is exceptional. Well-documented, type-safe, and easy to customize. Highly recommended!",
             author: {
-              name: 'Emma Rodriguez',
-              title: 'Lead Developer',
-              company: 'Digital Solutions',
+              name: "Emma Rodriguez",
+              title: "Lead Developer",
+              company: "Digital Solutions",
               avatar: {
-                src: '/assets/images/avatar-placeholder.png',
-                alt: 'Emma Rodriguez',
+                src: "/assets/images/avatar-placeholder.png",
+                alt: "Emma Rodriguez",
               },
             },
             rating: 5,
@@ -466,44 +466,44 @@ export default async function LandingPage(props: LandingPageProps) {
         showBillingToggle={true}
         tiers={[
           {
-            name: 'Starter',
-            description: 'Perfect for side projects and small applications',
+            name: "Starter",
+            description: "Perfect for side projects and small applications",
             price: {
               monthly: 0,
               yearly: 0,
-              currency: '$',
+              currency: "$",
             },
             features: [
-              'Up to 5,000 MAU',
-              'Community support',
-              'Basic analytics',
-              'All authentication providers',
-              '99.9% uptime SLA',
+              "Up to 5,000 MAU",
+              "Community support",
+              "Basic analytics",
+              "All authentication providers",
+              "99.9% uptime SLA",
             ],
             cta: {
-              text: 'Get started',
-              href: '/sign-up',
+              text: "Get started",
+              href: "/sign-up",
             },
           },
           {
-            name: 'Pro',
-            description: 'For growing businesses and teams',
+            name: "Pro",
+            description: "For growing businesses and teams",
             price: {
               monthly: 29,
               yearly: 290,
-              currency: '$',
+              currency: "$",
             },
             features: [
-              'Up to 50,000 MAU',
-              'Priority email support',
-              'Advanced analytics',
-              'Custom branding',
-              'Remove powered by badge',
-              'Advanced security features',
+              "Up to 50,000 MAU",
+              "Priority email support",
+              "Advanced analytics",
+              "Custom branding",
+              "Remove powered by badge",
+              "Advanced security features",
             ],
             cta: {
-              text: 'Start free trial',
-              href: '/sign-up',
+              text: "Start free trial",
+              href: "/sign-up",
             },
             highlighted: true,
             badge: (
@@ -513,25 +513,25 @@ export default async function LandingPage(props: LandingPageProps) {
             ),
           },
           {
-            name: 'Enterprise',
-            description: 'For large-scale applications and organizations',
+            name: "Enterprise",
+            description: "For large-scale applications and organizations",
             price: {
               monthly: 99,
               yearly: 990,
-              currency: '$',
+              currency: "$",
             },
             features: [
-              'Unlimited MAU',
-              '24/7 dedicated support',
-              'Custom integrations',
-              'SLA guarantee',
-              'On-premise deployment option',
-              'Advanced team features',
-              'Custom contract terms',
+              "Unlimited MAU",
+              "24/7 dedicated support",
+              "Custom integrations",
+              "SLA guarantee",
+              "On-premise deployment option",
+              "Advanced team features",
+              "Custom contract terms",
             ],
             cta: {
-              text: 'Contact sales',
-              href: '/contact',
+              text: "Contact sales",
+              href: "/contact",
             },
           },
         ]}
@@ -543,34 +543,34 @@ export default async function LandingPage(props: LandingPageProps) {
         description="Everything you need to know about the product and billing."
         faqs={[
           {
-            question: 'What is included in the free trial?',
+            question: "What is included in the free trial?",
             answer:
-              'The free trial includes full access to all features for 14 days, no credit card required. You can explore all authentication providers, database features, and integrations.',
+              "The free trial includes full access to all features for 14 days, no credit card required. You can explore all authentication providers, database features, and integrations.",
           },
           {
-            question: 'Can I cancel anytime?',
+            question: "Can I cancel anytime?",
             answer:
-              'Yes, you can cancel your subscription at any time. There are no long-term commitments or cancellation fees.',
+              "Yes, you can cancel your subscription at any time. There are no long-term commitments or cancellation fees.",
           },
           {
-            question: 'Which authentication providers are supported?',
+            question: "Which authentication providers are supported?",
             answer:
-              'We support Clerk, Cloudflare Access, and AWS Cognito. You can switch between providers using a single environment variable.',
+              "We support Clerk, Cloudflare Access, and AWS Cognito. You can switch between providers using a single environment variable.",
           },
           {
-            question: 'Do you offer refunds?',
+            question: "Do you offer refunds?",
             answer:
-              'Yes, we offer a 30-day money-back guarantee. If you\'re not satisfied, contact us within 30 days for a full refund.',
+              "Yes, we offer a 30-day money-back guarantee. If you're not satisfied, contact us within 30 days for a full refund.",
           },
           {
-            question: 'Can I use this for client projects?',
+            question: "Can I use this for client projects?",
             answer:
-              'Yes! The boilerplate is MIT licensed, which means you can use it for unlimited personal and commercial projects.',
+              "Yes! The boilerplate is MIT licensed, which means you can use it for unlimited personal and commercial projects.",
           },
           {
-            question: 'How do I get support?',
+            question: "How do I get support?",
             answer:
-              'Pro and Enterprise customers get priority email support. Starter plan users can access our community Discord and documentation.',
+              "Pro and Enterprise customers get priority email support. Starter plan users can access our community Discord and documentation.",
           },
         ]}
       />
@@ -580,12 +580,12 @@ export default async function LandingPage(props: LandingPageProps) {
         title="Ready to build something amazing?"
         description="Join thousands of developers who have launched their products faster with our boilerplate."
         primaryCta={{
-          text: 'Start your free trial',
-          href: '/sign-up',
+          text: "Start your free trial",
+          href: "/sign-up",
         }}
         secondaryCta={{
-          text: 'Schedule a demo',
-          href: '/demo',
+          text: "Schedule a demo",
+          href: "/demo",
         }}
       />
 
@@ -594,12 +594,12 @@ export default async function LandingPage(props: LandingPageProps) {
         title="Start building today"
         description="Get instant access to the complete toolkit. No credit card required."
         primaryCta={{
-          text: 'Get started for free',
-          href: '/sign-up',
+          text: "Get started for free",
+          href: "/sign-up",
         }}
         secondaryCta={{
-          text: 'View documentation',
-          href: '/docs',
+          text: "View documentation",
+          href: "/docs",
         }}
         gradientFrom="from-blue-600"
         gradientTo="to-purple-600"

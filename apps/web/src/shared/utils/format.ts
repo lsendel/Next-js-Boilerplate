@@ -4,28 +4,28 @@
  * Pure functions for formatting data
  */
 
-export function formatDate(date: Date, locale = 'en-US'): string {
+export function formatDate(date: Date, locale = "en-US"): string {
   return new Intl.DateTimeFormat(locale, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   }).format(date);
 }
 
 export function formatCurrency(
   amount: number,
-  currency = 'USD',
-  locale = 'en-US',
+  currency = "USD",
+  locale = "en-US",
 ): string {
   return new Intl.NumberFormat(locale, {
-    style: 'currency',
+    style: "currency",
     currency,
   }).format(amount);
 }
 
 export function formatNumber(
   num: number,
-  locale = 'en-US',
+  locale = "en-US",
   options?: Intl.NumberFormatOptions,
 ): string {
   return new Intl.NumberFormat(locale, options).format(num);
@@ -46,7 +46,7 @@ export function slugify(str: string): string {
   return str
     .toLowerCase()
     .trim()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/[\s_-]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }

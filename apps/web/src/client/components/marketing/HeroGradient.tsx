@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 export type HeroGradientProps = {
   title: string;
@@ -28,8 +28,8 @@ export function HeroGradient({
   primaryCta,
   secondaryCta,
   badge,
-  gradientFrom = 'from-blue-600',
-  gradientTo = 'to-purple-600',
+  gradientFrom = "from-blue-600",
+  gradientTo = "to-purple-600",
 }: HeroGradientProps) {
   return (
     <section

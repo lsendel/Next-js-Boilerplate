@@ -5,17 +5,17 @@
  * Session management, security checks, token validation
  */
 
-import { randomBytes } from 'node:crypto';
-import * as sessionRepo from '@/server/db/repositories/session.repository';
-import * as userRepo from '@/server/db/repositories/user.repository';
-import { checkAuthRateLimit } from '@/libs/auth/security/rate-limit';
-import { securityLogger } from '@/server/lib/security-logger';
+import { randomBytes } from "node:crypto";
+import * as sessionRepo from "@/server/db/repositories/session.repository";
+import * as userRepo from "@/server/db/repositories/user.repository";
+import { checkAuthRateLimit } from "@/libs/auth/security/rate-limit";
+import { securityLogger } from "@/server/lib/security-logger";
 import type {
   NewSession,
   Session,
-} from '@/server/db/repositories/session.repository';
-import type { User } from '@/server/db/repositories/user.repository';
-import type { RateLimitResult } from '@/libs/auth/security/rate-limit';
+} from "@/server/db/repositories/session.repository";
+import type { User } from "@/server/db/repositories/user.repository";
+import type { RateLimitResult } from "@/libs/auth/security/rate-limit";
 
 /**
  * Client information for session tracking
@@ -172,11 +172,11 @@ export class AuthService {
   async checkRateLimit(
     identifier: string,
     action:
-      | 'signIn'
-      | 'signUp'
-      | 'passwordReset'
-      | 'mfaVerify'
-      | 'oauthCallback',
+      | "signIn"
+      | "signUp"
+      | "passwordReset"
+      | "mfaVerify"
+      | "oauthCallback",
   ): Promise<RateLimitResult> {
     return await checkAuthRateLimit(identifier, action);
   }
@@ -188,7 +188,7 @@ export class AuthService {
    * @param ip - IP address
    */
   async recordFailedLogin(email: string, ip: string): Promise<void> {
-    await securityLogger.logAuthFailure(email, ip, 'Invalid credentials');
+    await securityLogger.logAuthFailure(email, ip, "Invalid credentials");
 
     const user = await userRepo.findUserByEmail(email);
     if (!user) {
@@ -199,8 +199,8 @@ export class AuthService {
     const maxAttempts = 5;
     const lockoutDuration = 15 * 60 * 1000; // 15 minutes
 
-    const lockedUntil
-      = attempts >= maxAttempts ? new Date(Date.now() + lockoutDuration) : null;
+    const lockedUntil =
+      attempts >= maxAttempts ? new Date(Date.now() + lockoutDuration) : null;
 
     await userRepo.updateUser(user.id, {
       failedLoginAttempts: attempts,
@@ -210,7 +210,7 @@ export class AuthService {
 
     if (lockedUntil) {
       securityLogger.logSuspiciousActivity(
-        'Account locked due to failed login attempts',
+        "Account locked due to failed login attempts",
         ip,
         { userId: user.id, email: user.email, attempts },
       );
@@ -300,7 +300,7 @@ export class AuthService {
    * Generate a secure session token
    */
   private generateSessionToken(): string {
-    return randomBytes(32).toString('hex');
+    return randomBytes(32).toString("hex");
   }
 
   /**

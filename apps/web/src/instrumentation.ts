@@ -1,14 +1,14 @@
-import * as Sentry from '@sentry/nextjs';
-import { getServiceConfig, isServiceEnabled } from '@/utils/MonitoringConfig';
+import * as Sentry from "@sentry/nextjs";
+import { getServiceConfig, isServiceEnabled } from "@/utils/MonitoringConfig";
 
-const sentryConfig = getServiceConfig('sentry');
+const sentryConfig = getServiceConfig("sentry");
 
 const sentryOptions: Sentry.NodeOptions | Sentry.EdgeOptions = {
   // Sentry DSN
   dsn: sentryConfig.dsn,
 
   // Enable Spotlight in development
-  spotlight: process.env.NODE_ENV === 'development',
+  spotlight: process.env.NODE_ENV === "development",
 
   integrations: [Sentry.consoleLoggingIntegration()],
 
@@ -26,23 +26,23 @@ const sentryOptions: Sentry.NodeOptions | Sentry.EdgeOptions = {
 };
 
 export async function register() {
-  if (!isServiceEnabled('sentry')) {
+  if (!isServiceEnabled("sentry")) {
     return;
   }
 
   if (!sentryConfig.dsn) {
     console.warn(
-      'Sentry is enabled but DSN is not configured. Skipping initialization.',
+      "Sentry is enabled but DSN is not configured. Skipping initialization.",
     );
     return;
   }
 
-  if (process.env.NEXT_RUNTIME === 'nodejs') {
+  if (process.env.NEXT_RUNTIME === "nodejs") {
     // Node.js Sentry configuration
     Sentry.init(sentryOptions);
   }
 
-  if (process.env.NEXT_RUNTIME === 'edge') {
+  if (process.env.NEXT_RUNTIME === "edge") {
     // Edge Sentry configuration
     Sentry.init(sentryOptions);
   }

@@ -1,7 +1,7 @@
-import type { LocalePrefixMode } from 'next-intl/routing';
-import { enUS, frFR } from '@clerk/localizations';
+import type { LocalePrefixMode } from "next-intl/routing";
+import { enUS, frFR } from "@clerk/localizations";
 
-const localePrefix: LocalePrefixMode = 'as-needed';
+const localePrefix: LocalePrefixMode = "as-needed";
 
 /**
  * Application Configuration
@@ -12,9 +12,9 @@ const localePrefix: LocalePrefixMode = 'as-needed';
  * - defaultLocale: Default language for the application
  */
 export const AppConfig = {
-  name: 'Next.js Production Boilerplate',
-  locales: ['en', 'fr'],
-  defaultLocale: 'en',
+  name: "Next.js Production Boilerplate",
+  locales: ["en", "fr"],
+  defaultLocale: "en",
   localePrefix,
 };
 

@@ -1,9 +1,9 @@
-import { createEnv } from '@t3-oss/env-nextjs';
-import * as z from 'zod';
+import { createEnv } from "@t3-oss/env-nextjs";
+import * as z from "zod";
 
 export const Env = createEnv({
   server: {
-    ARCJET_KEY: z.string().startsWith('ajkey_').optional(),
+    ARCJET_KEY: z.string().startsWith("ajkey_").optional(),
     CLERK_SECRET_KEY: z.string().min(1).optional(), // Optional - only required when using Clerk auth
     DATABASE_URL: z.string().min(1),
     // Security
@@ -35,14 +35,14 @@ export const Env = createEnv({
     NEXT_PUBLIC_SENTRY_REPLAYS_ERROR_SAMPLE_RATE: z.string().optional(),
     // Auth provider
     NEXT_PUBLIC_AUTH_PROVIDER: z
-      .enum(['clerk', 'cloudflare', 'cognito', 'test'])
+      .enum(["clerk", "cloudflare", "cognito", "test"])
       .optional(),
     NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN: z.string().optional(),
     NEXT_PUBLIC_CLOUDFLARE_AUDIENCE: z.string().optional(),
     NEXT_PUBLIC_CLOUDFLARE_VERIFY_JWT: z.string().optional(),
   },
   shared: {
-    NODE_ENV: z.enum(['test', 'development', 'production']).optional(),
+    NODE_ENV: z.enum(["test", "development", "production"]).optional(),
   },
   // You need to destructure all the keys manually
   runtimeEnv: {

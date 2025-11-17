@@ -2,12 +2,12 @@ import { defineConfig } from 'drizzle-kit';
 
 /**
  * Drizzle Kit configuration for Cloudflare D1
- * 
+ *
  * This configuration is used for:
  * - Generating migrations for D1 (SQLite)
  * - Applying migrations to D1 databases
  * - Introspecting D1 schema
- * 
+ *
  * Usage:
  * - Generate migration: drizzle-kit generate --config=drizzle.config.d1.ts
  * - Apply migration: wrangler d1 migrations apply next-boilerplate-db --local
@@ -25,4 +25,3 @@ export default defineConfig({
   verbose: true,
   strict: true,
 });
-

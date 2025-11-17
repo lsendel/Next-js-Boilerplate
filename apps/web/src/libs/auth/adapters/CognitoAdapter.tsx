@@ -1,23 +1,23 @@
-import type { NextRequest } from 'next/server';
+import type { NextRequest } from "next/server";
 import type {
   AuthMiddlewareConfig,
   AuthSession,
   AuthUser,
   IAuthAdapter,
-} from '../types';
-import { configureAmplify, getCognitoConfig } from './cognito/amplify-config';
+} from "../types";
+import { configureAmplify, getCognitoConfig } from "./cognito/amplify-config";
 import {
   extractCognitoTokenFromCookies,
   parseCognitoIssuer,
   verifyCognitoToken,
-} from './cognito/jwt-utils';
-import { CognitoSignIn } from './cognito/SignIn';
-import { CognitoSignUp } from './cognito/SignUp';
-import { CognitoUserProfile } from './cognito/UserProfile';
-import { cognitoUserToAuthUser } from './cognito/utils';
-import { resolveTenantClientPath } from '@/shared/utils/tenant-client-path';
-import { decodeJWT } from '../security/jwt-verifier';
-import { authLogger } from '@/libs/Logger';
+} from "./cognito/jwt-utils";
+import { CognitoSignIn } from "./cognito/SignIn";
+import { CognitoSignUp } from "./cognito/SignUp";
+import { CognitoUserProfile } from "./cognito/UserProfile";
+import { cognitoUserToAuthUser } from "./cognito/utils";
+import { resolveTenantClientPath } from "@/shared/utils/tenant-client-path";
+import { decodeJWT } from "../security/jwt-verifier";
+import { authLogger } from "@/libs/Logger";
 
 /**
  * AWS Cognito Authentication Adapter
@@ -37,7 +37,7 @@ import { authLogger } from '@/libs/Logger';
 export class CognitoAdapter implements IAuthAdapter {
   constructor() {
     // Configure Amplify on initialization
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       configureAmplify();
     }
   }
@@ -45,8 +45,8 @@ export class CognitoAdapter implements IAuthAdapter {
   async getCurrentUser(): Promise<AuthUser | null> {
     try {
       // Dynamically import to avoid SSR issues
-      const { getCurrentUser: getAmplifyUser, fetchUserAttributes }
-        = await import('aws-amplify/auth');
+      const { getCurrentUser: getAmplifyUser, fetchUserAttributes } =
+        await import("aws-amplify/auth");
 
       const cognitoUser = await getAmplifyUser();
       const attributes = await fetchUserAttributes();
@@ -64,7 +64,7 @@ export class CognitoAdapter implements IAuthAdapter {
 
   async getSession(): Promise<AuthSession | null> {
     try {
-      const { fetchAuthSession } = await import('aws-amplify/auth');
+      const { fetchAuthSession } = await import("aws-amplify/auth");
 
       const session = await fetchAuthSession();
 
@@ -73,8 +73,8 @@ export class CognitoAdapter implements IAuthAdapter {
       }
 
       return {
-        userId: (session.tokens.idToken?.payload.sub as string) || '',
-        sessionId: session.tokens.accessToken?.toString() || '',
+        userId: (session.tokens.idToken?.payload.sub as string) || "",
+        sessionId: session.tokens.accessToken?.toString() || "",
       };
     } catch {
       return null;
@@ -83,10 +83,10 @@ export class CognitoAdapter implements IAuthAdapter {
 
   async signOut(): Promise<void> {
     try {
-      const { signOut } = await import('aws-amplify/auth');
+      const { signOut } = await import("aws-amplify/auth");
       await signOut();
     } catch (error) {
-      authLogger.error('Failed to sign out', { error });
+      authLogger.error("Failed to sign out", { error });
     }
   }
 
@@ -99,7 +99,7 @@ export class CognitoAdapter implements IAuthAdapter {
     // This is a simplified version - in production, verify JWT signature
 
     try {
-      const { fetchAuthSession } = await import('aws-amplify/auth');
+      const { fetchAuthSession } = await import("aws-amplify/auth");
       const session = await fetchAuthSession();
 
       return {
@@ -138,15 +138,15 @@ export class CognitoAdapter implements IAuthAdapter {
   }): React.ReactElement {
     const handleSignOut = async () => {
       try {
-        const { signOut } = await import('aws-amplify/auth');
+        const { signOut } = await import("aws-amplify/auth");
         await signOut();
 
         // Redirect to home page
-        if (typeof window !== 'undefined') {
-          window.location.href = resolveTenantClientPath('/');
+        if (typeof window !== "undefined") {
+          window.location.href = resolveTenantClientPath("/");
         }
       } catch (error) {
-        authLogger.error('Failed to sign out', { error });
+        authLogger.error("Failed to sign out", { error });
       }
     };
 
@@ -168,7 +168,7 @@ export class CognitoAdapter implements IAuthAdapter {
   static createMiddleware(config: AuthMiddlewareConfig) {
     return async (request: NextRequest) => {
       // Check if this is a protected route
-      const isProtectedRoute = config.protectedRoutes.some(route =>
+      const isProtectedRoute = config.protectedRoutes.some((route) =>
         request.nextUrl.pathname.includes(route),
       );
 
@@ -178,14 +178,14 @@ export class CognitoAdapter implements IAuthAdapter {
 
       // Check for Cognito tokens in cookies
       // Cognito uses cookies: CognitoIdentityServiceProvider.{clientId}.{username}.{tokenType}
-      const cookieHeader = request.headers.get('cookie');
+      const cookieHeader = request.headers.get("cookie");
 
       if (!cookieHeader) {
         // No cookies, redirect to sign-in
         const cognitoConfig = getCognitoConfig();
         if (cognitoConfig.oauth) {
           // Use hosted UI
-          const { getHostedUIUrl } = await import('./cognito/amplify-config');
+          const { getHostedUIUrl } = await import("./cognito/amplify-config");
           const hostedUIUrl = getHostedUIUrl();
           return Response.redirect(hostedUIUrl, 302);
         }
@@ -195,13 +195,13 @@ export class CognitoAdapter implements IAuthAdapter {
       }
 
       // Extract and verify ID token
-      const idToken = extractCognitoTokenFromCookies(cookieHeader, 'idToken');
+      const idToken = extractCognitoTokenFromCookies(cookieHeader, "idToken");
 
       if (!idToken) {
         // No valid session, redirect to sign-in
         const cognitoConfig = getCognitoConfig();
         if (cognitoConfig.oauth) {
-          const { getHostedUIUrl } = await import('./cognito/amplify-config');
+          const { getHostedUIUrl } = await import("./cognito/amplify-config");
           const hostedUIUrl = getHostedUIUrl();
           return Response.redirect(hostedUIUrl, 302);
         }
@@ -212,10 +212,10 @@ export class CognitoAdapter implements IAuthAdapter {
       // Decode token to get issuer (region and user pool ID)
       const decoded = decodeJWT(idToken);
       if (!decoded?.payload.iss) {
-        authLogger.warn('Invalid Cognito token: missing issuer');
+        authLogger.warn("Invalid Cognito token: missing issuer");
         const cognitoConfig = getCognitoConfig();
         if (cognitoConfig.oauth) {
-          const { getHostedUIUrl } = await import('./cognito/amplify-config');
+          const { getHostedUIUrl } = await import("./cognito/amplify-config");
           const hostedUIUrl = getHostedUIUrl();
           return Response.redirect(hostedUIUrl, 302);
         }
@@ -226,7 +226,7 @@ export class CognitoAdapter implements IAuthAdapter {
       // Parse region and user pool ID from issuer
       const cognitoInfo = parseCognitoIssuer(decoded.payload.iss as string);
       if (!cognitoInfo) {
-        authLogger.warn('Failed to parse Cognito issuer', {
+        authLogger.warn("Failed to parse Cognito issuer", {
           issuer: decoded.payload.iss,
         });
         return Response.redirect(new URL(config.signInUrl, request.url), 302);
@@ -242,10 +242,10 @@ export class CognitoAdapter implements IAuthAdapter {
 
       if (!payload) {
         // JWT verification failed - redirect to sign-in
-        authLogger.warn('Cognito JWT verification failed');
+        authLogger.warn("Cognito JWT verification failed");
         const cognitoConfig = getCognitoConfig();
         if (cognitoConfig.oauth) {
-          const { getHostedUIUrl } = await import('./cognito/amplify-config');
+          const { getHostedUIUrl } = await import("./cognito/amplify-config");
           const hostedUIUrl = getHostedUIUrl();
           return Response.redirect(hostedUIUrl, 302);
         }

@@ -1,11 +1,11 @@
-import type { NextRequest } from 'next/server';
+import type { NextRequest } from "next/server";
 
 /**
  * Auth Provider Types
  * These types define the contract that all auth providers must implement
  */
 
-export type AuthProvider = 'clerk' | 'cloudflare' | 'cognito' | 'test';
+export type AuthProvider = "clerk" | "cloudflare" | "cognito" | "test";
 
 export type AuthUser = {
   id: string;

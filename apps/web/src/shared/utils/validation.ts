@@ -19,17 +19,17 @@ export function isValidUrl(url: string): boolean {
 }
 
 export function isValidUUID(uuid: string): boolean {
-  const uuidRegex
-    = /^[\da-f]{8}-[\da-f]{4}-[1-5][\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i;
+  const uuidRegex =
+    /^[\da-f]{8}-[\da-f]{4}-[1-5][\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i;
   return uuidRegex.test(uuid);
 }
 
 export function isNonEmptyString(value: unknown): value is string {
-  return typeof value === 'string' && value.trim().length > 0;
+  return typeof value === "string" && value.trim().length > 0;
 }
 
 export function isPositiveNumber(value: unknown): value is number {
-  return typeof value === 'number' && value > 0;
+  return typeof value === "number" && value > 0;
 }
 
 export function hasMinLength(str: string, minLength: number): boolean {

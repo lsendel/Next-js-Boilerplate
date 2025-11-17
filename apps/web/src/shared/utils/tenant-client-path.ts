@@ -1,10 +1,10 @@
-import { routing } from '@/libs/I18nRouting';
+import { routing } from "@/libs/I18nRouting";
 import {
   DEFAULT_TENANT_SLUG,
   TENANT_DOMAIN_COOKIE,
   TENANT_LOCALE_COOKIE,
   TENANT_SLUG_COOKIE,
-} from '@/shared/constants/tenant';
+} from "@/shared/constants/tenant";
 
 export type TenantClientContext = {
   slug: string;
@@ -13,24 +13,24 @@ export type TenantClientContext = {
 };
 
 const readCookie = (name: string) => {
-  if (typeof document === 'undefined') {
+  if (typeof document === "undefined") {
     return null;
   }
 
   const cookieMatch = document.cookie
-    .split(';')
-    .map(entry => entry.trim())
-    .find(entry => entry.startsWith(`${name}=`));
+    .split(";")
+    .map((entry) => entry.trim())
+    .find((entry) => entry.startsWith(`${name}=`));
 
   if (!cookieMatch) {
     return null;
   }
 
-  return decodeURIComponent(cookieMatch.split('=').slice(1).join('='));
+  return decodeURIComponent(cookieMatch.split("=").slice(1).join("="));
 };
 
 const getClientContext = (): TenantClientContext => {
-  if (typeof document === 'undefined') {
+  if (typeof document === "undefined") {
     return {
       slug: DEFAULT_TENANT_SLUG,
       locale: routing.defaultLocale,
@@ -46,11 +46,11 @@ const getClientContext = (): TenantClientContext => {
 };
 
 const normalizePath = (path: string) => {
-  if (!path || path === '/') {
-    return '/';
+  if (!path || path === "/") {
+    return "/";
   }
 
-  return path.startsWith('/') ? path : `/${path}`;
+  return path.startsWith("/") ? path : `/${path}`;
 };
 
 const buildLocalizedPath = (path: string, locale: string) => {
@@ -58,7 +58,7 @@ const buildLocalizedPath = (path: string, locale: string) => {
     return path;
   }
 
-  if (path === '/') {
+  if (path === "/") {
     return `/${locale}`;
   }
 
@@ -79,14 +79,14 @@ export const resolveTenantClientPath = (
   const locale = options?.locale ?? context.locale;
   const localizedPath = buildLocalizedPath(normalizedPath, locale);
 
-  const shouldPrefixSlug
-    = context.slug && context.slug !== DEFAULT_TENANT_SLUG && !context.domain;
+  const shouldPrefixSlug =
+    context.slug && context.slug !== DEFAULT_TENANT_SLUG && !context.domain;
 
   if (!shouldPrefixSlug) {
     return localizedPath;
   }
 
-  if (localizedPath === '/') {
+  if (localizedPath === "/") {
     return `/${context.slug}`;
   }
 

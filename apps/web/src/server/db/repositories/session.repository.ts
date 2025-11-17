@@ -4,9 +4,9 @@
  * Data access layer for session management
  */
 
-import { and, count, eq, gt, lt, ne } from 'drizzle-orm';
-import { db } from '@/server/db/DB';
-import { sessions } from '@/server/db/models/Schema';
+import { and, count, eq, gt, lt, ne } from "drizzle-orm";
+import { db } from "@/server/db/DB";
+import { sessions } from "@/server/db/models/Schema";
 
 /**
  * Session type based on database schema
@@ -55,7 +55,10 @@ export async function findSessionById(id: number): Promise<Session | null> {
  * Find all sessions for a user
  */
 export async function findSessionsByUserId(userId: number): Promise<Session[]> {
-  return await (db as any).select().from(sessions).where(eq(sessions.userId, userId));
+  return await (db as any)
+    .select()
+    .from(sessions)
+    .where(eq(sessions.userId, userId));
 }
 
 /**

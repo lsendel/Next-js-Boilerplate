@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import Image from "next/image";
 
 export type Testimonial = {
   quote: string;
@@ -14,7 +14,7 @@ export type Testimonial = {
   rating?: number;
 };
 
-const RATING_POSITIONS = ['one', 'two', 'three', 'four', 'five'];
+const RATING_POSITIONS = ["one", "two", "three", "four", "five"];
 
 export type TestimonialsGridProps = {
   title?: string;
@@ -35,7 +35,7 @@ export function TestimonialsGrid({
   testimonials,
   columns = 3,
 }: TestimonialsGridProps) {
-  const gridCols = columns === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-3';
+  const gridCols = columns === 2 ? "lg:grid-cols-2" : "lg:grid-cols-3";
 
   return (
     <section className="bg-gray-50 px-6 py-24 sm:py-32 lg:px-8">
@@ -60,7 +60,7 @@ export function TestimonialsGrid({
         <div
           className={`mx-auto mt-16 grid max-w-7xl grid-cols-1 gap-8 sm:grid-cols-2 ${gridCols}`}
         >
-          {testimonials.map(testimonial => (
+          {testimonials.map((testimonial) => (
             <div
               key={`${testimonial.author.name}-${testimonial.author.title}`}
               className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm transition-shadow hover:shadow-md"
@@ -71,7 +71,7 @@ export function TestimonialsGrid({
                   {RATING_POSITIONS.map((position, index) => (
                     <svg
                       key={`${testimonial.author.name}-star-${position}`}
-                      className={`h-5 w-5 ${index < testimonial.rating! ? 'text-yellow-400' : 'text-gray-300'}`}
+                      className={`h-5 w-5 ${index < testimonial.rating! ? "text-yellow-400" : "text-gray-300"}`}
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -83,9 +83,7 @@ export function TestimonialsGrid({
 
               {/* Quote */}
               <blockquote className="text-base leading-7 text-gray-700">
-                "
-                {testimonial.quote}
-                "
+                "{testimonial.quote}"
               </blockquote>
 
               {/* Author */}
@@ -107,8 +105,8 @@ export function TestimonialsGrid({
                   </div>
                   <div className="text-sm text-gray-600">
                     {testimonial.author.title}
-                    {testimonial.author.company
-                      && ` at ${testimonial.author.company}`}
+                    {testimonial.author.company &&
+                      ` at ${testimonial.author.company}`}
                   </div>
                 </div>
               </div>

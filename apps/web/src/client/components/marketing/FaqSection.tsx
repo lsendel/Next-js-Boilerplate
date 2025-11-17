@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { TenantLink } from '@/client/components/navigation/TenantLink';
+import { useState } from "react";
+import { TenantLink } from "@/client/components/navigation/TenantLink";
 
 export type FaqItem = {
   question: string;
@@ -33,7 +33,7 @@ export function FaqSection({
     setOpenIndex(openIndex === index ? null : index);
   };
 
-  const gridCols = columns === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-1';
+  const gridCols = columns === 2 ? "lg:grid-cols-2" : "lg:grid-cols-1";
 
   return (
     <section className="bg-white px-6 py-24 sm:py-32 lg:px-8">
@@ -77,7 +77,7 @@ export function FaqSection({
                   </span>
                   <svg
                     className={`h-5 w-5 shrink-0 text-gray-500 transition-transform ${
-                      isOpen ? 'rotate-180' : ''
+                      isOpen ? "rotate-180" : ""
                     }`}
                     fill="none"
                     viewBox="0 0 24 24"
@@ -107,8 +107,7 @@ export function FaqSection({
         {/* Contact CTA */}
         <div className="mx-auto mt-16 max-w-md text-center">
           <p className="text-base text-gray-600">
-            Can't find the answer you're looking for?
-            {' '}
+            Can't find the answer you're looking for?{" "}
             <TenantLink
               href="/contact"
               className="font-semibold text-blue-600 hover:text-blue-500"

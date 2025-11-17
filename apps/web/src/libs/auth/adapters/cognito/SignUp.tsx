@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { TenantLink } from '@/client/components/navigation/TenantLink';
-import { useTenantPath } from '@/shared/hooks/useTenantPath';
-import { getHostedUIUrl, getOAuthSignInUrl } from './amplify-config';
-import { getAvailableOAuthProviders, getOAuthProviderInfo } from './utils';
+import { useState } from "react";
+import { TenantLink } from "@/client/components/navigation/TenantLink";
+import { useTenantPath } from "@/shared/hooks/useTenantPath";
+import { getHostedUIUrl, getOAuthSignInUrl } from "./amplify-config";
+import { getAvailableOAuthProviders, getOAuthProviderInfo } from "./utils";
 
 type SignUpProps = {
   path: string;
@@ -21,10 +21,10 @@ type SignUpProps = {
  */
 export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>('');
-  const [statusMessage, setStatusMessage] = useState('');
+  const [error, setError] = useState<string>("");
+  const [statusMessage, setStatusMessage] = useState("");
   const [verificationRequired, setVerificationRequired] = useState(false);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
 
   const oauthProviders = getAvailableOAuthProviders();
   const hasOAuth = oauthProviders.length > 0;
@@ -32,17 +32,17 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
   const resolveTenantPath = useTenantPath();
 
   const handleOAuthSignUp = async (
-    provider: 'Google' | 'Facebook' | 'Apple',
+    provider: "Google" | "Facebook" | "Apple",
   ) => {
     try {
       setLoading(true);
-      setError('');
+      setError("");
 
       const signInUrl = getOAuthSignInUrl(provider);
       window.location.href = signInUrl;
     } catch (err: unknown) {
       setError(
-        err instanceof Error ? err.message : 'Failed to initiate sign-up',
+        err instanceof Error ? err.message : "Failed to initiate sign-up",
       );
       setLoading(false);
     }
@@ -55,7 +55,7 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
       window.location.href = hostedUIUrl;
     } catch (err: unknown) {
       setError(
-        err instanceof Error ? err.message : 'Failed to redirect to Hosted UI',
+        err instanceof Error ? err.message : "Failed to redirect to Hosted UI",
       );
       setLoading(false);
     }
@@ -66,16 +66,16 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
   ) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setStatusMessage('');
+    setError("");
+    setStatusMessage("");
 
     const formData = new FormData(e.currentTarget);
-    const userEmail = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    const name = formData.get('name') as string;
+    const userEmail = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const name = formData.get("name") as string;
 
     try {
-      const { signUp } = await import('aws-amplify/auth');
+      const { signUp } = await import("aws-amplify/auth");
       const result = await signUp({
         username: userEmail,
         password,
@@ -90,14 +90,14 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
       setEmail(userEmail);
 
       // Check if email verification is required
-      if (result.nextStep.signUpStep === 'CONFIRM_SIGN_UP') {
+      if (result.nextStep.signUpStep === "CONFIRM_SIGN_UP") {
         setVerificationRequired(true);
       } else {
         // Sign up complete, redirect to sign in
-        window.location.href = resolveTenantPath('/sign-in');
+        window.location.href = resolveTenantPath("/sign-in");
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Sign up failed');
+      setError(err instanceof Error ? err.message : "Sign up failed");
     } finally {
       setLoading(false);
     }
@@ -106,23 +106,23 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
   const handleVerification = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setStatusMessage('');
+    setError("");
+    setStatusMessage("");
 
     const formData = new FormData(e.currentTarget);
-    const code = formData.get('code') as string;
+    const code = formData.get("code") as string;
 
     try {
-      const { confirmSignUp } = await import('aws-amplify/auth');
+      const { confirmSignUp } = await import("aws-amplify/auth");
       await confirmSignUp({
         username: email,
         confirmationCode: code,
       });
 
       // Verification successful, redirect to sign in
-      window.location.href = resolveTenantPath('/sign-in?verified=true');
+      window.location.href = resolveTenantPath("/sign-in?verified=true");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Verification failed');
+      setError(err instanceof Error ? err.message : "Verification failed");
     } finally {
       setLoading(false);
     }
@@ -130,15 +130,15 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
 
   const resendVerificationCode = async () => {
     setLoading(true);
-    setError('');
-    setStatusMessage('');
+    setError("");
+    setStatusMessage("");
 
     try {
-      const { resendSignUpCode } = await import('aws-amplify/auth');
+      const { resendSignUpCode } = await import("aws-amplify/auth");
       await resendSignUpCode({ username: email });
-      setStatusMessage('Verification code resent! Check your email.');
+      setStatusMessage("Verification code resent! Check your email.");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to resend code');
+      setError(err instanceof Error ? err.message : "Failed to resend code");
     } finally {
       setLoading(false);
     }
@@ -186,10 +186,7 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
                 Verify Your Email
               </h1>
               <p className="mt-2 text-gray-600">
-                We sent a verification code to
-                {' '}
-                <strong>{email}</strong>
-                . Enter
+                We sent a verification code to <strong>{email}</strong>. Enter
                 it below to complete your sign up.
               </p>
               {statusMessage && (
@@ -227,13 +224,12 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
                 disabled={loading}
                 className="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? 'Verifying...' : 'Verify Email'}
+                {loading ? "Verifying..." : "Verify Email"}
               </button>
             </form>
 
             <div className="mt-4 text-center text-sm text-gray-600">
-              Didn't receive the code?
-              {' '}
+              Didn't receive the code?{" "}
               <button
                 type="button"
                 onClick={resendVerificationCode}
@@ -309,7 +305,7 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
               disabled={loading}
               className="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? 'Redirecting...' : 'Sign up with Cognito Hosted UI'}
+              {loading ? "Redirecting..." : "Sign up with Cognito Hosted UI"}
             </button>
           )}
 
@@ -377,14 +373,13 @@ export function CognitoSignUp({ path: _path, locale: _locale }: SignUpProps) {
                 disabled={loading}
                 className="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? 'Creating account...' : 'Create account'}
+                {loading ? "Creating account..." : "Create account"}
               </button>
             </form>
           )}
 
           <div className="mt-6 text-center text-sm text-gray-600">
-            Already have an account?
-            {' '}
+            Already have an account?{" "}
             <TenantLink
               href="/sign-in"
               className="font-medium text-blue-600 hover:underline"
