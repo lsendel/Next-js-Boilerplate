@@ -180,6 +180,11 @@ jobs:
       - name: Run database migrations
         run: pnpm --filter web db:migrate
 
+      - name: Clean test database
+        run: pnpm --filter web tsx scripts/clean-test-db.ts
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+
       - name: Run integration tests
         run: pnpm --filter web test:integration
         env:
