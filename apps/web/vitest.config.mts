@@ -17,7 +17,7 @@ export default defineConfig({
     },
     projects: [
       {
-        extends: true,
+        extends: true as const,
         test: {
           name: 'unit',
           include: ['src/**/*.test.{js,ts}'],
@@ -29,7 +29,7 @@ export default defineConfig({
         },
       },
       {
-        extends: true,
+        extends: true as const,
         test: {
           name: 'integration',
           include: [
@@ -42,7 +42,7 @@ export default defineConfig({
       ...(enableBrowserTests
         ? [
             {
-              extends: true,
+              extends: true as const,
               test: {
                 name: 'ui',
                 include: ['**/*.test.tsx', 'src/hooks/**/*.test.ts'],
