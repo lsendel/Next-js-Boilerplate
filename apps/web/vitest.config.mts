@@ -37,11 +37,7 @@ export default defineConfig({
             'src/server/**/*.test.ts', // Include server tests (need database)
           ],
           environment: 'node',
-          poolOptions: {
-            threads: {
-              singleThread: true, // Run integration tests sequentially to avoid DB conflicts
-            },
-          },
+          fileParallelism: false, // Run test files sequentially to avoid DB conflicts
         },
       },
       ...(enableBrowserTests
