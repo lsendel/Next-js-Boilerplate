@@ -24,18 +24,11 @@ export async function GET() {
       environment: process.env.NEXT_PUBLIC_ENVIRONMENT || 'development',
     };
 
-    // Optional: Add database check
-    // Uncomment when you want to include database health
-    /*
-    try {
-      const { db } = await import('@/libs/DB');
-      await db.execute(sql`SELECT 1`);
-      health.database = 'connected';
-    } catch (error) {
-      health.database = 'disconnected';
-      health.status = 'degraded';
-    }
-    */
+    // Optional: Add database check (commented out for now)
+    // To enable database health check:
+    // 1. Import sql from drizzle-orm
+    // 2. Import db from server/db/DB
+    // 3. Execute: await db.execute(sql SELECT 1)
 
     const responseTime = Date.now() - startTime;
 
