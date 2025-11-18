@@ -52,7 +52,7 @@ export default defineConfig({
                   provider: playwright(),
                   screenshotDirectory: 'vitest-test-results',
                   instances: [
-                    { browser: 'chromium' },
+                    { browser: 'chromium' as const },
                   ],
                 },
               },
