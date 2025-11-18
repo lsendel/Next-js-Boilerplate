@@ -185,8 +185,8 @@ jobs:
       - name: Clean test database
         run: |
           PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "
-            TRUNCATE TABLE sessions CASCADE;
-            TRUNCATE TABLE users CASCADE;
+            DELETE FROM sessions;
+            DELETE FROM users;
             ALTER SEQUENCE users_id_seq RESTART WITH 1;
             ALTER SEQUENCE sessions_id_seq RESTART WITH 1;
           "
