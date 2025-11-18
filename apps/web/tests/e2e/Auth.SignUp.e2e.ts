@@ -5,6 +5,7 @@ import {
   getStrongPasswords,
   getWeakPasswords,
 } from './test-data';
+import { cleanupTestAuth } from './helpers';
 
 /**
  * Sign-Up E2E Tests
@@ -13,7 +14,10 @@ import {
  */
 
 test.describe('Sign-Up Flow', () => {
-  test.beforeEach(async ({ signUpPage }) => {
+  test.beforeEach(async ({ signUpPage, page }) => {
+    // Clean up test auth state before each test
+    await cleanupTestAuth(page);
+
     await signUpPage.visit();
     await signUpPage.assertLoaded();
   });
@@ -239,8 +243,6 @@ test.describe('Sign-Up Security', () => {
     const passwordType = await signUpPage.passwordInput.getAttribute('type');
     expect(passwordType).toBe('password');
   });
-
-});
 
   test('should not allow XSS in form fields', async ({ signUpPage, page }) => {
     const xssPayload = '<script>alert("XSS")</script>';

@@ -144,8 +144,8 @@ Developer experience first, extremely flexible code structure and only keep what
 - 🔒 Authentication with [Clerk](https://clerk.com?utm_source=github&utm_medium=sponsorship&utm_campaign=nextjs-boilerplate): Sign up, Sign in, Sign out, Forgot password, Reset password, and more.
 - 👤 Passwordless Authentication with Magic Links, Multi-Factor Auth (MFA), Social Auth (Google, Facebook, Twitter, GitHub, Apple, and more), Passwordless login with Passkeys, User Impersonation
 - 📦 Type-safe ORM with DrizzleORM, compatible with PostgreSQL, SQLite, and MySQL
-- 💽 Offline and local development database with PGlite
-- ☁️ Remote and production database with [Prisma Postgres](https://www.prisma.io/?via=nextjs-boilerplate)
+- 💽 Offline and local development database with PGlite (Postgres-compatible)
+- ☁️ Production-ready database with **Cloudflare D1** (default when deployed to Cloudflare Pages), with optional PostgreSQL when running on a Node host
 - 🌐 Multi-language (i18n) with next-intl and [Crowdin](https://l.crowdin.com/next-js)
 - ♻️ Type-safe environment variables with T3 Env
 - ⌨️ Form handling with React Hook Form
@@ -267,6 +267,10 @@ CLERK_SECRET_KEY=your_clerk_secret_key
 Now you have a fully functional authentication system with Next.js, including features such as sign up, sign in, sign out, forgot password, reset password, update profile, update password, update email, delete account, and more.
 
 ### Set up remote database
+
+> **Cloudflare-first note:** When you deploy this boilerplate to **Cloudflare Pages**, the default production database is **Cloudflare D1**, managed via Drizzle ORM and Wrangler. In that case, you typically do **not** need a separate hosted PostgreSQL instance. See `CLOUDFLARE_MIGRATION_GUIDE.md` and `.github/workflows/deploy-cloudflare.yml` for the D1 flow.
+>
+> The instructions below apply when you deploy to a traditional Node host (e.g. Sevalla, custom Node servers) and want a remote PostgreSQL database instead of D1.
 
 The project uses DrizzleORM, a type-safe ORM that is compatible with PostgreSQL, SQLite, and MySQL databases. By default, the project is configured to seamlessly work with PostgreSQL, and you have the flexibility to choose any PostgreSQL database provider of your choice.
 
@@ -436,6 +440,15 @@ Notes:
 
 ### Deploy to production
 
+> **Cloudflare Pages (recommended):** This repository is preconfigured to deploy to **Cloudflare Pages + Workers** using **Cloudflare D1** as the production database. In that flow, you normally don't call `npm run build`/`start` directly on a server. Instead, rely on:
+>
+> - `.github/workflows/deploy-cloudflare.yml` for CI/CD
+> - `pnpm --filter web cf:deploy` for manual deployments
+>
+> Those commands build the app with the OpenNext Cloudflare adapter and apply D1 migrations via Wrangler.
+>
+> The commands below are still valid when you deploy to a traditional Node host (e.g. Sevalla, bare Node server) and use `DATABASE_URL` instead of D1.
+
 During the build process, database migrations are automatically executed, so there's no need to run them manually. However, you must define `DATABASE_URL` in your environment variables.
 
 Then, you can generate a production build with:
@@ -481,6 +494,42 @@ SENTRY_PROJECT=
 ```
 
 You also need to create a environment variable `SENTRY_AUTH_TOKEN` in your hosting provider's dashboard.
+
+#### Monitoring feature flags (Sentry, PostHog, Cloudflare Analytics)
+
+This boilerplate exposes a small set of **feature flags** to turn monitoring providers on/off without code changes.
+
+| Service               | Env var                          | Default (Cloudflare build) | Notes |
+| --------------------- | -------------------------------- | --------------------------- | ----- |
+| Sentry                | `NEXT_PUBLIC_ENABLE_SENTRY`      | `true`                      | If `false`, Sentry SDK is not initialized on client or server. |
+| PostHog               | `NEXT_PUBLIC_ENABLE_POSTHOG`     | `true`                      | If `false`, PostHog scripts are not loaded and events are not sent. |
+| Cloudflare Analytics  | `NEXT_PUBLIC_ENABLE_CF_ANALYTICS`| `true`                      | If `false`, the Cloudflare Web Analytics script is not injected. |
+
+Minimal required keys when enabled:
+
+- Sentry: `SENTRY_DSN` **or** `NEXT_PUBLIC_SENTRY_DSN`
+- PostHog: `NEXT_PUBLIC_POSTHOG_KEY` (and optionally `NEXT_PUBLIC_POSTHOG_HOST`)
+- Cloudflare Analytics: `NEXT_PUBLIC_CF_ANALYTICS_TOKEN`
+
+#### Staging vs production: recommended monitoring settings
+
+- **Production (e.g. `environment.1pet.com`, `test.1pet.me`)**
+  - Keep all three enabled (`true`) to get full error + product analytics + CF Web Analytics.
+  - Use real DSNs / keys in your hosting env or GitHub Actions.
+- **Staging (e.g. `environment-stage.1pet.com`, `stg.1pet.me`)**
+  - Recommended: enable Sentry + CF Analytics, optionally disable PostHog to avoid skewing funnels.
+  - Override flags via:
+    - Cloudflare Pages **Environment variables** for your staging project, or
+    - GitHub Actions `vars`/`secrets` in `.github/workflows/deploy-cloudflare.yml`.
+
+The GitHub Actions workflow already exposes these flags:
+
+- `NEXT_PUBLIC_ENABLE_SENTRY`: `${{ vars.ENABLE_SENTRY || 'true' }}`
+- `NEXT_PUBLIC_ENABLE_POSTHOG`: `${{ vars.ENABLE_POSTHOG || 'true' }}`
+- `NEXT_PUBLIC_ENABLE_CF_ANALYTICS`: `${{ vars.ENABLE_CF_ANALYTICS || 'true' }}`
+
+Set `ENABLE_SENTRY`, `ENABLE_POSTHOG`, and `ENABLE_CF_ANALYTICS` as **repository variables** or **environment variables** in GitHub to control behavior per environment without touching application code.
+
 
 ### Code coverage
 

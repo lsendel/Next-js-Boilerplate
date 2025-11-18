@@ -11,11 +11,14 @@
  */
 
 import { expect, test } from '@playwright/test';
+import { cleanupTestAuth } from './helpers';
 
 test.describe('Test Adapter Authentication', () => {
   test.beforeEach(async ({ page }) => {
+    // Clean up test auth state before each test
+    await cleanupTestAuth(page);
+
     // Start fresh on each test
-    // Note: In-memory storage is cleared on server restart
     await page.goto('/');
   });
 

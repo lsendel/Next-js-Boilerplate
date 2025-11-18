@@ -1,6 +1,6 @@
-import { Suspense } from "react";
-import { setRequestLocale } from "next-intl/server";
-import { AuthProvider } from "@/libs/auth/components";
+import { Suspense } from 'react';
+import { setRequestLocale } from 'next-intl/server';
+import { AuthProvider } from '@/libs/auth/components';
 
 export default async function AuthLayout(props: {
   children: React.ReactNode;

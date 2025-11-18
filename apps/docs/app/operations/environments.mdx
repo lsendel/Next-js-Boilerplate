@@ -6,7 +6,7 @@ Use this checklist whenever you spin up a new environment (local, staging, produ
 
 | Variable | Scope | Where to configure | Notes |
 | --- | --- | --- | --- |
-| `DATABASE_URL` | Server | Hosting provider + GitHub Actions secrets | Must point to PostgreSQL/PGlite instance; used by Drizzle and migrations. |
+| `DATABASE_URL` | Server | CI + any Node-based hosting | Must point to a Postgres-compatible instance (PGlite/PostgreSQL) for Node workflows (tests, `db:migrate`). Cloudflare D1 in production uses the `DB` binding configured via Wrangler instead of this variable. |
 | `NEXT_PUBLIC_APP_URL` | Client | Hosting provider | Used for absolute URLs, sitemap, CORS fallback. Optional locally. |
 | `NEXT_TELEMETRY_DISABLED` | Server | Optional | Set to `1` in CI to disable Next telemetry. |
 
@@ -34,8 +34,9 @@ Use this checklist whenever you spin up a new environment (local, staging, produ
 
 | Variable | Scope | Where | Notes |
 | --- | --- | --- | --- |
-| `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_ORGANIZATION`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` | Mixed | Hosting + GitHub secrets | Required to upload source maps and capture runtime errors. |
+| `SENTRY_DSN`, `SENTRY_ORGANIZATION`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` | Mixed | Hosting + GitHub secrets | Required to upload source maps and capture runtime errors. |
 | `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST` | Client | Hosting | Enable analytics dashboarding if you use PostHog. |
+| `NEXT_PUBLIC_ENABLE_SENTRY`, `NEXT_PUBLIC_ENABLE_POSTHOG`, `NEXT_PUBLIC_ENABLE_CF_ANALYTICS` | Client | GitHub repo/env vars or Cloudflare Pages env vars | Feature flags to turn monitoring providers on/off per environment. |
 | `NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN`, `NEXT_PUBLIC_BETTER_STACK_INGESTING_HOST` | Client | Hosting | Route LogTape logs to Better Stack. |
 | `NEXT_PUBLIC_BETTER_STACK_*` | Client | Hosting | Only set if you forward logs externally. |
 

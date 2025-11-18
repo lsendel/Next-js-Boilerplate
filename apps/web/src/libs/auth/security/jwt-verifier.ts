@@ -3,8 +3,8 @@
  * Provides JWT signature verification using Web Crypto API (no external dependencies)
  */
 
-import { Buffer } from "node:buffer";
-import { securityLogger } from "@/libs/Logger";
+import { Buffer } from 'node:buffer';
+import { securityLogger } from '@/libs/Logger';
 
 export type JWK = {
   kid: string;
@@ -45,7 +45,7 @@ export function decodeJWT(token: string): {
   signature: string;
 } | null {
   try {
-    const parts = token.split(".");
+    const parts = token.split('.');
     if (parts.length !== 3) {
       return null;
     }
@@ -57,11 +57,11 @@ export function decodeJWT(token: string): {
     }
 
     const header = JSON.parse(
-      Buffer.from(headerPart, "base64url").toString("utf-8"),
+      Buffer.from(headerPart, 'base64url').toString('utf-8'),
     ) as JWTHeader;
 
     const payload = JSON.parse(
-      Buffer.from(payloadPart, "base64url").toString("utf-8"),
+      Buffer.from(payloadPart, 'base64url').toString('utf-8'),
     ) as JWTPayload;
 
     return {
@@ -90,12 +90,12 @@ export async function fetchJWKS(jwksUrl: string): Promise<JWKS | null> {
 
     const response = await fetch(jwksUrl, {
       headers: {
-        Accept: "application/json",
+        Accept: 'application/json',
       },
     });
 
     if (!response.ok) {
-      securityLogger.error("Failed to fetch JWKS", {
+      securityLogger.error('Failed to fetch JWKS', {
         jwksUrl,
         status: response.status,
       });
@@ -112,7 +112,7 @@ export async function fetchJWKS(jwksUrl: string): Promise<JWKS | null> {
 
     return jwks;
   } catch (error) {
-    securityLogger.error("Failed to fetch JWKS", { error });
+    securityLogger.error('Failed to fetch JWKS', { error });
     return null;
   }
 }
@@ -121,7 +121,7 @@ export async function fetchJWKS(jwksUrl: string): Promise<JWKS | null> {
  * Find matching JWK by kid
  */
 export function findJWK(jwks: JWKS, kid: string): JWK | null {
-  return jwks.keys.find((key) => key.kid === kid) || null;
+  return jwks.keys.find(key => key.kid === kid) || null;
 }
 
 /**
@@ -130,13 +130,13 @@ export function findJWK(jwks: JWKS, kid: string): JWK | null {
 export async function importJWK(jwk: JWK): Promise<CryptoKey | null> {
   try {
     // Only support RSA keys for now (most common for JWT)
-    if (jwk.kty !== "RSA") {
-      securityLogger.error("Only RSA keys are supported", { keyType: jwk.kty });
+    if (jwk.kty !== 'RSA') {
+      securityLogger.error('Only RSA keys are supported', { keyType: jwk.kty });
       return null;
     }
 
     return await crypto.subtle.importKey(
-      "jwk",
+      'jwk',
       {
         kty: jwk.kty,
         n: jwk.n,
@@ -145,14 +145,14 @@ export async function importJWK(jwk: JWK): Promise<CryptoKey | null> {
         ext: true,
       },
       {
-        name: "RSASSA-PKCS1-v1_5",
-        hash: { name: "SHA-256" },
+        name: 'RSASSA-PKCS1-v1_5',
+        hash: { name: 'SHA-256' },
       },
       false,
-      ["verify"],
+      ['verify'],
     );
   } catch (error) {
-    securityLogger.error("Failed to import JWK", { error });
+    securityLogger.error('Failed to import JWK', { error });
     return null;
   }
 }
@@ -165,7 +165,7 @@ export async function verifyJWTSignature(
   publicKey: CryptoKey,
 ): Promise<boolean> {
   try {
-    const parts = token.split(".");
+    const parts = token.split('.');
     if (parts.length !== 3) {
       return false;
     }
@@ -181,19 +181,19 @@ export async function verifyJWTSignature(
     const signedDataBuffer = new TextEncoder().encode(signedData);
 
     // Decode the signature from base64url
-    const signatureBuffer = Buffer.from(signaturePart, "base64url");
+    const signatureBuffer = Buffer.from(signaturePart, 'base64url');
 
     // Verify the signature
     return await crypto.subtle.verify(
       {
-        name: "RSASSA-PKCS1-v1_5",
+        name: 'RSASSA-PKCS1-v1_5',
       },
       publicKey,
       signatureBuffer,
       signedDataBuffer,
     );
   } catch (error) {
-    securityLogger.error("Failed to verify JWT signature", { error });
+    securityLogger.error('Failed to verify JWT signature', { error });
     return false;
   }
 }
@@ -215,7 +215,7 @@ export function validateJWTClaims(
   // Check expiration
   if (payload.exp !== undefined) {
     if (payload.exp + clockTolerance < now) {
-      securityLogger.warn("JWT expired", { exp: payload.exp, now });
+      securityLogger.warn('JWT expired', { exp: payload.exp, now });
       return false;
     }
   }
@@ -223,7 +223,7 @@ export function validateJWTClaims(
   // Check not before
   if (payload.nbf !== undefined) {
     if (payload.nbf - clockTolerance > now) {
-      securityLogger.warn("JWT not yet valid", { nbf: payload.nbf, now });
+      securityLogger.warn('JWT not yet valid', { nbf: payload.nbf, now });
       return false;
     }
   }
@@ -240,12 +240,12 @@ export function validateJWTClaims(
         ? [payload.aud]
         : [];
 
-    const hasValidAudience = expectedAudiences.some((expectedAud) =>
+    const hasValidAudience = expectedAudiences.some(expectedAud =>
       tokenAudiences.includes(expectedAud),
     );
 
     if (!hasValidAudience) {
-      securityLogger.warn("JWT audience mismatch", {
+      securityLogger.warn('JWT audience mismatch', {
         expected: expectedAudiences,
         actual: tokenAudiences,
       });
@@ -255,7 +255,7 @@ export function validateJWTClaims(
 
   // Check issuer
   if (options.issuer && payload.iss !== options.issuer) {
-    securityLogger.warn("JWT issuer mismatch", {
+    securityLogger.warn('JWT issuer mismatch', {
       expected: options.issuer,
       actual: payload.iss,
     });
@@ -281,7 +281,7 @@ export async function verifyJWT(
     // Step 1: Decode the JWT
     const decoded = decodeJWT(token);
     if (!decoded) {
-      securityLogger.error("Failed to decode JWT");
+      securityLogger.error('Failed to decode JWT');
       return null;
     }
 
@@ -293,14 +293,14 @@ export async function verifyJWT(
     // Step 3: Fetch JWKS
     const jwks = await fetchJWKS(jwksUrl);
     if (!jwks) {
-      securityLogger.error("Failed to fetch JWKS");
+      securityLogger.error('Failed to fetch JWKS');
       return null;
     }
 
     // Step 4: Find matching JWK
     const jwk = findJWK(jwks, decoded.header.kid);
     if (!jwk) {
-      securityLogger.error("No matching JWK found", {
+      securityLogger.error('No matching JWK found', {
         kid: decoded.header.kid,
       });
       return null;
@@ -309,20 +309,20 @@ export async function verifyJWT(
     // Step 5: Import public key
     const publicKey = await importJWK(jwk);
     if (!publicKey) {
-      securityLogger.error("Failed to import public key");
+      securityLogger.error('Failed to import public key');
       return null;
     }
 
     // Step 6: Verify signature
     const isValid = await verifyJWTSignature(token, publicKey);
     if (!isValid) {
-      securityLogger.error("JWT signature verification failed");
+      securityLogger.error('JWT signature verification failed');
       return null;
     }
 
     return decoded.payload;
   } catch (error) {
-    securityLogger.error("JWT verification failed", { error });
+    securityLogger.error('JWT verification failed', { error });
     return null;
   }
 }

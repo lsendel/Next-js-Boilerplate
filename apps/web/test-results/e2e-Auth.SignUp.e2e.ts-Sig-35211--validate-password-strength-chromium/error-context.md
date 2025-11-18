@@ -1,0 +1,117 @@
+# Page snapshot
+
+```yaml
+- generic:
+  - generic [active]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - navigation [ref=e6]:
+            - button "previous" [disabled] [ref=e7]:
+              - img "previous" [ref=e8]
+            - generic [ref=e10]:
+              - generic [ref=e11]: 1/
+              - text: "1"
+            - button "next" [disabled] [ref=e12]:
+              - img "next" [ref=e13]
+          - img
+        - generic [ref=e15]:
+          - generic [ref=e16]:
+            - img [ref=e17]
+            - generic "Latest available version is detected (16.0.3)." [ref=e19]: Next.js 16.0.3
+            - generic [ref=e20]: Turbopack
+          - img
+      - generic [ref=e21]:
+        - dialog "Runtime Error" [ref=e22]:
+          - generic [ref=e25]:
+            - generic [ref=e26]:
+              - generic [ref=e27]:
+                - generic [ref=e29]: Runtime Error
+                - generic [ref=e30]:
+                  - button "Copy Error Info" [ref=e31] [cursor=pointer]:
+                    - img [ref=e32]
+                  - button "No related documentation found" [disabled] [ref=e34]:
+                    - img [ref=e35]
+                  - link "Learn more about enabling Node.js inspector for server code with Chrome DevTools" [ref=e37] [cursor=pointer]:
+                    - /url: https://nextjs.org/docs/app/building-your-application/configuring/debugging#server-side-code
+                    - img [ref=e38]
+              - generic [ref=e46]:
+                - generic [ref=e47]: "Failed query: select \"tenantDomains\".\"id\", \"tenantDomains\".\"tenant_id\", \"tenantDomains\".\"domain\", \"tenantDomains\".\"provider\", \"tenantDomains\".\"verified_at\", \"tenantDomains\".\"created_at\", \"tenantDomains\".\"updated_at\", \"tenantDomains_tenant\".\"data\" as \"tenant\" from \"tenant_domains\" \"tenantDomains\" left join lateral (select json_build_array(\"tenantDomains_tenant\".\"id\", \"tenantDomains_tenant\".\"slug\", \"tenantDomains_tenant\".\"name\", \"tenantDomains_tenant\".\"status\", \"tenantDomains_tenant\".\"default_locale\", \"tenantDomains_tenant\".\"plan\", \"tenantDomains_tenant\".\"created_at\", \"tenantDomains_tenant\".\"updated_at\") as \"data\" from (select * from \"tenants\" \"tenantDomains_tenant\" where \"tenantDomains_tenant\".\"id\" = \"tenantDomains\".\"tenant_id\" limit $1) \"tenantDomains_tenant\") \"tenantDomains_tenant\" on true where \"tenantDomains\".\"domain\" = $2 limit $3 params: 1,localhost,1"
+                - button "Show More" [ref=e49] [cursor=pointer]
+            - generic [ref=e50]:
+              - generic [ref=e51]:
+                - paragraph [ref=e53]:
+                  - img [ref=e55]
+                  - generic [ref=e59]: ../../node_modules/.pnpm/drizzle-orm@0.44.7_@cloudflare+workers-types@4.20251115.0_@electric-sql+pglite@0.3.14_@_e6db1ff8156ccc4ae6768c5969b7e410/node_modules/src/pg-core/session.ts (73:11) @ NodePgPreparedQuery.queryWithCache
+                  - button "Open in editor" [ref=e60] [cursor=pointer]:
+                    - img [ref=e62]
+                - generic [ref=e65]:
+                  - generic [ref=e66]: 71 | return await query();
+                  - generic [ref=e67]: "72 | } catch (e) {"
+                  - generic [ref=e68]: "> 73 | throw new DrizzleQueryError(queryString, params, e as Error);"
+                  - generic [ref=e69]: "| ^"
+                  - generic [ref=e70]: "74 | }"
+                  - generic [ref=e71]: "75 | }"
+                  - generic [ref=e72]: 76 |
+              - generic [ref=e73]:
+                - generic [ref=e74]:
+                  - paragraph [ref=e75]:
+                    - text: Call Stack
+                    - generic [ref=e76]: "21"
+                  - button "Show 16 ignore-listed frame(s)" [ref=e77] [cursor=pointer]:
+                    - text: Show 16 ignore-listed frame(s)
+                    - img [ref=e78]
+                - generic [ref=e80]:
+                  - generic [ref=e81]:
+                    - text: NodePgPreparedQuery.queryWithCache
+                    - button "Open NodePgPreparedQuery.queryWithCache in editor" [ref=e82] [cursor=pointer]:
+                      - img [ref=e83]
+                  - text: ../../node_modules/.pnpm/drizzle-orm@0.44.7_@cloudflare+workers-types@4.20251115.0_@electric-sql+pglite@0.3.14_@_e6db1ff8156ccc4ae6768c5969b7e410/node_modules/src/pg-core/session.ts (73:11)
+                - generic [ref=e85]:
+                  - generic [ref=e86]:
+                    - text: async
+                    - button "Open async in editor" [ref=e87] [cursor=pointer]:
+                      - img [ref=e88]
+                  - text: ../../node_modules/.pnpm/drizzle-orm@0.44.7_@cloudflare+workers-types@4.20251115.0_@electric-sql+pglite@0.3.14_@_e6db1ff8156ccc4ae6768c5969b7e410/node_modules/src/node-postgres/session.ts (154:19)
+                - generic [ref=e90]:
+                  - generic [ref=e91]:
+                    - text: async getTenantByDomain
+                    - button "Open async getTenantByDomain in editor" [ref=e92] [cursor=pointer]:
+                      - img [ref=e93]
+                  - text: src/middleware/utils/tenant.ts (138:20)
+                - generic [ref=e95]:
+                  - generic [ref=e96]:
+                    - text: async resolveTenantContext
+                    - button "Open async resolveTenantContext in editor" [ref=e97] [cursor=pointer]:
+                      - img [ref=e98]
+                  - text: src/middleware/utils/tenant.ts (232:26)
+                - generic [ref=e100]:
+                  - generic [ref=e101]:
+                    - text: async middleware
+                    - button "Open async middleware in editor" [ref=e102] [cursor=pointer]:
+                      - img [ref=e103]
+                  - text: src/middleware.ts (140:25)
+          - generic [ref=e105]: "1"
+          - generic [ref=e106]: "2"
+        - contentinfo [ref=e107]:
+          - region "Error feedback" [ref=e108]:
+            - paragraph [ref=e109]:
+              - link "Was this helpful?" [ref=e110] [cursor=pointer]:
+                - /url: https://nextjs.org/telemetry#error-feedback
+            - button "Mark as helpful" [disabled] [ref=e111]:
+              - img [ref=e112]
+            - button "Mark as not helpful" [disabled] [ref=e115]:
+              - img [ref=e116]
+    - generic [ref=e122] [cursor=pointer]:
+      - button "Open Next.js Dev Tools" [ref=e123]:
+        - img [ref=e124]
+      - generic [ref=e127]:
+        - button "Open issues overlay" [ref=e128]:
+          - generic [ref=e129]:
+            - generic [ref=e130]: "0"
+            - generic [ref=e131]: "1"
+          - generic [ref=e132]: Issue
+        - button "Collapse issues badge" [ref=e133]:
+          - img [ref=e134]
+  - alert [ref=e136]
+```

@@ -24,8 +24,8 @@ export class DashboardPage extends BasePage {
     // Initialize locators
     this.welcomeMessage = page.getByText(/welcome|hello/i).first();
     this.userEmail = page.locator('[data-testid="user-email"]');
-    this.navigation = page.locator('nav');
-    this.signOutButton = page.getByRole('button', { name: /sign out|log out/i });
+    this.navigation = page.getByRole('navigation', { name: /main/i }).or(page.locator('nav').first());
+    this.signOutButton = page.getByRole('button', { name: /sign out|log out/i }).first();
     this.userProfileLink = page.getByRole('link', { name: /profile|account/i });
     this.settingsLink = page.getByRole('link', { name: /settings/i });
     this.counterSection = page.locator('[data-testid="counter"]');

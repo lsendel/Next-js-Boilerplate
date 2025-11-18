@@ -5,9 +5,9 @@
  * including OAuth2 social providers and MFA
  */
 
-import { Amplify } from "aws-amplify";
-import type { ResourcesConfig } from "aws-amplify";
-import { authLogger } from "@/libs/Logger";
+import { Amplify } from 'aws-amplify';
+import type { ResourcesConfig } from 'aws-amplify';
+import { authLogger } from '@/libs/Logger';
 
 export type CognitoConfig = {
   region: string;
@@ -19,12 +19,12 @@ export type CognitoConfig = {
     scope: string[]; // e.g., ['email', 'profile', 'openid']
     redirectSignIn: string; // e.g., 'http://localhost:3000/dashboard'
     redirectSignOut: string; // e.g., 'http://localhost:3000/'
-    responseType: "code" | "token"; // 'code' for authorization code flow
+    responseType: 'code' | 'token'; // 'code' for authorization code flow
   };
   // MFA Configuration
   mfa?: {
     enabled: boolean;
-    preferredMethod?: "TOTP" | "SMS"; // TOTP = Authenticator app, SMS = text message
+    preferredMethod?: 'TOTP' | 'SMS'; // TOTP = Authenticator app, SMS = text message
     totpIssuer?: string; // Issuer name shown in authenticator app
   };
 };
@@ -34,9 +34,9 @@ export type CognitoConfig = {
  */
 export function getCognitoConfig(): CognitoConfig {
   const config: CognitoConfig = {
-    region: process.env.NEXT_PUBLIC_COGNITO_REGION || "us-east-1",
-    userPoolId: process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID || "",
-    userPoolClientId: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID || "",
+    region: process.env.NEXT_PUBLIC_COGNITO_REGION || 'us-east-1',
+    userPoolId: process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID || '',
+    userPoolClientId: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID || '',
   };
 
   // OAuth2 Configuration
@@ -44,26 +44,26 @@ export function getCognitoConfig(): CognitoConfig {
     config.oauth = {
       domain: process.env.NEXT_PUBLIC_COGNITO_OAUTH_DOMAIN,
       scope: (
-        process.env.NEXT_PUBLIC_COGNITO_OAUTH_SCOPE || "email,profile,openid"
-      ).split(","),
+        process.env.NEXT_PUBLIC_COGNITO_OAUTH_SCOPE || 'email,profile,openid'
+      ).split(','),
       redirectSignIn:
-        process.env.NEXT_PUBLIC_COGNITO_REDIRECT_SIGN_IN ||
-        `${typeof window !== "undefined" ? window.location.origin : ""}/dashboard`,
+        process.env.NEXT_PUBLIC_COGNITO_REDIRECT_SIGN_IN
+        || `${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard`,
       redirectSignOut:
-        process.env.NEXT_PUBLIC_COGNITO_REDIRECT_SIGN_OUT ||
-        `${typeof window !== "undefined" ? window.location.origin : ""}/`,
-      responseType: "code",
+        process.env.NEXT_PUBLIC_COGNITO_REDIRECT_SIGN_OUT
+        || `${typeof window !== 'undefined' ? window.location.origin : ''}/`,
+      responseType: 'code',
     };
   }
 
   // MFA Configuration
-  if (process.env.NEXT_PUBLIC_COGNITO_MFA_ENABLED === "true") {
+  if (process.env.NEXT_PUBLIC_COGNITO_MFA_ENABLED === 'true') {
     config.mfa = {
       enabled: true,
       preferredMethod:
-        (process.env.NEXT_PUBLIC_COGNITO_MFA_METHOD as "TOTP" | "SMS") ||
-        "TOTP",
-      totpIssuer: process.env.NEXT_PUBLIC_COGNITO_MFA_ISSUER || "MyApp",
+        (process.env.NEXT_PUBLIC_COGNITO_MFA_METHOD as 'TOTP' | 'SMS')
+        || 'TOTP',
+      totpIssuer: process.env.NEXT_PUBLIC_COGNITO_MFA_ISSUER || 'MyApp',
     };
   }
 
@@ -79,7 +79,7 @@ export function configureAmplify(): void {
 
   if (!config.userPoolId || !config.userPoolClientId) {
     authLogger.warn(
-      "Cognito configuration incomplete. Please set NEXT_PUBLIC_COGNITO_USER_POOL_ID and NEXT_PUBLIC_COGNITO_CLIENT_ID",
+      'Cognito configuration incomplete. Please set NEXT_PUBLIC_COGNITO_USER_POOL_ID and NEXT_PUBLIC_COGNITO_CLIENT_ID',
     );
     return;
   }
@@ -104,19 +104,19 @@ export function configureAmplify(): void {
       redirectSignIn: [config.oauth.redirectSignIn],
       redirectSignOut: [config.oauth.redirectSignOut],
       responseType: config.oauth.responseType,
-      providers: [] as ("Google" | "Facebook" | "Apple")[],
+      providers: [] as ('Google' | 'Facebook' | 'Apple')[],
     };
 
     // Add social providers
-    const providers: ("Google" | "Facebook" | "Apple")[] = [];
-    if (process.env.NEXT_PUBLIC_COGNITO_OAUTH_GOOGLE === "true") {
-      providers.push("Google");
+    const providers: ('Google' | 'Facebook' | 'Apple')[] = [];
+    if (process.env.NEXT_PUBLIC_COGNITO_OAUTH_GOOGLE === 'true') {
+      providers.push('Google');
     }
-    if (process.env.NEXT_PUBLIC_COGNITO_OAUTH_FACEBOOK === "true") {
-      providers.push("Facebook");
+    if (process.env.NEXT_PUBLIC_COGNITO_OAUTH_FACEBOOK === 'true') {
+      providers.push('Facebook');
     }
-    if (process.env.NEXT_PUBLIC_COGNITO_OAUTH_APPLE === "true") {
-      providers.push("Apple");
+    if (process.env.NEXT_PUBLIC_COGNITO_OAUTH_APPLE === 'true') {
+      providers.push('Apple');
     }
 
     if (providers.length > 0) {
@@ -127,9 +127,9 @@ export function configureAmplify(): void {
   // Configure MFA
   if (config.mfa?.enabled) {
     amplifyConfig.Auth!.Cognito.mfa = {
-      status: "on",
-      totpEnabled: config.mfa.preferredMethod === "TOTP",
-      smsEnabled: config.mfa.preferredMethod === "SMS",
+      status: 'on',
+      totpEnabled: config.mfa.preferredMethod === 'TOTP',
+      smsEnabled: config.mfa.preferredMethod === 'SMS',
     };
   }
 
@@ -140,12 +140,12 @@ export function configureAmplify(): void {
  * Get OAuth2 sign-in URL for a specific provider
  */
 export function getOAuthSignInUrl(
-  provider: "Google" | "Facebook" | "Apple",
+  provider: 'Google' | 'Facebook' | 'Apple',
 ): string {
   const config = getCognitoConfig();
 
   if (!config.oauth) {
-    throw new Error("OAuth not configured");
+    throw new Error('OAuth not configured');
   }
 
   const { domain, redirectSignIn, scope, responseType } = config.oauth;
@@ -155,7 +155,7 @@ export function getOAuthSignInUrl(
     redirect_uri: redirectSignIn,
     response_type: responseType,
     client_id: config.userPoolClientId,
-    scope: scope.join(" "),
+    scope: scope.join(' '),
   });
 
   return `https://${domain}/oauth2/authorize?${params.toString()}`;
@@ -168,7 +168,7 @@ export function getHostedUIUrl(): string {
   const config = getCognitoConfig();
 
   if (!config.oauth) {
-    throw new Error("OAuth not configured");
+    throw new Error('OAuth not configured');
   }
 
   const { domain, redirectSignIn, scope, responseType } = config.oauth;
@@ -177,7 +177,7 @@ export function getHostedUIUrl(): string {
     redirect_uri: redirectSignIn,
     response_type: responseType,
     client_id: config.userPoolClientId,
-    scope: scope.join(" "),
+    scope: scope.join(' '),
   });
 
   return `https://${domain}/login?${params.toString()}`;

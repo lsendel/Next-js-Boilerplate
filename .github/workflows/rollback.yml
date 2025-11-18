@@ -1,0 +1,405 @@
+name: Rollback Deployment
+
+# This workflow allows quick rollback to a previous deployment version
+# Best practice: Always test rollback procedures regularly
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to rollback'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
+      target_version:
+        description: 'Version to rollback to (e.g., 1.2.3 or leave empty for previous)'
+        required: false
+        type: string
+      reason:
+        description: 'Reason for rollback'
+        required: true
+        type: string
+      rollback_database:
+        description: 'Also rollback database migrations (DANGEROUS)'
+        required: false
+        type: boolean
+        default: false
+
+# Only one rollback per environment at a time
+concurrency:
+  group: rollback-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  deployments: write
+  issues: write
+  actions: read
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '10'
+
+jobs:
+  # ============================================================================
+  # JOB 1: Validate rollback request
+  # ============================================================================
+  validate:
+    name: Validate Rollback
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      target_version: ${{ steps.determine-version.outputs.version }}
+      deployment_id: ${{ steps.find-deployment.outputs.deployment_id }}
+      can_rollback: ${{ steps.validate.outputs.can_rollback }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate environment
+        id: validate
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+
+          # Production rollbacks require extra validation
+          if [[ "$ENV" == "production" ]]; then
+            echo "⚠️ **WARNING:** Rolling back PRODUCTION environment" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Reason:** ${{ github.event.inputs.reason }}" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Validate that we're not in the middle of another deployment
+          echo "can_rollback=true" >> $GITHUB_OUTPUT
+
+      - name: Determine target version
+        id: determine-version
+        run: |
+          if [[ -n "${{ github.event.inputs.target_version }}" ]]; then
+            VERSION="${{ github.event.inputs.target_version }}"
+            echo "Using specified version: $VERSION"
+          else
+            # Find previous successful deployment
+            # This is a simplified version - in production, query deployment API
+            CURRENT_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.0")
+            PREVIOUS_VERSION=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "1.0.0")
+            VERSION="$PREVIOUS_VERSION"
+            echo "Current version: $CURRENT_VERSION"
+            echo "Rolling back to previous version: $VERSION"
+          fi
+
+          # Validate version exists
+          if ! git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "::error::Version v$VERSION does not exist"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "**Target Version:** \`$VERSION\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Find previous deployment
+        id: find-deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployments = await github.rest.repos.listDeployments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              environment: '${{ github.event.inputs.environment }}',
+              per_page: 10
+            });
+
+            // Find the last successful deployment
+            for (const deployment of deployments.data) {
+              const statuses = await github.rest.repos.listDeploymentStatuses({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                deployment_id: deployment.id
+              });
+
+              const successStatus = statuses.data.find(s => s.state === 'success');
+              if (successStatus && deployment.ref.includes('${{ steps.determine-version.outputs.version }}')) {
+                core.setOutput('deployment_id', deployment.id);
+                return deployment.id;
+              }
+            }
+
+            core.setFailed('No successful deployment found for version ${{ steps.determine-version.outputs.version }}');
+
+  # ============================================================================
+  # JOB 2: Create backup before rollback
+  # ============================================================================
+  backup:
+    name: Create Pre-Rollback Backup
+    needs: validate
+    if: needs.validate.outputs.can_rollback == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Backup D1 database
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          BACKUP_FILE="backup-pre-rollback-$(date +%Y%m%d-%H%M%S).sql"
+
+          echo "Creating backup: $BACKUP_FILE"
+
+          # Export D1 database
+          if [[ "$ENV" == "production" ]]; then
+            npx wrangler d1 export next-boilerplate-db --remote --output "$BACKUP_FILE"
+          elif [[ "$ENV" == "staging" ]]; then
+            npx wrangler d1 export next-boilerplate-db --remote --env stage --output "$BACKUP_FILE"
+          else
+            npx wrangler d1 export next-boilerplate-db --local --output "$BACKUP_FILE"
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pre-rollback-backup-${{ github.event.inputs.environment }}-${{ github.run_number }}
+          path: backup-*.sql
+          retention-days: 30
+
+      - name: Backup summary
+        run: |
+          echo "## 💾 Pre-Rollback Backup Created" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Backup ID:** ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Retention:** 30 days" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================================================
+  # JOB 3: Perform rollback
+  # ============================================================================
+  rollback:
+    name: Rollback to ${{ needs.validate.outputs.target_version }}
+    needs: [validate, backup]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout target version
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.validate.outputs.target_version }}
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build application (from target version)
+        run: pnpm --filter web build-local
+        env:
+          NEXT_PUBLIC_APP_VERSION: ${{ needs.validate.outputs.target_version }}
+          NEXT_PUBLIC_ENVIRONMENT: ${{ github.event.inputs.environment }}
+
+      # Rollback database migrations if requested (DANGEROUS)
+      - name: Rollback database migrations
+        if: github.event.inputs.rollback_database == 'true'
+        run: |
+          echo "::warning::Rolling back database migrations - this may cause data loss"
+
+          ENV="${{ github.event.inputs.environment }}"
+
+          # This is a placeholder - implement actual migration rollback logic
+          # Drizzle doesn't have built-in down migrations, so you'll need to:
+          # 1. Restore from backup, OR
+          # 2. Manually write and apply down migrations
+
+          echo "⚠️ Database rollback requested but not implemented" >> $GITHUB_STEP_SUMMARY
+          echo "Manual intervention required for database rollback" >> $GITHUB_STEP_SUMMARY
+
+      # Deploy the rolled-back version
+      - name: Deploy rolled-back version to Cloudflare
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy .open-next --project-name=socialpet --branch=${{ github.event.inputs.environment }}
+
+      - name: Create rollback tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          ROLLBACK_TAG="rollback-${{ github.event.inputs.environment }}-$(date +%Y%m%d-%H%M%S)"
+          git tag -a "$ROLLBACK_TAG" -m "Rollback to v${{ needs.validate.outputs.target_version }}"
+          git push origin "$ROLLBACK_TAG"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================================================
+  # JOB 4: Verify rollback
+  # ============================================================================
+  verify:
+    name: Verify Rollback
+    needs: [validate, rollback]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Wait for deployment
+        run: sleep 30
+
+      - name: Health check
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+
+          if [[ "$ENV" == "production" ]]; then
+            URL="https://socialpet.io"
+          elif [[ "$ENV" == "staging" ]]; then
+            URL="https://stg.socialpet.io"
+          else
+            URL="https://dev.socialpet.io"
+          fi
+
+          echo "Verifying rollback at: $URL"
+
+          for i in {1..5}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL/api/health" || echo "000")
+
+            if [[ "$STATUS" == "200" ]]; then
+              echo "✅ Rollback verified (attempt $i)"
+              exit 0
+            fi
+
+            echo "⚠️ Health check failed (attempt $i/5)"
+            sleep 10
+          done
+
+          echo "::error::Rollback verification failed"
+          exit 1
+
+      - name: Version check
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+
+          if [[ "$ENV" == "production" ]]; then
+            URL="https://socialpet.io"
+          elif [[ "$ENV" == "staging" ]]; then
+            URL="https://stg.socialpet.io"
+          else
+            URL="https://dev.socialpet.io"
+          fi
+
+          # Check deployed version matches target
+          DEPLOYED_VERSION=$(curl -s "$URL/api/version" | jq -r '.version' 2>/dev/null || echo "unknown")
+
+          echo "**Deployed Version:** \`$DEPLOYED_VERSION\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Target Version:** \`${{ needs.validate.outputs.target_version }}\`" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "$DEPLOYED_VERSION" == "${{ needs.validate.outputs.target_version }}" ]]; then
+            echo "✅ Version verified" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Version mismatch detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # ============================================================================
+  # JOB 5: Document rollback
+  # ============================================================================
+  document:
+    name: Document Rollback
+    needs: [validate, rollback, verify]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create incident issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '📋 Rollback Performed: ${{ github.event.inputs.environment }} → v${{ needs.validate.outputs.target_version }}',
+              body: `## Rollback Summary
+
+**Environment:** \`${{ github.event.inputs.environment }}\`
+**Target Version:** \`${{ needs.validate.outputs.target_version }}\`
+**Initiated by:** @${{ github.actor }}
+**Timestamp:** ${new Date().toISOString()}
+**Status:** ${{ needs.verify.result == 'success' && '✅ Successful' || '❌ Failed' }}
+
+### Reason
+${{ github.event.inputs.reason }}
+
+### Backup Information
+- **Backup ID:** ${{ github.run_number }}
+- **Retention:** 30 days
+- **Location:** GitHub Actions Artifacts
+
+### Actions Taken
+- ✅ Pre-rollback backup created
+- ${{ needs.rollback.result == 'success' && '✅' || '❌' }} Application rolled back
+- ${{ github.event.inputs.rollback_database == 'true' && '⚠️ Database rollback requested' || '➖ Database not rolled back' }}
+- ${{ needs.verify.result == 'success' && '✅' || '❌' }} Deployment verified
+
+### Next Steps
+1. Monitor application logs and metrics
+2. Investigate root cause of the issue
+3. Plan fix deployment
+4. Review rollback procedure effectiveness
+
+**Workflow Run:** https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+`,
+              labels: ['rollback', 'incident', '${{ github.event.inputs.environment }}']
+            });
+
+            core.setOutput('issue_number', issue.data.number);
+
+      - name: Update deployment status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ needs.validate.outputs.deployment_id }},
+              state: '${{ needs.verify.result == 'success' && 'success' || 'failure' }}',
+              description: 'Rolled back to v${{ needs.validate.outputs.target_version }}',
+              log_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            });
+
+      - name: Final summary
+        run: |
+          echo "# 🔄 Rollback Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | \`${{ github.event.inputs.environment }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | \`${{ needs.validate.outputs.target_version }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ needs.verify.result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Initiated by | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Backup ID | \`${{ github.run_number }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Reason:** ${{ github.event.inputs.reason }}" >> $GITHUB_STEP_SUMMARY

@@ -1,60 +1,155 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "next-boilerplate",
+  "name": "socialpet",
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-03-25",
   "compatibility_flags": ["nodejs_compat"],
-  
+
   // Static assets configuration
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
-  
-  // D1 Database binding
+
+  // D1 Database binding - PRODUCTION
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "next-boilerplate-db",
-      "database_id": "YOUR_D1_DATABASE_ID",
+      "database_name": "socialpet-db-production",
+      "database_id": "YOUR_PRODUCTION_D1_DATABASE_ID",
       "migrations_dir": "./migrations-d1"
     }
   ],
-  
-  // Environment variables
+
+  // Environment variables - PRODUCTION
   "vars": {
     "NODE_ENV": "production",
-    "NEXT_PUBLIC_AUTH_PROVIDER": "cloudflare"
+    "NEXT_PUBLIC_AUTH_PROVIDER": "cloudflare",
+    "NEXT_PUBLIC_ENVIRONMENT": "production",
+    "NEXT_PUBLIC_APP_URL": "https://socialpet.io"
   },
-  
+
   // Observability (2025 best practice)
   "observability": {
     "enabled": true
   },
-  
+
   // Analytics Engine binding
   "analytics_engine_datasets": [
     {
       "binding": "ANALYTICS"
     }
   ],
-  
+
   // Logpush for production monitoring
   "logpush": true,
-  
+
   // Tail consumers for real-time logs
   "tail_consumers": [
     {
-      "service": "log-consumer"
+      "service": "socialpet-log-consumer"
     }
   ],
-  
-  // Routes configuration (optional - for custom domains)
+
+  // Routes configuration - PRODUCTION
+  // Primary domain: socialpet.io
+  // Alternative: www.socialpet.io
   "routes": [
     {
-      "pattern": "your-domain.com/*",
+      "pattern": "socialpet.io/*",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.socialpet.io/*",
       "custom_domain": true
     }
-  ]
-}
+  ],
 
+  // Environment-specific overrides
+  "env": {
+    // DEVELOPMENT ENVIRONMENT
+    "dev": {
+      "name": "socialpet-dev",
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "socialpet-db-dev",
+          "database_id": "YOUR_DEV_D1_DATABASE_ID",
+          "migrations_dir": "./migrations-d1"
+        }
+      ],
+      "vars": {
+        "NODE_ENV": "development",
+        "NEXT_PUBLIC_AUTH_PROVIDER": "cloudflare",
+        "NEXT_PUBLIC_ENVIRONMENT": "development",
+        "NEXT_PUBLIC_APP_URL": "https://dev.socialpet.io"
+      },
+      "routes": [
+        {
+          "pattern": "dev.socialpet.io/*",
+          "custom_domain": true
+        }
+      ],
+      "observability": {
+        "enabled": true
+      }
+    },
+
+    // STAGING ENVIRONMENT
+    "staging": {
+      "name": "socialpet-staging",
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "socialpet-db-staging",
+          "database_id": "YOUR_STAGING_D1_DATABASE_ID",
+          "migrations_dir": "./migrations-d1"
+        }
+      ],
+      "vars": {
+        "NODE_ENV": "production",
+        "NEXT_PUBLIC_AUTH_PROVIDER": "cloudflare",
+        "NEXT_PUBLIC_ENVIRONMENT": "staging",
+        "NEXT_PUBLIC_APP_URL": "https://stg.socialpet.io"
+      },
+      "routes": [
+        {
+          "pattern": "stg.socialpet.io/*",
+          "custom_domain": true
+        }
+      ],
+      "observability": {
+        "enabled": true
+      }
+    },
+
+    // TEST ENVIRONMENT
+    // Dedicated environment for running integration and E2E tests
+    "test": {
+      "name": "socialpet-test",
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "socialpet-db-test",
+          "database_id": "YOUR_TEST_D1_DATABASE_ID",
+          "migrations_dir": "./migrations-d1"
+        }
+      ],
+      "vars": {
+        "NODE_ENV": "test",
+        "NEXT_PUBLIC_AUTH_PROVIDER": "cloudflare",
+        "NEXT_PUBLIC_ENVIRONMENT": "test",
+        "NEXT_PUBLIC_APP_URL": "https://tst.socialpet.io"
+      },
+      "routes": [
+        {
+          "pattern": "tst.socialpet.io/*",
+          "custom_domain": true
+        }
+      ],
+      "observability": {
+        "enabled": true
+      }
+    }
+  }
+}

@@ -318,6 +318,19 @@ pnpm start
 
 Visit [http://localhost:3000](http://localhost:3000) to see the production build.
 
+## Cloudflare runtime (Workers + D1)
+
+When you want to test the same runtime that Cloudflare Pages uses in production:
+
+```bash
+# Build and preview using the Cloudflare Workers runtime
+pnpm --filter web cf:preview
+```
+
+This runs your app in the Workers runtime with the D1 database binding (`env.DB`).
+
+For a deeper D1 + Cloudflare overview, see `CLOUDFLARE_MIGRATION_GUIDE.md` in the repository.
+
 ## Next Steps
 
 You've explored the key features! Now:

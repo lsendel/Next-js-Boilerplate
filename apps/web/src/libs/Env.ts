@@ -1,15 +1,17 @@
-import { createEnv } from "@t3-oss/env-nextjs";
-import * as z from "zod";
+import { createEnv } from '@t3-oss/env-nextjs';
+import * as z from 'zod';
 
 export const Env = createEnv({
   server: {
-    ARCJET_KEY: z.string().startsWith("ajkey_").optional(),
+    ARCJET_KEY: z.string().startsWith('ajkey_').optional(),
     CLERK_SECRET_KEY: z.string().min(1).optional(), // Optional - only required when using Clerk auth
     DATABASE_URL: z.string().min(1),
     // Security
     PASSWORD_PEPPER: z.string().min(32).optional(), // Secret for password hashing
     SECURITY_ALERT_WEBHOOK: z.string().url().optional(), // Webhook for critical security alerts
     ENCRYPTION_KEY: z.string().min(32).optional(), // Key for encrypting sensitive data
+    BETTER_STACK_SOURCE_TOKEN: z.string().optional(),
+    BETTER_STACK_INGESTING_HOST: z.string().optional(),
     // Cloudflare
     CLOUDFLARE_ACCOUNT_ID: z.string().optional(),
     CLOUDFLARE_API_TOKEN: z.string().optional(),
@@ -35,14 +37,14 @@ export const Env = createEnv({
     NEXT_PUBLIC_SENTRY_REPLAYS_ERROR_SAMPLE_RATE: z.string().optional(),
     // Auth provider
     NEXT_PUBLIC_AUTH_PROVIDER: z
-      .enum(["clerk", "cloudflare", "cognito", "test"])
+      .enum(['clerk', 'cloudflare', 'cognito', 'test'])
       .optional(),
     NEXT_PUBLIC_CLOUDFLARE_AUTH_DOMAIN: z.string().optional(),
     NEXT_PUBLIC_CLOUDFLARE_AUDIENCE: z.string().optional(),
     NEXT_PUBLIC_CLOUDFLARE_VERIFY_JWT: z.string().optional(),
   },
   shared: {
-    NODE_ENV: z.enum(["test", "development", "production"]).optional(),
+    NODE_ENV: z.enum(['test', 'development', 'production']).optional(),
   },
   // You need to destructure all the keys manually
   runtimeEnv: {
@@ -52,6 +54,8 @@ export const Env = createEnv({
     PASSWORD_PEPPER: process.env.PASSWORD_PEPPER,
     SECURITY_ALERT_WEBHOOK: process.env.SECURITY_ALERT_WEBHOOK,
     ENCRYPTION_KEY: process.env.ENCRYPTION_KEY,
+    BETTER_STACK_SOURCE_TOKEN: process.env.BETTER_STACK_SOURCE_TOKEN,
+    BETTER_STACK_INGESTING_HOST: process.env.BETTER_STACK_INGESTING_HOST,
     CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID,
     CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN,
     D1_DATABASE_ID: process.env.D1_DATABASE_ID,

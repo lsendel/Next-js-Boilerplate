@@ -1,35 +1,35 @@
-import { NextIntlClientProvider } from "next-intl";
-import { describe, expect, it } from "vitest";
-import { render } from "vitest-browser-react";
-import { page } from "vitest/browser";
-import messages from "@/locales/en.json";
-import { BaseTemplate } from "./BaseTemplate";
+import { NextIntlClientProvider } from 'next-intl';
+import { describe, expect, it } from 'vitest';
+import { render } from 'vitest-browser-react';
+import { page } from 'vitest/browser';
+import messages from '@/locales/en.json';
+import { BaseTemplate } from './BaseTemplate';
 
-describe("Base template", () => {
-  describe("Render method", () => {
-    it("should have 3 menu items", () => {
+describe('Base template', () => {
+  describe('Render method', () => {
+    it('should have 3 menu items', () => {
       render(
         <NextIntlClientProvider locale="en" messages={messages}>
           <BaseTemplate
-            leftNav={
+            leftNav={(
               <>
                 <li>link 1</li>
                 <li>link 2</li>
                 <li>link 3</li>
               </>
-            }
+            )}
           >
             {null}
           </BaseTemplate>
         </NextIntlClientProvider>,
       );
 
-      const menuItemList = page.getByRole("listitem");
+      const menuItemList = page.getByRole('listitem');
 
       expect(menuItemList.elements()).toHaveLength(3);
     });
 
-    it("should have a link to support nextjs-boilerplate.com", () => {
+    it('should have a link to support nextjs-boilerplate.com', () => {
       render(
         <NextIntlClientProvider locale="en" messages={messages}>
           <BaseTemplate leftNav={<li>1</li>}>{null}</BaseTemplate>
@@ -37,7 +37,7 @@ describe("Base template", () => {
       );
 
       const copyrightSection = page.getByText(/© Copyright/);
-      const copyrightLink = copyrightSection.getByRole("link");
+      const copyrightLink = copyrightSection.getByRole('link');
 
       /*
        * PLEASE READ THIS SECTION
@@ -46,8 +46,8 @@ describe("Base template", () => {
        * Thank you for your support it'll mean a lot for us.
        */
       expect(copyrightLink).toHaveAttribute(
-        "href",
-        "https://nextjs-boilerplate.com",
+        'href',
+        'https://nextjs-boilerplate.com',
       );
     });
   });

@@ -5,8 +5,8 @@
  * using k-anonymity to protect user privacy
  */
 
-import crypto from "node:crypto";
-import { securityLogger } from "@/libs/Logger";
+import crypto from 'node:crypto';
+import { securityLogger } from '@/libs/Logger';
 
 type BreachCheckResult = {
   breached: boolean;
@@ -25,9 +25,9 @@ export async function checkPasswordBreach(
   try {
     // Generate SHA-1 hash of password
     const hash = crypto
-      .createHash("sha1")
+      .createHash('sha1')
       .update(password)
-      .digest("hex")
+      .digest('hex')
       .toUpperCase();
 
     // Split into prefix (first 5 chars) and suffix
@@ -39,8 +39,8 @@ export async function checkPasswordBreach(
       `https://api.pwnedpasswords.com/range/${prefix}`,
       {
         headers: {
-          "User-Agent": "Next.js-Boilerplate-Password-Check",
-          "Add-Padding": "true", // Request padding for extra privacy
+          'User-Agent': 'Next.js-Boilerplate-Password-Check',
+          'Add-Padding': 'true', // Request padding for extra privacy
         },
         next: { revalidate: 86400 }, // Cache for 24 hours
       },
@@ -48,7 +48,7 @@ export async function checkPasswordBreach(
 
     if (!response.ok) {
       // If API is down, fail open (allow password) but log warning
-      securityLogger.warn("HIBP API unavailable, skipping breach check", {
+      securityLogger.warn('HIBP API unavailable, skipping breach check', {
         status: response.status,
       });
       return { breached: false, occurrences: 0 };
@@ -57,9 +57,9 @@ export async function checkPasswordBreach(
     const text = await response.text();
 
     // Parse response - each line is "SUFFIX:COUNT"
-    const lines = text.split("\n");
+    const lines = text.split('\n');
     for (const line of lines) {
-      const [hashSuffix, count] = line.split(":");
+      const [hashSuffix, count] = line.split(':');
       if (hashSuffix === suffix) {
         return {
           breached: true,
@@ -72,7 +72,7 @@ export async function checkPasswordBreach(
     return { breached: false, occurrences: 0 };
   } catch (error) {
     // Fail open on errors but log them
-    securityLogger.error("Password breach check failed", { error });
+    securityLogger.error('Password breach check failed', { error });
     return { breached: false, occurrences: 0 };
   }
 }
@@ -99,7 +99,7 @@ export function validatePasswordStrength(
 
   // Length check
   if (password.length < 8) {
-    feedback.push("Password must be at least 8 characters long");
+    feedback.push('Password must be at least 8 characters long');
   } else if (password.length >= 8) {
     score += 20;
   }
@@ -117,25 +117,25 @@ export function validatePasswordStrength(
   const hasSpecial = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password);
 
   if (!hasLowercase) {
-    feedback.push("Include lowercase letters");
+    feedback.push('Include lowercase letters');
   } else {
     score += 15;
   }
 
   if (!hasUppercase) {
-    feedback.push("Include uppercase letters");
+    feedback.push('Include uppercase letters');
   } else {
     score += 15;
   }
 
   if (!hasNumbers) {
-    feedback.push("Include numbers");
+    feedback.push('Include numbers');
   } else {
     score += 15;
   }
 
   if (!hasSpecial) {
-    feedback.push("Include special characters");
+    feedback.push('Include special characters');
   } else {
     score += 15;
   }
@@ -149,7 +149,7 @@ export function validatePasswordStrength(
 
   for (const pattern of commonPatterns) {
     if (pattern.test(password)) {
-      feedback.push("Avoid common patterns and repeated characters");
+      feedback.push('Avoid common patterns and repeated characters');
       score -= 20;
       break;
     }
@@ -196,7 +196,7 @@ export function getPasswordValidationMessage(
   }
 
   if (!strength.valid) {
-    return `${strength.feedback.join(". ")}.`;
+    return `${strength.feedback.join('. ')}.`;
   }
 
   return null;

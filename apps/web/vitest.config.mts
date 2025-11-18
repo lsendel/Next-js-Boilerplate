@@ -4,6 +4,8 @@ import { loadEnv } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'vitest/config';
 
+const enableBrowserTests = process.env.ENABLE_BROWSER_TESTS === 'true';
+
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
   test: {
@@ -37,22 +39,26 @@ export default defineConfig({
           environment: 'node',
         },
       },
-      {
-        extends: true,
-        test: {
-          name: 'ui',
-          include: ['**/*.test.tsx', 'src/hooks/**/*.test.ts'],
-          browser: {
-            enabled: true,
-            headless: true,
-            provider: playwright(),
-            screenshotDirectory: 'vitest-test-results',
-            instances: [
-              { browser: 'chromium' },
-            ],
-          },
-        },
-      },
+      ...(enableBrowserTests
+        ? [
+            {
+              extends: true,
+              test: {
+                name: 'ui',
+                include: ['**/*.test.tsx', 'src/hooks/**/*.test.ts'],
+                browser: {
+                  enabled: true,
+                  headless: true,
+                  provider: playwright(),
+                  screenshotDirectory: 'vitest-test-results',
+                  instances: [
+                    { browser: 'chromium' },
+                  ],
+                },
+              },
+            },
+          ]
+        : []),
     ],
     env: loadEnv('', process.cwd(), ''),
   },

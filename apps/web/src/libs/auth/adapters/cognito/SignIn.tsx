@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { TenantLink } from "@/client/components/navigation/TenantLink";
-import { useTenantPath } from "@/shared/hooks/useTenantPath";
-import { getHostedUIUrl, getOAuthSignInUrl } from "./amplify-config";
-import { getAvailableOAuthProviders, getOAuthProviderInfo } from "./utils";
+import { useState } from 'react';
+import { TenantLink } from '@/client/components/navigation/TenantLink';
+import { useTenantPath } from '@/shared/hooks/useTenantPath';
+import { getHostedUIUrl, getOAuthSignInUrl } from './amplify-config';
+import { getAvailableOAuthProviders, getOAuthProviderInfo } from './utils';
 
 type SignInProps = {
   path: string;
@@ -22,7 +22,7 @@ type SignInProps = {
  */
 export function CognitoSignIn({ path: _path, locale: _locale }: SignInProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState<string>('');
   const useHostedUI = Boolean(process.env.NEXT_PUBLIC_COGNITO_OAUTH_DOMAIN);
 
   const oauthProviders = getAvailableOAuthProviders();
@@ -30,17 +30,17 @@ export function CognitoSignIn({ path: _path, locale: _locale }: SignInProps) {
   const resolveTenantPath = useTenantPath();
 
   const handleOAuthSignIn = async (
-    provider: "Google" | "Facebook" | "Apple",
+    provider: 'Google' | 'Facebook' | 'Apple',
   ) => {
     try {
       setLoading(true);
-      setError("");
+      setError('');
 
       const signInUrl = getOAuthSignInUrl(provider);
       window.location.href = signInUrl;
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Failed to initiate sign-in";
+      const message
+        = err instanceof Error ? err.message : 'Failed to initiate sign-in';
       setError(message);
       setLoading(false);
     }
@@ -52,8 +52,8 @@ export function CognitoSignIn({ path: _path, locale: _locale }: SignInProps) {
       const hostedUIUrl = getHostedUIUrl();
       window.location.href = hostedUIUrl;
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Failed to redirect to Hosted UI";
+      const message
+        = err instanceof Error ? err.message : 'Failed to redirect to Hosted UI';
       setError(message);
       setLoading(false);
     }
@@ -64,35 +64,35 @@ export function CognitoSignIn({ path: _path, locale: _locale }: SignInProps) {
   ) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setError('');
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
 
     try {
-      const { signIn } = await import("aws-amplify/auth");
+      const { signIn } = await import('aws-amplify/auth');
       const result = await signIn({
         username: email,
         password,
       });
 
       // Check if MFA is required
-      if (result.nextStep?.signInStep === "CONFIRM_SIGN_IN_WITH_TOTP_CODE") {
+      if (result.nextStep?.signInStep === 'CONFIRM_SIGN_IN_WITH_TOTP_CODE') {
         // Redirect to MFA page or show MFA input
-        window.location.href = resolveTenantPath("/sign-in/mfa?method=totp");
+        window.location.href = resolveTenantPath('/sign-in/mfa?method=totp');
         return;
       }
 
-      if (result.nextStep?.signInStep === "CONFIRM_SIGN_IN_WITH_SMS_CODE") {
-        window.location.href = resolveTenantPath("/sign-in/mfa?method=sms");
+      if (result.nextStep?.signInStep === 'CONFIRM_SIGN_IN_WITH_SMS_CODE') {
+        window.location.href = resolveTenantPath('/sign-in/mfa?method=sms');
         return;
       }
 
       // Sign in successful
-      window.location.href = resolveTenantPath("/dashboard");
+      window.location.href = resolveTenantPath('/dashboard');
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Sign in failed";
+      const message = err instanceof Error ? err.message : 'Sign in failed';
       setError(message);
       setLoading(false);
     }
@@ -171,7 +171,7 @@ export function CognitoSignIn({ path: _path, locale: _locale }: SignInProps) {
               disabled={loading}
               className="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? "Redirecting..." : "Sign in with Cognito Hosted UI"}
+              {loading ? 'Redirecting...' : 'Sign in with Cognito Hosted UI'}
             </button>
           )}
 
@@ -217,7 +217,7 @@ export function CognitoSignIn({ path: _path, locale: _locale }: SignInProps) {
                 disabled={loading}
                 className="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? "Signing in..." : "Sign in"}
+                {loading ? 'Signing in...' : 'Sign in'}
               </button>
             </form>
           )}
@@ -233,7 +233,8 @@ export function CognitoSignIn({ path: _path, locale: _locale }: SignInProps) {
           </div>
 
           <div className="mt-4 text-center text-sm text-gray-600">
-            Don't have an account?{" "}
+            Don't have an account?
+            {' '}
             <TenantLink
               href="/sign-up"
               className="font-medium text-blue-600 hover:underline"
@@ -243,7 +244,7 @@ export function CognitoSignIn({ path: _path, locale: _locale }: SignInProps) {
           </div>
 
           {/* MFA Info */}
-          {process.env.NEXT_PUBLIC_COGNITO_MFA_ENABLED === "true" && (
+          {process.env.NEXT_PUBLIC_COGNITO_MFA_ENABLED === 'true' && (
             <div className="mt-6 rounded-lg bg-blue-50 p-4">
               <div className="flex">
                 <div className="shrink-0">

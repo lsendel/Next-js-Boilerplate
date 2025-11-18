@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import Image from "next/image";
+import type { ReactNode } from 'react';
+import Image from 'next/image';
 
 export type HeroWithImageProps = {
   title: string;
@@ -19,7 +19,7 @@ export type HeroWithImageProps = {
     href: string;
   };
   badge?: ReactNode;
-  imagePosition?: "left" | "right";
+  imagePosition?: 'left' | 'right';
 };
 
 /**
@@ -35,7 +35,7 @@ export function HeroWithImage({
   primaryCta,
   secondaryCta,
   badge,
-  imagePosition = "right",
+  imagePosition = 'right',
 }: HeroWithImageProps) {
   const content = (
     <div className="flex flex-col justify-center">
@@ -95,14 +95,14 @@ export function HeroWithImage({
     <section className="relative overflow-hidden bg-white px-6 py-24 sm:py-32 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <div
-          className={`grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16 ${imagePosition === "left" ? "lg:grid-flow-dense" : ""}`}
+          className={`grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16 ${imagePosition === 'left' ? 'lg:grid-flow-dense' : ''}`}
         >
-          <div className={imagePosition === "left" ? "lg:col-start-2" : ""}>
+          <div className={imagePosition === 'left' ? 'lg:col-start-2' : ''}>
             {content}
           </div>
           <div
             className={
-              imagePosition === "left" ? "lg:col-start-1 lg:row-start-1" : ""
+              imagePosition === 'left' ? 'lg:col-start-1 lg:row-start-1' : ''
             }
           >
             {imageContent}

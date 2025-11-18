@@ -89,7 +89,7 @@ class InMemoryRateLimitStore {
 
     // Remove expired attempts (outside window)
     const windowStart = now - config.windowMs;
-    record.attempts = record.attempts.filter((time) => time > windowStart);
+    record.attempts = record.attempts.filter(time => time > windowStart);
 
     // Add current attempt
     record.attempts.push(now);
@@ -127,7 +127,7 @@ class InMemoryRateLimitStore {
     const now = Date.now();
     for (const [key, record] of this.store.entries()) {
       const hasRecentAttempts = record.attempts.some(
-        (time) => now - time < 24 * 60 * 60 * 1000,
+        time => now - time < 24 * 60 * 60 * 1000,
       );
       const isBlocked = record.blockedUntil && now < record.blockedUntil;
 
@@ -167,14 +167,14 @@ export async function checkAuthRateLimit(
  */
 export function getClientIdentifier(request: Request): string {
   // Get IP address (supports various proxy headers)
-  const forwarded = request.headers.get("x-forwarded-for");
-  const realIp = request.headers.get("x-real-ip");
-  const cfConnectingIp = request.headers.get("cf-connecting-ip");
+  const forwarded = request.headers.get('x-forwarded-for');
+  const realIp = request.headers.get('x-real-ip');
+  const cfConnectingIp = request.headers.get('cf-connecting-ip');
 
-  const ip = cfConnectingIp || realIp || forwarded?.split(",")[0] || "unknown";
+  const ip = cfConnectingIp || realIp || forwarded?.split(',')[0] || 'unknown';
 
   // Get user agent for additional fingerprinting
-  const userAgent = request.headers.get("user-agent") || "unknown";
+  const userAgent = request.headers.get('user-agent') || 'unknown';
 
   // Create hash of IP + UA
   return `${ip}:${hashString(userAgent)}`;
@@ -199,7 +199,7 @@ function hashString(str: string): string {
 export function formatRateLimitError(result: RateLimitResult): string {
   const minutes = Math.ceil((result.resetAt - Date.now()) / 60000);
 
-  return `Too many attempts. Please try again in ${minutes} minute${minutes > 1 ? "s" : ""}.`;
+  return `Too many attempts. Please try again in ${minutes} minute${minutes > 1 ? 's' : ''}.`;
 }
 
 /**
@@ -211,14 +211,14 @@ export function formatRateLimitError(result: RateLimitResult): string {
  */
 export function getRateLimitHeaders(
   result: RateLimitResult,
-  operation: keyof typeof AuthRateLimits = "signIn",
+  operation: keyof typeof AuthRateLimits = 'signIn',
 ): HeadersInit {
   return {
-    "X-RateLimit-Limit": AuthRateLimits[operation].maxAttempts.toString(),
-    "X-RateLimit-Remaining": result.remaining.toString(),
-    "X-RateLimit-Reset": new Date(result.resetAt).toISOString(),
+    'X-RateLimit-Limit': AuthRateLimits[operation].maxAttempts.toString(),
+    'X-RateLimit-Remaining': result.remaining.toString(),
+    'X-RateLimit-Reset': new Date(result.resetAt).toISOString(),
     ...(result.blocked && {
-      "Retry-After": Math.ceil((result.resetAt - Date.now()) / 1000).toString(),
+      'Retry-After': Math.ceil((result.resetAt - Date.now()) / 1000).toString(),
     }),
   };
 }

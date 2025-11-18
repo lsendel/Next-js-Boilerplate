@@ -177,8 +177,11 @@ Edit `theme.config.tsx` to customize:
 - Search settings
 
 ## Deployment
+The **main web app** is deployed to Cloudflare Pages + Workers with D1. The docs site can be hosted on any platform (including Vercel) as a standard Next.js app.
 
-### Vercel (Recommended)
+
+
+### Vercel (Example – docs site only)
 
 ```bash
 # Build locally

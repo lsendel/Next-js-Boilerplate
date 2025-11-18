@@ -1,29 +1,38 @@
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-import { SESSION_COOKIE, users } from "@/libs/auth/adapters/TestAdapter.server";
-import { authLogger } from "@/libs/Logger";
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { SESSION_COOKIE, users } from '@/libs/auth/adapters/TestAdapter.server';
+import { authLogger } from '@/libs/Logger';
+import {
+  guardTestAuthRequest,
+  hashTestPassword,
+} from '@/libs/auth/utils/test-mode';
 
 /**
  * API endpoint to handle user registration for test authentication
  * This is only used when NEXT_PUBLIC_AUTH_PROVIDER=test
  */
 export async function POST(request: NextRequest) {
+  const guardResponse = guardTestAuthRequest();
+  if (guardResponse) {
+    return guardResponse;
+  }
+
   try {
     const body = await request.json();
     const { email, password, confirmPassword } = body;
 
     // Validate email format
-    if (!email || typeof email !== "string" || !email.includes("@")) {
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
       return NextResponse.json(
-        { error: "Please enter a valid email address" },
+        { error: 'Please enter a valid email address' },
         { status: 400 },
       );
     }
 
     // Validate password
-    if (!password || typeof password !== "string" || password.length < 8) {
+    if (!password || typeof password !== 'string' || password.length < 8) {
       return NextResponse.json(
-        { error: "Password must be at least 8 characters" },
+        { error: 'Password must be at least 8 characters' },
         { status: 400 },
       );
     }
@@ -31,7 +40,7 @@ export async function POST(request: NextRequest) {
     // Validate password confirmation
     if (password !== confirmPassword) {
       return NextResponse.json(
-        { error: "Passwords do not match" },
+        { error: 'Passwords do not match' },
         { status: 400 },
       );
     }
@@ -40,7 +49,7 @@ export async function POST(request: NextRequest) {
     for (const user of users.values()) {
       if (user.email === email) {
         return NextResponse.json(
-          { error: "An account with this email already exists" },
+          { error: 'An account with this email already exists' },
           { status: 409 },
         );
       }
@@ -48,17 +57,18 @@ export async function POST(request: NextRequest) {
 
     // Create user
     const userId = `user_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const passwordHash = await hashTestPassword(password);
     const newUser = {
       id: userId,
       email,
-      password, // In real app, this would be hashed!
+      passwordHash,
       firstName: null,
       lastName: null,
       imageUrl: null,
     };
     users.set(userId, newUser);
 
-    authLogger.info("Test auth: User registered", { userId, email });
+    authLogger.info('Test auth: User registered', { userId, email });
 
     // Create response with session cookie
     const response = NextResponse.json({
@@ -83,17 +93,17 @@ export async function POST(request: NextRequest) {
 
     response.cookies.set(SESSION_COOKIE, cookieData, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: "/",
+      path: '/',
     });
 
     return response;
   } catch (error) {
-    authLogger.error("Error during sign up", { error });
+    authLogger.error('Error during sign up', { error });
     return NextResponse.json(
-      { error: "Failed to create account" },
+      { error: 'Failed to create account' },
       { status: 500 },
     );
   }

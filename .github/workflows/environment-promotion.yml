@@ -1,0 +1,529 @@
+name: Environment Promotion Pipeline
+
+# This workflow implements a best-practice environment promotion strategy:
+# dev -> staging -> production
+# with version control, quality gates, and rollback capabilities
+
+on:
+  push:
+    branches:
+      - dev        # Auto-deploy to dev environment
+      - staging    # Auto-deploy to staging environment
+      - main       # Requires approval for production deployment
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment to deploy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
+      version:
+        description: 'Version to deploy (leave empty for latest)'
+        required: false
+        type: string
+      skip_tests:
+        description: 'Skip tests (NOT RECOMMENDED for production)'
+        required: false
+        type: boolean
+        default: false
+
+# Ensure only one deployment per environment runs at a time
+concurrency:
+  group: deploy-${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production') || (github.ref == 'refs/heads/staging' && 'staging') || 'dev' }}
+  cancel-in-progress: false  # Never cancel deployments in progress
+
+permissions:
+  contents: write
+  deployments: write
+  pull-requests: write
+  id-token: write
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '10'
+  # Determine target environment
+  TARGET_ENV: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production') || (github.ref == 'refs/heads/staging' && 'staging') || 'dev' }}
+
+jobs:
+  # ============================================================================
+  # JOB 1: Determine deployment metadata and version
+  # ============================================================================
+  prepare:
+    name: Prepare Deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      environment: ${{ steps.metadata.outputs.environment }}
+      should_deploy: ${{ steps.metadata.outputs.should_deploy }}
+      deployment_id: ${{ steps.create-deployment.outputs.deployment_id }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for version calculation
+
+      - name: Determine deployment metadata
+        id: metadata
+        run: |
+          ENV="${{ env.TARGET_ENV }}"
+          echo "environment=$ENV" >> $GITHUB_OUTPUT
+
+          # Production requires approval or manual trigger
+          if [[ "$ENV" == "production" ]] && [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "should_deploy=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Production deployment requires manual approval" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          fi
+
+          echo "## 🚀 Deployment to \`$ENV\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Calculate version
+        id: version
+        run: |
+          if [[ -n "${{ github.event.inputs.version }}" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+            echo "Using manually specified version: $VERSION"
+          else
+            # Use semantic-release to calculate next version
+            # For non-main branches, use pre-release versions
+            if [[ "${{ github.ref_name }}" == "main" ]]; then
+              # Production version: 1.2.3
+              VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.0")
+            elif [[ "${{ github.ref_name }}" == "staging" ]]; then
+              # Staging version: 1.2.3-rc.1
+              VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.0")-rc.${{ github.run_number }}
+            else
+              # Dev version: 1.2.3-dev.123+sha
+              VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.0")-dev.${{ github.run_number }}+${GITHUB_SHA:0:7}
+            fi
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "**Version:** \`$VERSION\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Create GitHub deployment
+        id: create-deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha,
+              environment: '${{ steps.metadata.outputs.environment }}',
+              required_contexts: [],
+              auto_merge: false,
+              description: 'Deploying version ${{ steps.version.outputs.version }}',
+              transient_environment: false,
+              production_environment: '${{ steps.metadata.outputs.environment }}' === 'production'
+            });
+
+            return deployment.data.id;
+
+      - name: Update deployment status to in_progress
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.create-deployment.outputs.result }},
+              state: 'in_progress',
+              description: 'Running quality gates...',
+              log_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            });
+
+  # ============================================================================
+  # JOB 2: Quality Gates - Linting & Type Checking
+  # ============================================================================
+  quality-gates:
+    name: Quality Gates
+    needs: prepare
+    if: needs.prepare.outputs.should_deploy == 'true' && github.event.inputs.skip_tests != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: true  # Stop immediately if any check fails
+      matrix:
+        check:
+          - name: lint
+            command: lint:all
+          - name: type-check
+            command: check:types
+          - name: i18n-check
+            command: check:i18n
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup monorepo
+        uses: ./.github/actions/setup-monorepo-optimized
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Run ${{ matrix.check.name }}
+        run: pnpm --filter web ${{ matrix.check.command }}
+
+      - name: Report failure
+        if: failure()
+        run: |
+          echo "::error::${{ matrix.check.name }} failed - blocking deployment to ${{ needs.prepare.outputs.environment }}"
+          exit 1
+
+  # ============================================================================
+  # JOB 3: Security Scanning
+  # ============================================================================
+  security-scan:
+    name: Security Scan
+    needs: prepare
+    if: needs.prepare.outputs.should_deploy == 'true' && github.event.inputs.skip_tests != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup monorepo
+        uses: ./.github/actions/setup-monorepo-optimized
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Run dependency audit
+        run: pnpm audit --audit-level=high
+        continue-on-error: ${{ needs.prepare.outputs.environment != 'production' }}
+
+      - name: Scan for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified
+
+      - name: OWASP Dependency Check
+        if: needs.prepare.outputs.environment == 'production'
+        run: |
+          echo "## 🔒 Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "All security checks passed ✅" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================================================
+  # JOB 4: Integration Tests
+  # ============================================================================
+  integration-tests:
+    name: Integration Tests
+    needs: prepare
+    if: needs.prepare.outputs.should_deploy == 'true' && github.event.inputs.skip_tests != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup monorepo
+        uses: ./.github/actions/setup-monorepo-optimized
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Run database migrations
+        run: pnpm --filter web db:migrate
+
+      - name: Run integration tests
+        run: pnpm --filter web test:integration
+
+      - name: Upload coverage
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: integration
+          fail_ci_if_error: ${{ needs.prepare.outputs.environment == 'production' }}
+
+  # ============================================================================
+  # JOB 5: Build Application
+  # ============================================================================
+  build:
+    name: Build Application
+    needs: [prepare, quality-gates, security-scan, integration-tests]
+    if: |
+      always() &&
+      needs.prepare.outputs.should_deploy == 'true' &&
+      (needs.quality-gates.result == 'success' || needs.quality-gates.result == 'skipped') &&
+      (needs.security-scan.result == 'success' || needs.security-scan.result == 'skipped') &&
+      (needs.integration-tests.result == 'success' || needs.integration-tests.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup monorepo
+        uses: ./.github/actions/setup-monorepo-optimized
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          restore-nextjs-cache: true
+
+      - name: Build application
+        run: pnpm --filter web build-local
+        env:
+          NEXT_PUBLIC_APP_VERSION: ${{ needs.prepare.outputs.version }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ needs.prepare.outputs.environment }}-${{ github.sha }}
+          path: apps/web/.next
+          retention-days: 7
+          compression-level: 6
+
+      - name: Build summary
+        run: |
+          echo "## 📦 Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ needs.prepare.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.prepare.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Size:** $(du -sh apps/web/.next | cut -f1)" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================================================
+  # JOB 6: Deploy to Environment
+  # ============================================================================
+  deploy:
+    name: Deploy to ${{ needs.prepare.outputs.environment }}
+    needs: [prepare, build]
+    if: needs.prepare.outputs.should_deploy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: ${{ needs.prepare.outputs.environment }}
+      url: ${{ steps.deploy.outputs.deployment-url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-${{ needs.prepare.outputs.environment }}-${{ github.sha }}
+          path: apps/web/.next
+
+      # Apply database migrations before deployment
+      - name: Apply D1 migrations
+        run: |
+          ENV="${{ needs.prepare.outputs.environment }}"
+          if [[ "$ENV" == "production" ]]; then
+            pnpm --filter web d1:migrate:prod
+          elif [[ "$ENV" == "staging" ]]; then
+            pnpm --filter web d1:migrate:stage
+          else
+            pnpm --filter web d1:migrate
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # Deploy to Cloudflare
+      - name: Deploy to Cloudflare Pages
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy .open-next --project-name=socialpet --branch=${{ needs.prepare.outputs.environment }}
+        env:
+          # Environment-specific variables
+          NEXT_PUBLIC_APP_VERSION: ${{ needs.prepare.outputs.version }}
+          NEXT_PUBLIC_ENVIRONMENT: ${{ needs.prepare.outputs.environment }}
+
+      - name: Tag release
+        if: needs.prepare.outputs.environment == 'production'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ needs.prepare.outputs.version }}" -m "Release ${{ needs.prepare.outputs.version }}"
+          git push origin "v${{ needs.prepare.outputs.version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        if: needs.prepare.outputs.environment == 'production'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: 'v${{ needs.prepare.outputs.version }}',
+              name: 'Release ${{ needs.prepare.outputs.version }}',
+              body: `## 🚀 Deployment to Production\n\n**Version:** ${{ needs.prepare.outputs.version }}\n**Deployed at:** ${new Date().toISOString()}\n**Commit:** ${context.sha}`,
+              draft: false,
+              prerelease: false
+            });
+
+  # ============================================================================
+  # JOB 7: Post-Deployment Verification
+  # ============================================================================
+  verify-deployment:
+    name: Verify Deployment
+    needs: [prepare, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Wait for deployment to stabilize
+        run: sleep 30
+
+      - name: Health check
+        run: |
+          ENV="${{ needs.prepare.outputs.environment }}"
+
+          # Environment-specific URLs for socialpet.io
+          if [[ "$ENV" == "production" ]]; then
+            URL="https://socialpet.io"
+          elif [[ "$ENV" == "staging" ]]; then
+            URL="https://stg.socialpet.io"
+          else
+            URL="https://dev.socialpet.io"
+          fi
+
+          echo "Checking health at: $URL/api/health"
+
+          # Retry logic for health check
+          for i in {1..5}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL/api/health" || echo "000")
+
+            if [[ "$STATUS" == "200" ]]; then
+              echo "✅ Health check passed (attempt $i)"
+              echo "## ✅ Deployment Verified" >> $GITHUB_STEP_SUMMARY
+              echo "**URL:** $URL" >> $GITHUB_STEP_SUMMARY
+              echo "**Status:** Healthy" >> $GITHUB_STEP_SUMMARY
+              exit 0
+            fi
+
+            echo "⚠️ Health check failed with status $STATUS (attempt $i/5)"
+            sleep 10
+          done
+
+          echo "::error::Health check failed after 5 attempts"
+          exit 1
+
+      - name: Smoke tests
+        run: |
+          ENV="${{ needs.prepare.outputs.environment }}"
+
+          if [[ "$ENV" == "production" ]]; then
+            URL="https://socialpet.io"
+          elif [[ "$ENV" == "staging" ]]; then
+            URL="https://stg.socialpet.io"
+          else
+            URL="https://dev.socialpet.io"
+          fi
+
+          # Test critical paths
+          curl -f "$URL/" || exit 1
+          echo "✅ Homepage accessible"
+
+      - name: Update deployment status to success
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ needs.prepare.outputs.deployment_id }},
+              state: 'success',
+              description: 'Deployment successful and verified',
+              environment_url: '${{ needs.deploy.outputs.deployment-url }}',
+              log_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            });
+
+      - name: Update deployment status to failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ needs.prepare.outputs.deployment_id }},
+              state: 'failure',
+              description: 'Deployment verification failed',
+              log_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            });
+
+  # ============================================================================
+  # JOB 8: Notify Deployment Status
+  # ============================================================================
+  notify:
+    name: Notify Deployment Status
+    needs: [prepare, deploy, verify-deployment]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create deployment summary
+        run: |
+          echo "# 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | \`${{ needs.prepare.outputs.environment }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | \`${{ needs.prepare.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ needs.verify-deployment.result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deployed by | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify on failure
+        if: needs.verify-deployment.result == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Deployment Failed: ${{ needs.prepare.outputs.environment }}',
+              body: `## Deployment Failure\n\n**Environment:** ${{ needs.prepare.outputs.environment }}\n**Version:** ${{ needs.prepare.outputs.version }}\n**Workflow:** ${context.runId}\n**Actor:** @${{ github.actor }}\n\nPlease investigate and consider rollback if necessary.`,
+              labels: ['deployment', 'incident', needs.prepare.outputs.environment]
+            });

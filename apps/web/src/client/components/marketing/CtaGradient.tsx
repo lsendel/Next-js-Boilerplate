@@ -24,8 +24,8 @@ export function CtaGradient({
   description,
   primaryCta,
   secondaryCta,
-  gradientFrom = "from-blue-600",
-  gradientTo = "to-purple-600",
+  gradientFrom = 'from-blue-600',
+  gradientTo = 'to-purple-600',
 }: CtaGradientProps) {
   return (
     <section className="relative overflow-hidden px-6 py-24 sm:py-32 lg:px-8">

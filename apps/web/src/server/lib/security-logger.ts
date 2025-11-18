@@ -5,7 +5,7 @@
  * All security-related events should use this logger for audit trail.
  */
 
-import { logger } from "@/libs/Logger";
+import { logger } from '@/libs/Logger';
 
 /**
  * Security event logger with structured logging for audit trails
@@ -15,11 +15,11 @@ export const securityLogger = {
    * Log successful authentication
    */
   logAuthSuccess: (userId: number, email: string, ip: string) => {
-    logger.info("Authentication successful", {
+    logger.info('Authentication successful', {
       userId,
       email,
       ip,
-      event: "auth_success",
+      event: 'auth_success',
     });
   },
 
@@ -27,11 +27,11 @@ export const securityLogger = {
    * Log failed authentication attempt
    */
   logAuthFailure: (email: string, ip: string, reason: string) => {
-    logger.warn("Authentication failed", {
+    logger.warn('Authentication failed', {
       email,
       ip,
       reason,
-      event: "auth_failure",
+      event: 'auth_failure',
     });
   },
 
@@ -39,11 +39,11 @@ export const securityLogger = {
    * Log password change event
    */
   logPasswordChanged: (userId: number, email: string, ip: string) => {
-    logger.info("Password changed", {
+    logger.info('Password changed', {
       userId,
       email,
       ip,
-      event: "password_change",
+      event: 'password_change',
     });
   },
 
@@ -51,10 +51,10 @@ export const securityLogger = {
    * Log password reset request
    */
   logPasswordResetRequest: (email: string, ip: string) => {
-    logger.info("Password reset requested", {
+    logger.info('Password reset requested', {
       email,
       ip,
-      event: "password_reset_request",
+      event: 'password_reset_request',
     });
   },
 
@@ -66,11 +66,11 @@ export const securityLogger = {
     ip: string,
     details: Record<string, unknown>,
   ) => {
-    logger.warn("Suspicious activity detected", {
+    logger.warn('Suspicious activity detected', {
       message,
       ip,
       details,
-      event: "suspicious_activity",
+      event: 'suspicious_activity',
     });
   },
 
@@ -78,11 +78,11 @@ export const securityLogger = {
    * Log account lockout event
    */
   logAccountLockout: (userId: number, email: string, ip: string) => {
-    logger.warn("Account locked due to failed login attempts", {
+    logger.warn('Account locked due to failed login attempts', {
       userId,
       email,
       ip,
-      event: "account_lockout",
+      event: 'account_lockout',
     });
   },
 
@@ -90,11 +90,11 @@ export const securityLogger = {
    * Log user registration
    */
   logUserRegistration: (userId: number, email: string, ip: string) => {
-    logger.info("New user registered", {
+    logger.info('New user registered', {
       userId,
       email,
       ip,
-      event: "user_registration",
+      event: 'user_registration',
     });
   },
 
@@ -102,20 +102,20 @@ export const securityLogger = {
    * Log generic security error
    */
   error: (message: string, metadata: Record<string, unknown>) => {
-    logger.error(message, { ...metadata, event: "security_error" });
+    logger.error(message, { ...metadata, event: 'security_error' });
   },
 
   /**
    * Log generic security warning
    */
   warn: (message: string, metadata: Record<string, unknown>) => {
-    logger.warn(message, { ...metadata, event: "security_warning" });
+    logger.warn(message, { ...metadata, event: 'security_warning' });
   },
 
   /**
    * Log generic security info
    */
   info: (message: string, metadata: Record<string, unknown>) => {
-    logger.info(message, { ...metadata, event: "security_info" });
+    logger.info(message, { ...metadata, event: 'security_info' });
   },
 } as const;

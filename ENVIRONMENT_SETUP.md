@@ -1,3 +1,7 @@
+> **Note (Cloudflare-first):** These instructions were written for the previous Vercel setup.
+> For Cloudflare Pages + D1 environment configuration, prefer `CLOUDFLARE_MIGRATION_GUIDE.md` and the templates in `apps/web/.env*.template`.
+
+
 # Environment Setup Guide
 ## Complete Configuration for All Platforms
 

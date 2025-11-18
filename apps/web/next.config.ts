@@ -17,6 +17,7 @@ const baseConfig: NextConfig = {
   },
   // Disable Component Caching for now - incompatible with current architecture
   // TODO: Re-enable when codebase patterns are updated for Next.js 16 Cache Components
+  // NOTE: We still use route-level caching (revalidate / static) where safe.
   cacheComponents: false,
   experimental: {
     turbopackFileSystemCacheForDev: true,

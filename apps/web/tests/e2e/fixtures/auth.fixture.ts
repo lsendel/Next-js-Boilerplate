@@ -1,6 +1,7 @@
 import { test as base } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { DashboardPage, HomePage, SignInPage, SignUpPage } from '../pages';
+import { cleanupTestAuth } from '../helpers';
 
 /**
  * Authentication Fixtures
@@ -55,59 +56,56 @@ export const test = base.extend<AuthFixtures>({
   /**
    * Pre-authenticated page context
    * Use this when tests need to start already signed in
+   *
+   * This fixture creates a unique user for each test and signs them in.
+   * Test isolation is ensured by cleaning up before creating the session.
    */
   authenticatedPage: async ({ page }, use) => {
-    // Import test data generator dynamically
-    const { generateUserCredentials } = await import('../test-data/generators');
+    // Clean up any existing auth state before creating new session
+    await cleanupTestAuth(page);
 
-    // Generate unique test user credentials
-    const testUser = generateUserCredentials();
+    // Create unique credentials for this test
+    const timestamp = Date.now();
+    const email = `test-user-${timestamp}@example.com`;
+    const password = 'TestPassword123!';
 
-    // Authenticate via Test Auth API endpoints
-    // This is faster than UI-based auth and more reliable
+    // Sign up the user
+    await page.goto('/sign-up');
+    await page.waitForLoadState('networkidle');
 
-    // Step 1: Sign up the test user
-    const signupResponse = await page.request.post('/api/test-auth/signup', {
-      data: {
-        email: testUser.email,
-        password: testUser.password,
-        firstName: testUser.firstName,
-        lastName: testUser.lastName,
-      },
-    });
+    const emailInput = page.locator('input[type="email"], input[name="email"]');
+    const passwordInput = page.locator('input[type="password"], input[name="password"]').first();
+    const confirmPasswordInput = page.locator('input[name="confirm-password"]').first();
+    const submitButton = page.locator('button[type="submit"]').first();
 
-    if (!signupResponse.ok()) {
-      throw new Error(`Signup failed: ${signupResponse.status()} - ${await signupResponse.text()}`);
+    await emailInput.fill(email);
+    await passwordInput.fill(password);
+
+    // Fill confirm password if it exists
+    const hasConfirmPassword = await confirmPasswordInput.isVisible().catch(() => false);
+    if (hasConfirmPassword) {
+      await confirmPasswordInput.fill(password);
     }
 
-    // Step 2: Sign in to get session cookie
-    const signinResponse = await page.request.post('/api/test-auth/signin', {
-      data: {
-        email: testUser.email,
-        password: testUser.password,
-      },
-    });
+    await submitButton.click();
 
-    if (!signinResponse.ok()) {
-      throw new Error(`Sign-in failed: ${signinResponse.status()} - ${await signinResponse.text()}`);
-    }
+    // Wait for redirect to dashboard
+    await page.waitForURL(/\/dashboard/, { timeout: 10000 });
+    await page.waitForLoadState('networkidle');
 
-    // Step 3: Verify authentication by checking user endpoint
-    const userResponse = await page.request.get('/api/test-auth/user');
+    // Wait for critical dashboard elements to be fully rendered
+    // This ensures React hydration is complete before tests run
+    const mainNav = page.getByRole('navigation', { name: /main/i }).or(page.locator('nav').first());
+    await mainNav.waitFor({ state: 'visible', timeout: 5000 });
 
-    if (!userResponse.ok()) {
-      throw new Error(`Authentication verification failed: ${userResponse.status()}`);
-    }
+    // Wait a bit more for any async data loading
+    await page.waitForTimeout(500);
 
-    const userData = await userResponse.json();
-
-    if (userData.email !== testUser.email) {
-      throw new Error(`Authentication mismatch: expected ${testUser.email}, got ${userData.email}`);
-    }
-
-    // Session cookie is now set in the page context
-    // Tests can proceed with authenticated state
+    // Provide the authenticated page to the test
     await use(page);
+
+    // Cleanup after test completes
+    await cleanupTestAuth(page);
   },
 });
 

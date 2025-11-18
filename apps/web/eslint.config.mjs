@@ -45,6 +45,7 @@ export default antfu(
       '*.tmp',
       '.DS_Store',
       'tests/**/*',
+      'test-results/**/*',
       '**/*.test.ts',
       '**/*.stories.tsx',
       'src/libs/auth/adapters/TestAdapter.tsx',

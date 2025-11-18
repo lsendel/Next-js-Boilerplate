@@ -5,18 +5,18 @@
  * on state-changing auth operations
  */
 
-import crypto from "node:crypto";
-import { cookies } from "next/headers";
+import crypto from 'node:crypto';
+import { cookies } from 'next/headers';
 
-const CSRF_TOKEN_NAME = "__Host-csrf-token";
-const CSRF_HEADER_NAME = "x-csrf-token";
+const CSRF_TOKEN_NAME = '__Host-csrf-token';
+const CSRF_HEADER_NAME = 'x-csrf-token';
 const CSRF_TOKEN_LENGTH = 32;
 
 /**
  * Generate a cryptographically secure CSRF token
  */
 function generateCsrfToken(): string {
-  return crypto.randomBytes(CSRF_TOKEN_LENGTH).toString("base64url");
+  return crypto.randomBytes(CSRF_TOKEN_LENGTH).toString('base64url');
 }
 
 /**
@@ -28,9 +28,9 @@ async function setCsrfToken(): Promise<string> {
 
   cookieStore.set(CSRF_TOKEN_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/',
     maxAge: 60 * 60 * 24, // 24 hours
   });
 

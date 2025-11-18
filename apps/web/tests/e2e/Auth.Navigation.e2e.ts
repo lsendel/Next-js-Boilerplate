@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { cleanupTestAuth } from './helpers';
 
 /**
  * Authentication Navigation & Page Content Tests
@@ -7,6 +8,9 @@ import { expect, test } from '@playwright/test';
 
 test.describe('Authentication Navigation & Page Content', () => {
   test.beforeEach(async ({ page }) => {
+    // Clean up test auth state before each test
+    await cleanupTestAuth(page);
+
     // Start from homepage
     await page.goto('/');
   });

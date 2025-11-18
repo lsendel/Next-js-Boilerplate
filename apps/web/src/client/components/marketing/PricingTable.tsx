@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { TenantLink } from "@/client/components/navigation/TenantLink";
+import type { ReactNode } from 'react';
+import { TenantLink } from '@/client/components/navigation/TenantLink';
 
 export type PricingTier = {
   name: string;
@@ -22,7 +22,7 @@ export type PricingTableProps = {
   title?: string;
   description?: string;
   tiers: PricingTier[];
-  billingPeriod?: "monthly" | "yearly";
+  billingPeriod?: 'monthly' | 'yearly';
   showBillingToggle?: boolean;
 };
 
@@ -36,7 +36,7 @@ export function PricingTable({
   title,
   description,
   tiers,
-  billingPeriod = "monthly",
+  billingPeriod = 'monthly',
   showBillingToggle = false,
 }: PricingTableProps) {
   return (
@@ -65,9 +65,9 @@ export function PricingTable({
               <button
                 type="button"
                 className={`rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
-                  billingPeriod === "monthly"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
+                  billingPeriod === 'monthly'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 Monthly
@@ -75,9 +75,9 @@ export function PricingTable({
               <button
                 type="button"
                 className={`rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
-                  billingPeriod === "yearly"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
+                  billingPeriod === 'yearly'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 Yearly
@@ -92,19 +92,19 @@ export function PricingTable({
         {/* Pricing Cards */}
         <div className="mx-auto mt-16 grid max-w-7xl grid-cols-1 gap-8 lg:grid-cols-3">
           {tiers.map((tier) => {
-            const price =
-              billingPeriod === "yearly" && tier.price.yearly
+            const price
+              = billingPeriod === 'yearly' && tier.price.yearly
                 ? tier.price.yearly
                 : tier.price.monthly;
-            const currency = tier.price.currency || "$";
+            const currency = tier.price.currency || '$';
 
             return (
               <div
                 key={tier.name}
                 className={`relative rounded-3xl p-8 ${
                   tier.highlighted
-                    ? "border-2 border-blue-600 bg-white shadow-xl ring-4 ring-blue-50"
-                    : "border border-gray-200 bg-white shadow-sm"
+                    ? 'border-2 border-blue-600 bg-white shadow-xl ring-4 ring-blue-50'
+                    : 'border border-gray-200 bg-white shadow-sm'
                 }`}
               >
                 {/* Badge */}
@@ -132,10 +132,11 @@ export function PricingTable({
                       {price}
                     </span>
                     <span className="text-sm font-semibold text-gray-600">
-                      /{billingPeriod === "yearly" ? "year" : "month"}
+                      /
+                      {billingPeriod === 'yearly' ? 'year' : 'month'}
                     </span>
                   </div>
-                  {billingPeriod === "yearly" && tier.price.yearly && (
+                  {billingPeriod === 'yearly' && tier.price.yearly && (
                     <p className="mt-1 text-sm text-gray-500">
                       {currency}
                       {Math.round(tier.price.yearly / 12)}
@@ -149,8 +150,8 @@ export function PricingTable({
                   href={tier.cta.href}
                   className={`mb-8 block w-full rounded-lg px-6 py-3 text-center text-base font-semibold transition-colors ${
                     tier.highlighted
-                      ? "bg-blue-600 text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-                      : "border border-gray-300 bg-white text-gray-900 shadow-sm hover:bg-gray-50"
+                      ? 'bg-blue-600 text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                      : 'border border-gray-300 bg-white text-gray-900 shadow-sm hover:bg-gray-50'
                   }`}
                 >
                   {tier.cta.text}
@@ -158,7 +159,7 @@ export function PricingTable({
 
                 {/* Features */}
                 <ul className="space-y-3">
-                  {tier.features.map((feature) => (
+                  {tier.features.map(feature => (
                     <li key={`${tier.name}-${feature}`} className="flex gap-3">
                       <svg
                         className="mt-0.5 h-5 w-5 shrink-0 text-blue-600"
@@ -183,7 +184,8 @@ export function PricingTable({
         {/* Enterprise CTA */}
         <div className="mx-auto mt-16 max-w-md text-center">
           <p className="text-base text-gray-600">
-            Need a custom plan for your team?{" "}
+            Need a custom plan for your team?
+            {' '}
             <TenantLink
               href="/contact"
               className="font-semibold text-blue-600 hover:text-blue-500"

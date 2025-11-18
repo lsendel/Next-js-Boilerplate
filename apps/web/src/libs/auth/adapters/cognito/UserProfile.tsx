@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import type { MFAStatus } from "./utils";
-import { useCallback, useEffect, useState } from "react";
-import Image from "next/image";
-import { authLogger } from "@/libs/Logger";
+import type { MFAStatus } from './utils';
+import { useCallback, useEffect, useState } from 'react';
+import Image from 'next/image';
+import { authLogger } from '@/libs/Logger';
 
 type UserProfileProps = {
   path: string;
@@ -28,17 +28,17 @@ export function CognitoUserProfile({ path: _path }: UserProfileProps) {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [mfaStatus, setMFAStatus] = useState<MFAStatus | null>(null);
   const [loading, setLoading] = useState(true);
-  const [setupMode, setSetupMode] = useState<"totp" | "sms" | null>(null);
-  const [totpQR, setTotpQR] = useState<string>("");
-  const [totpSecret, setTotpSecret] = useState<string>("");
-  const [error, setError] = useState<string>("");
-  const [successMessage, setSuccessMessage] = useState<string>("");
-  const [pendingDisableConfirmation, setPendingDisableConfirmation] =
-    useState(false);
+  const [setupMode, setSetupMode] = useState<'totp' | 'sms' | null>(null);
+  const [totpQR, setTotpQR] = useState<string>('');
+  const [totpSecret, setTotpSecret] = useState<string>('');
+  const [error, setError] = useState<string>('');
+  const [successMessage, setSuccessMessage] = useState<string>('');
+  const [pendingDisableConfirmation, setPendingDisableConfirmation]
+    = useState(false);
 
   const loadUserData = useCallback(async () => {
     try {
-      const response = await fetch("/api/auth/user");
+      const response = await fetch('/api/auth/user');
       if (response.ok) {
         const data = await response.json();
         setUserData({
@@ -52,7 +52,7 @@ export function CognitoUserProfile({ path: _path }: UserProfileProps) {
         });
       }
     } catch (err) {
-      authLogger.error("Failed to load user data", { error: err });
+      authLogger.error('Failed to load user data', { error: err });
     } finally {
       setLoading(false);
     }
@@ -60,11 +60,11 @@ export function CognitoUserProfile({ path: _path }: UserProfileProps) {
 
   const loadMFAStatus = useCallback(async () => {
     try {
-      const { getMFAStatus } = await import("./utils");
+      const { getMFAStatus } = await import('./utils');
       const status = await getMFAStatus();
       setMFAStatus(status);
     } catch (err) {
-      authLogger.error("Failed to load MFA status", { error: err });
+      authLogger.error('Failed to load MFA status', { error: err });
     }
   }, []);
 
@@ -75,22 +75,22 @@ export function CognitoUserProfile({ path: _path }: UserProfileProps) {
 
   const setupTOTP = async () => {
     setLoading(true);
-    setError("");
-    setSuccessMessage("");
+    setError('');
+    setSuccessMessage('');
 
     try {
-      const { setupTOTPMFA } = await import("./utils");
+      const { setupTOTPMFA } = await import('./utils');
       const result = await setupTOTPMFA();
 
       if (result) {
         setTotpQR(result.qrCode);
         setTotpSecret(result.secret);
-        setSetupMode("totp");
+        setSetupMode('totp');
       } else {
-        setError("TOTP setup failed. Please try again.");
+        setError('TOTP setup failed. Please try again.');
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to setup TOTP");
+      setError(err instanceof Error ? err.message : 'Failed to setup TOTP');
     } finally {
       setLoading(false);
     }
@@ -99,25 +99,25 @@ export function CognitoUserProfile({ path: _path }: UserProfileProps) {
   const verifyTOTP = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
-    setSuccessMessage("");
+    setError('');
+    setSuccessMessage('');
 
     const formData = new FormData(e.currentTarget);
-    const code = formData.get("code") as string;
+    const code = formData.get('code') as string;
 
     try {
-      const { verifyTOTPSetup } = await import("./utils");
+      const { verifyTOTPSetup } = await import('./utils');
       const success = await verifyTOTPSetup(code);
 
       if (success) {
         setSetupMode(null);
         await loadMFAStatus();
-        setSuccessMessage("TOTP MFA enabled successfully!");
+        setSuccessMessage('TOTP MFA enabled successfully!');
       } else {
-        setError("Invalid code. Please try again.");
+        setError('Invalid code. Please try again.');
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Verification failed");
+      setError(err instanceof Error ? err.message : 'Verification failed');
     } finally {
       setLoading(false);
     }
@@ -131,21 +131,21 @@ export function CognitoUserProfile({ path: _path }: UserProfileProps) {
     }
 
     setLoading(true);
-    setError("");
-    setSuccessMessage("");
+    setError('');
+    setSuccessMessage('');
 
     try {
-      const { disableMFA: disableMFAUtil } = await import("./utils");
+      const { disableMFA: disableMFAUtil } = await import('./utils');
       const success = await disableMFAUtil();
 
       if (success) {
         await loadMFAStatus();
-        setSuccessMessage("MFA disabled successfully.");
+        setSuccessMessage('MFA disabled successfully.');
       } else {
-        setError("Failed to disable MFA");
+        setError('Failed to disable MFA');
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to disable MFA");
+      setError(err instanceof Error ? err.message : 'Failed to disable MFA');
     } finally {
       setLoading(false);
       setPendingDisableConfirmation(false);
@@ -194,7 +194,7 @@ export function CognitoUserProfile({ path: _path }: UserProfileProps) {
                 Email Address
               </p>
               <div className="mt-1 rounded-md bg-gray-50 p-3 text-gray-900">
-                {userData?.email || "Not available"}
+                {userData?.email || 'Not available'}
               </div>
             </div>
 
@@ -203,21 +203,21 @@ export function CognitoUserProfile({ path: _path }: UserProfileProps) {
                 Full Name
               </p>
               <div className="mt-1 rounded-md bg-gray-50 p-3 text-gray-900">
-                {userData?.name || "Not set"}
+                {userData?.name || 'Not set'}
               </div>
             </div>
 
             <div>
               <p className="block text-sm font-medium text-gray-700">User ID</p>
               <div className="mt-1 rounded-md bg-gray-50 p-3 font-mono text-sm text-gray-900">
-                {userData?.id || "Not available"}
+                {userData?.id || 'Not available'}
               </div>
             </div>
           </div>
         </div>
 
         {/* Multi-Factor Authentication */}
-        {process.env.NEXT_PUBLIC_COGNITO_MFA_ENABLED === "true" && (
+        {process.env.NEXT_PUBLIC_COGNITO_MFA_ENABLED === 'true' && (
           <div className="rounded-lg border bg-white p-6 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900">
@@ -239,7 +239,7 @@ export function CognitoUserProfile({ path: _path }: UserProfileProps) {
 
                 {!mfaStatus?.enabled && (
                   <div className="space-y-3">
-                    {process.env.NEXT_PUBLIC_COGNITO_MFA_METHOD !== "SMS" && (
+                    {process.env.NEXT_PUBLIC_COGNITO_MFA_METHOD !== 'SMS' && (
                       <button
                         type="button"
                         onClick={setupTOTP}
@@ -287,7 +287,7 @@ export function CognitoUserProfile({ path: _path }: UserProfileProps) {
                       </button>
                     )}
 
-                    {process.env.NEXT_PUBLIC_COGNITO_MFA_METHOD !== "TOTP" && (
+                    {process.env.NEXT_PUBLIC_COGNITO_MFA_METHOD !== 'TOTP' && (
                       <button
                         type="button"
                         disabled
@@ -346,10 +346,12 @@ export function CognitoUserProfile({ path: _path }: UserProfileProps) {
                           </h3>
                           <div className="mt-1 text-sm text-green-700">
                             <p>
-                              Your account is protected with{" "}
-                              {mfaStatus.preferred === "TOTP"
-                                ? "authenticator app"
-                                : "SMS"}{" "}
+                              Your account is protected with
+                              {' '}
+                              {mfaStatus.preferred === 'TOTP'
+                                ? 'authenticator app'
+                                : 'SMS'}
+                              {' '}
                               multi-factor authentication.
                             </p>
                           </div>
@@ -375,7 +377,7 @@ export function CognitoUserProfile({ path: _path }: UserProfileProps) {
               </div>
             )}
 
-            {setupMode === "totp" && (
+            {setupMode === 'totp' && (
               <div className="space-y-4">
                 <div className="rounded-lg bg-blue-50 p-4">
                   <h3 className="font-medium text-blue-900">
@@ -417,8 +419,7 @@ export function CognitoUserProfile({ path: _path }: UserProfileProps) {
                       <button
                         type="button"
                         onClick={() =>
-                          navigator.clipboard.writeText(totpSecret)
-                        }
+                          navigator.clipboard.writeText(totpSecret)}
                         className="rounded-r-md bg-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
                       >
                         Copy
@@ -458,7 +459,7 @@ export function CognitoUserProfile({ path: _path }: UserProfileProps) {
                         disabled={loading}
                         className="flex-1 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                       >
-                        {loading ? "Verifying..." : "Verify & Enable"}
+                        {loading ? 'Verifying...' : 'Verify & Enable'}
                       </button>
                     </div>
                   </form>

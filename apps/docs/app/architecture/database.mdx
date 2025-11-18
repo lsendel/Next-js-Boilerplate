@@ -9,9 +9,10 @@ The boilerplate uses a layered database architecture:
 - **DrizzleORM** - Type-safe ORM with zero runtime overhead
 - **Repository Pattern** - Data access abstraction
 - **Multi-Tenant Isolation** - Row-level security
-- **PGlite** - Local development database
-- **PostgreSQL** - Production database
-- **Migrations** - Version-controlled schema changes
+- **Cloudflare D1** - Production database (SQLite at the edge)
+- **PGlite** - Local development database (Postgres-compatible)
+- **Dual Schema** - `Schema.ts` (Postgres) + `SchemaD1.ts` (D1)
+- **Migrations** - Version-controlled schema changes for both backends
 - **Type Safety** - End-to-end TypeScript types
 
 ## Architecture Layers
@@ -53,39 +54,33 @@ The boilerplate uses a layered database architecture:
 ### Connection Factory
 
 ```typescript
-// src/utils/DBConnection.ts
-import { neon } from '@neondatabase/serverless'
-import { drizzle as drizzleNeon } from 'drizzle-orm/neon-http'
-import { PGlite } from '@electric-sql/pglite'
-import { drizzle as drizzlePglite } from 'drizzle-orm/pglite'
-import * as schema from '@/models/Schema'
+// apps/web/src/server/db/DB.ts
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import type * as schema from "@/server/db/models/Schema";
+import type { D1DrizzleInstance } from "@/server/lib/d1-connection";
+import { createDbConnection } from "@/server/lib/db-connection";
+import { createD1Connection } from "@/server/lib/d1-connection";
 
-let db: ReturnType<typeof drizzleNeon> | ReturnType<typeof drizzlePglite>
+type DbInstance = NodePgDatabase<typeof schema> | D1DrizzleInstance;
 
-export function getDB() {
-  if (db) return db
+const isD1Environment = () => {
+  const env = (globalThis as any).env;
+  return !!env?.DB;
+};
 
-  if (process.env.DATABASE_URL) {
-    // Production: PostgreSQL via Neon
-    const sql = neon(process.env.DATABASE_URL)
-    db = drizzleNeon(sql, { schema })
-  } else {
-    // Development: PGlite (in-memory)
-    const client = new PGlite()
-    db = drizzlePglite(client, { schema })
-  }
+const createDb = (): DbInstance =>
+  isD1Environment()
+    ? createD1Connection((globalThis as any).env.DB)
+    : createDbConnection();
 
-  return db
-}
+export const db: DbInstance = createDb();
 ```
 
 ### Usage
 
 ```typescript
-// src/libs/DB.ts
-import { getDB } from '@/utils/DBConnection'
-
-export const db = getDB()
+// apps/web/src/libs/DB.ts
+export { db } from "@/server/db/DB";
 ```
 
 ## Schema Definition
@@ -461,10 +456,13 @@ await db.transaction(async (tx) => {
 
 ```bash
 # Make schema changes
-# src/models/Schema.ts
+# apps/web/src/server/db/models/Schema.ts + SchemaD1.ts
 
-# Generate migration
+# Generate Postgres/PGlite migration
 pnpm --filter web db:generate
+
+# Generate D1 (Cloudflare) migration
+pnpm --filter web db:d1:generate
 ```
 
 ### Migration File
@@ -487,11 +485,15 @@ CREATE INDEX IF NOT EXISTS "posts_author_idx" ON "posts" ("author_id");
 ### Apply Migration
 
 ```bash
-# Local development
+# Local development (Postgres/PGlite)
 pnpm --filter web db:migrate
 
-# Production (automatic on deploy)
-# Runs during build step
+# Local/preview D1 (Cloudflare Workers)
+pnpm --filter web d1:migrate
+
+# Staging / production D1
+pnpm --filter web d1:migrate:stage
+pnpm --filter web d1:migrate:prod
 ```
 
 [Full migration guide →](/guides/database/migrations)

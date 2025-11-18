@@ -24,9 +24,10 @@ export type CloudflareImageLoaderProps = {
  *
  * Transforms image URLs to use Cloudflare's image optimization service.
  *
- * @param src - Source image URL
- * @param width - Desired image width
- * @param quality - Image quality (1-100, default: 75)
+ * @param params - Loader parameters
+ * @param params.src - Source image URL
+ * @param params.width - Desired image width
+ * @param params.quality - Optional image quality (1-100, default 75)
  * @returns Optimized image URL
  */
 export default function cloudflareImageLoader({
@@ -35,18 +36,18 @@ export default function cloudflareImageLoader({
   quality = 75,
 }: CloudflareImageLoaderProps): string {
   // If the image is already a full URL (external), return as-is
-  if (src.startsWith("http://") || src.startsWith("https://")) {
+  if (src.startsWith('http://') || src.startsWith('https://')) {
     return src;
   }
 
   // For local images, use Cloudflare's image resizing
   // Format: /cdn-cgi/image/width=<width>,quality=<quality>,format=auto/<src>
-  const params = [`width=${width}`, `quality=${quality}`, "format=auto"];
+  const params = [`width=${width}`, `quality=${quality}`, 'format=auto'];
 
   // Remove leading slash from src if present
-  const normalizedSrc = src.startsWith("/") ? src.slice(1) : src;
+  const normalizedSrc = src.startsWith('/') ? src.slice(1) : src;
 
-  return `/cdn-cgi/image/${params.join(",")}/${normalizedSrc}`;
+  return `/cdn-cgi/image/${params.join(',')}/${normalizedSrc}`;
 }
 
 /**

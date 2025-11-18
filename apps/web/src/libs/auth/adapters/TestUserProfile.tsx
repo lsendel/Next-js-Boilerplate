@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { redirect } from "next/navigation";
-import type { AuthUser } from "../types";
-import { authLogger } from "@/libs/Logger";
+import React, { useState } from 'react';
+import { redirect } from 'next/navigation';
+import type { AuthUser } from '../types';
+import { authLogger } from '@/libs/Logger';
 
 /**
  * User Profile Component for Test Authentication
@@ -18,15 +18,15 @@ export function TestUserProfile() {
   React.useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch("/api/test-auth/user", {
-          credentials: "same-origin", // Required to send session cookies
+        const response = await fetch('/api/test-auth/user', {
+          credentials: 'same-origin', // Required to send session cookies
         });
         if (response.ok) {
           const data = await response.json();
           setUser(data);
         }
       } catch (err) {
-        authLogger.error("Test auth failed to fetch user", { error: err });
+        authLogger.error('Test auth failed to fetch user', { error: err });
       } finally {
         setIsLoading(false);
       }
@@ -44,7 +44,7 @@ export function TestUserProfile() {
   }
 
   if (!user) {
-    redirect("/sign-in");
+    redirect('/sign-in');
   }
 
   return (
@@ -75,13 +75,13 @@ export function TestUserProfile() {
             <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
               <dt className="text-sm font-medium text-gray-500">First Name</dt>
               <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                {user.firstName || "Not set"}
+                {user.firstName || 'Not set'}
               </dd>
             </div>
             <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
               <dt className="text-sm font-medium text-gray-500">Last Name</dt>
               <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                {user.lastName || "Not set"}
+                {user.lastName || 'Not set'}
               </dd>
             </div>
           </dl>

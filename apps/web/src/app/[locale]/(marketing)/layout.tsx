@@ -1,9 +1,9 @@
-import { getTranslations, setRequestLocale } from "next-intl/server";
-import Link from "next/link";
-import { DemoBanner } from "@/client/components/ui/DemoBanner";
-import { LocaleSwitcher } from "@/client/components/ui/LocaleSwitcher";
-import { BaseTemplate } from "@/templates/BaseTemplate";
-import { getI18nPath } from "@/shared/utils/helpers";
+import { getTranslations, setRequestLocale } from 'next-intl/server';
+import Link from 'next/link';
+import { DemoBanner } from '@/client/components/ui/DemoBanner';
+import { LocaleSwitcher } from '@/client/components/ui/LocaleSwitcher';
+import { BaseTemplate } from '@/templates/BaseTemplate';
+import { getI18nPath } from '@/shared/utils/helpers';
 
 export default async function Layout(props: {
   children: React.ReactNode;
@@ -13,7 +13,7 @@ export default async function Layout(props: {
   setRequestLocale(locale);
   const t = await getTranslations({
     locale,
-    namespace: "RootLayout",
+    namespace: 'RootLayout',
   });
 
   const buildHref = (path: string) => getI18nPath(path, locale);
@@ -22,54 +22,54 @@ export default async function Layout(props: {
     <>
       <DemoBanner />
       <BaseTemplate
-        leftNav={
+        leftNav={(
           <>
             <li>
               <Link
-                href={buildHref("/")}
+                href={buildHref('/')}
                 className="border-none text-gray-700 hover:text-gray-900"
               >
-                {t("home_link")}
+                {t('home_link')}
               </Link>
             </li>
             <li>
               <Link
-                href={buildHref("/about/")}
+                href={buildHref('/about/')}
                 className="border-none text-gray-700 hover:text-gray-900"
               >
-                {t("about_link")}
+                {t('about_link')}
               </Link>
             </li>
             <li>
               <Link
-                href={buildHref("/counter/")}
+                href={buildHref('/counter/')}
                 className="border-none text-gray-700 hover:text-gray-900"
               >
-                {t("counter_link")}
+                {t('counter_link')}
               </Link>
             </li>
             <li>
               <Link
-                href={buildHref("/portfolio/")}
+                href={buildHref('/portfolio/')}
                 className="border-none text-gray-700 hover:text-gray-900"
               >
-                {t("portfolio_link")}
+                {t('portfolio_link')}
               </Link>
             </li>
             <li>
               <Link
-                href={buildHref("/features/")}
+                href={buildHref('/features/')}
                 className="border-none text-gray-700 hover:text-gray-900"
               >
-                {t("features_link")}
+                {t('features_link')}
               </Link>
             </li>
             <li>
               <Link
-                href={buildHref("/pricing/")}
+                href={buildHref('/pricing/')}
                 className="border-none text-gray-700 hover:text-gray-900"
               >
-                {t("pricing_link")}
+                {t('pricing_link')}
               </Link>
             </li>
             <li>
@@ -82,31 +82,31 @@ export default async function Layout(props: {
             </li>
             <li>
               <Link
-                href={buildHref("/contact/")}
+                href={buildHref('/contact/')}
                 className="border-none text-gray-700 hover:text-gray-900"
               >
-                {t("contact_link")}
+                {t('contact_link')}
               </Link>
             </li>
           </>
-        }
-        rightNav={
+        )}
+        rightNav={(
           <>
             <li>
               <Link
-                href={buildHref("/sign-in/")}
+                href={buildHref('/sign-in/')}
                 className="border-none text-gray-700 hover:text-gray-900"
               >
-                {t("sign_in_link")}
+                {t('sign_in_link')}
               </Link>
             </li>
 
             <li>
               <Link
-                href={buildHref("/sign-up/")}
+                href={buildHref('/sign-up/')}
                 className="border-none text-gray-700 hover:text-gray-900"
               >
-                {t("sign_up_link")}
+                {t('sign_up_link')}
               </Link>
             </li>
 
@@ -114,7 +114,7 @@ export default async function Layout(props: {
               <LocaleSwitcher />
             </li>
           </>
-        }
+        )}
       >
         <div className="py-5 text-xl [&_p]:my-6">{props.children}</div>
       </BaseTemplate>

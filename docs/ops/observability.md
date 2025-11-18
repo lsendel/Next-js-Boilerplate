@@ -19,6 +19,28 @@ This guide summarizes the minimum production configuration for alerts, dashboard
    - API error rate (use the `$pageview` event and custom events you emit).
 3. Configure anomaly detection alerts to email on-call when conversion drops or latency spikes.
 
+
+### 2.1 Monitoring feature flags by environment
+
+Monitoring providers are wired through three feature flags. They are consumed in code via `MonitoringConfig` and injected at build time in `.github/workflows/deploy-cloudflare.yml`.
+
+| Environment              | Sentry (`NEXT_PUBLIC_ENABLE_SENTRY`) | PostHog (`NEXT_PUBLIC_ENABLE_POSTHOG`) | CF Analytics (`NEXT_PUBLIC_ENABLE_CF_ANALYTICS`) | Where to set                                                         |
+| ------------------------ | ------------------------------------- | -------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------- |
+| **Local dev (`pnpm dev`)**  | `false` (default in `apps/web/.env`)   | `false` (default in `apps/web/.env`)    | `true` but token empty by default               | `apps/web/.env` / `apps/web/.env.local`                              |
+| **Staging (Cloudflare)** | `true`                                | `false`                                 | `true`                                         | GitHub **environment/repo vars**: `ENABLE_SENTRY`, `ENABLE_POSTHOG`, `ENABLE_CF_ANALYTICS` |
+| **Production (Cloudflare)** | `true`                             | `true`                                  | `true`                                         | Same GitHub vars or Cloudflare Pages **Environment variables**       |
+
+Notes:
+
+- The Cloudflare deploy workflow maps GitHub vars → build-time env:
+  - `ENABLE_SENTRY` → `NEXT_PUBLIC_ENABLE_SENTRY`
+  - `ENABLE_POSTHOG` → `NEXT_PUBLIC_ENABLE_POSTHOG`
+  - `ENABLE_CF_ANALYTICS` → `NEXT_PUBLIC_ENABLE_CF_ANALYTICS`
+- For **staging**, a common setup is: `ENABLE_SENTRY=true`, `ENABLE_CF_ANALYTICS=true`, `ENABLE_POSTHOG=false` so you see real errors and traffic without skewing product funnels.
+- For **local dev**, `.env` keeps Sentry/PostHog off by default; CF Analytics is effectively off until you supply `NEXT_PUBLIC_CF_ANALYTICS_TOKEN`.
+
+When onboarding a new environment (e.g. another staging stack), define these three `ENABLE_*` variables first so observability behaves as expected from the first deploy.
+
 ### 3. Better Stack Logging
 
 1. Create a source in Better Stack and add `NEXT_PUBLIC_BETTER_STACK_SOURCE_TOKEN` and `NEXT_PUBLIC_BETTER_STACK_INGESTING_HOST`.

@@ -31,10 +31,10 @@ This guide will help you migrate your Next.js boilerplate from Vercel to Cloudfl
 ### Step 1: Create Cloudflare D1 Database
 
 ```bash
-# Create D1 database
-pnpm d1:create
+# Create D1 database (from the monorepo root)
+pnpm --filter web d1:create
 
-# This will output:
+# This will output something like:
 # ✅ Successfully created DB 'next-boilerplate-db'
 # 📋 Database ID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
@@ -48,7 +48,7 @@ pnpm d1:create
       "binding": "DB",
       "database_name": "next-boilerplate-db",
       "database_id": "YOUR_DATABASE_ID_HERE",  // ← Paste here
-      "migrations_dir": "./migrations"
+      "migrations_dir": "./migrations-d1"
     }
   ]
 }
@@ -56,86 +56,74 @@ pnpm d1:create
 
 ---
 
-### Step 2: Convert Database Schema for D1
+### Step 2: Database Schema Layout (Postgres + D1)
 
-D1 uses SQLite instead of PostgreSQL. You need to convert your Drizzle schema.
+This boilerplate already ships with **two Drizzle schemas**:
 
-**Current schema** (`apps/web/src/models/Schema.ts`):
-```typescript
-// PostgreSQL-specific types
-import { pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
-```
+- `apps/web/src/server/db/models/Schema.ts` → PostgreSQL schema used for local dev & tests (via PGlite/Postgres driver).
+- `apps/web/src/server/db/models/SchemaD1.ts` → SQLite-compatible schema used for **Cloudflare D1** in production.
 
-**New D1 schema:**
-```typescript
-// SQLite-compatible types
-import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
+You generally **do not need to hand-convert** the schema yourself. Instead:
 
-export const counterSchema = sqliteTable('counter', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  value: integer('value').notNull().default(0),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-});
-```
+- Make relational model changes in both `Schema.ts` (Postgres) and `SchemaD1.ts` (D1).
+- Keep types and columns aligned, but use D1-friendly types in `SchemaD1.ts` (e.g. `sqliteTable`, `integer({ mode: 'timestamp' })`).
 
-**Key differences:**
+**Key differences to keep in mind when editing `SchemaD1.ts`:**
 - `pgTable` → `sqliteTable`
 - `serial` → `integer().primaryKey({ autoIncrement: true })`
 - `timestamp` → `integer({ mode: 'timestamp' })`
-- PostgreSQL-specific features (JSONB, arrays) need alternatives
+- PostgreSQL-only features (JSONB, arrays, advanced indexes) need SQLite-friendly alternatives
 
 ---
 
 ### Step 3: Generate and Apply D1 Migrations
 
+D1 migrations live under `apps/web/migrations-d1` and are driven by `drizzle.config.d1.ts`.
+
+From the **monorepo root**:
+
 ```bash
-# Generate migration from schema
-pnpm db:generate
+# Generate D1 migration SQL from SchemaD1.ts
+pnpm --filter web db:d1:generate
 
-# Apply migration to local D1
-pnpm d1:migrate
+# Apply migrations to your local D1 database
+pnpm --filter web d1:migrate
 
-# Test locally
-pnpm cf:preview
+# Test locally on the Cloudflare runtime
+pnpm --filter web cf:preview
 ```
 
 ---
 
-### Step 4: Update Database Connection for D1
+### Step 4: Database Connection (Unified API)
 
-Create `apps/web/src/utils/D1Connection.ts`:
+The project already exposes a **single DB entrypoint** that chooses the right backend at runtime:
 
-```typescript
-import { drizzle } from 'drizzle-orm/d1';
-import type { D1Database } from '@cloudflare/workers-types';
-import * as schema from '@/models/Schema';
+- `apps/web/src/server/lib/d1-connection.ts` – creates a Drizzle instance for D1 using `SchemaD1.ts`.
+- `apps/web/src/server/lib/db-connection.ts` – creates a Postgres/PGlite Drizzle instance using `Schema.ts`.
+- `apps/web/src/server/db/DB.ts` – unified `db` that switches between D1 and Postgres depending on the environment.
+- `apps/web/src/libs/DB.ts` – re-exports `db` for use across the app.
 
-export function getD1Database(d1: D1Database) {
-  return drizzle(d1, { schema });
-}
+In simplified form:
 
-// For use in Server Components and API Routes
-export async function getDB() {
-  // Access D1 binding from Cloudflare env
+```ts
+// apps/web/src/server/db/DB.ts
+const isD1Environment = () => {
   const env = (globalThis as any).env;
-  if (!env?.DB) {
-    throw new Error('D1 database binding not found');
-  }
-  return getD1Database(env.DB);
-}
+  return !!env?.DB;
+};
 ```
 
-Update `apps/web/src/libs/DB.ts`:
+- In **Cloudflare Workers** (Pages), `env.DB` is injected, so `db` uses D1 via `createD1Connection(env.DB)`.
+- In **local dev / tests**, `env.DB` is absent, so `db` falls back to `createDbConnection()` (PGlite/Postgres).
 
-```typescript
-import { getDB } from '@/utils/D1Connection';
+You can import the unified DB anywhere in server code:
 
-// Use D1 in production, PGlite in development
-export const db = process.env.NODE_ENV === 'production' 
-  ? await getDB()
-  : /* existing PGlite setup */;
+```ts
+import { db } from '@/libs/DB';
 ```
+
+No additional changes are required to “wire up” D1 – the boilerplate has already done this for you.
 
 ---
 
@@ -174,7 +162,7 @@ trackEvent({
 
 ---
 
-### Step 6: Test Locally with Wrangler
+### Step 6: Test D1 + Worker runtime locally with Wrangler
 
 ```bash
 # Build and preview with Cloudflare Workers runtime
@@ -186,11 +174,13 @@ pnpm cf:preview
 # 3. Open http://localhost:8788
 ```
 
-**Test checklist:**
-- [ ] Homepage loads
+**Test checklist (D1 + Worker):**
+- [ ] Homepage loads (`/`)
+- [ ] Marketing pages load (`/landing`, `/pricing`, etc.)
 - [ ] Authentication works (Cloudflare Access)
-- [ ] Database queries work
-- [ ] API routes respond
+- [ ] D1 migrations are applied (no "no such table" errors in logs)
+- [ ] Tenant lookups work (if using multi-tenant slugs or domains)
+- [ ] API routes respond as expected
 - [ ] Static assets load
 - [ ] Monitoring tracks events (if enabled)
 
@@ -242,6 +232,115 @@ Update `apps/web/wrangler.jsonc`:
 
 ---
 
+### Step 9: Multi-Environment (dev/stage/prod) with Wrangler
+
+For real projects, you'll often have multiple long-lived environments (for example the matrix in `docs/CI_ENVIRONMENTS.md`):
+
+- `dev` → e.g. `environment-dev.1pet.com`
+- `stage` → e.g. `environment-stage.1pet.com` or `stg.1pet.me`
+- `prod` → e.g. `environment.1pet.com`
+
+Wrangler supports per-environment configuration via the `env` block in `apps/web/wrangler.jsonc`.
+
+**Example (staging environment):**
+
+```jsonc
+{
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "next-boilerplate-db",
+      "database_id": "YOUR_D1_DATABASE_ID",
+      "migrations_dir": "./migrations-d1"
+    }
+  ],
+  "env": {
+    "stage": {
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "next-boilerplate-db-stage",
+          "database_id": "YOUR_STAGE_D1_DATABASE_ID",
+          "migrations_dir": "./migrations-d1"
+        }
+      ],
+      "routes": [
+        {
+          "pattern": "stg.1pet.me/*",
+          "custom_domain": true
+        }
+      ]
+    }
+  }
+}
+```
+
+With this in place, you can run migrations against each environment's D1 database:
+
+```bash
+# Local dev D1 (if you use a local D1 instance)
+pnpm --filter web d1:migrate
+
+# Staging D1
+yarn --filter web d1:migrate:stage   # or pnpm/npm, depending on your PM
+
+# Production D1 (used by main / prod Pages project)
+pnpm --filter web d1:migrate:prod
+```
+
+> Adjust the `env` key (`stage`), `database_name`, `database_id`, and `pattern` to match your actual Cloudflare setup. The example here uses `stg.1pet.me` as a staging custom domain.
+
+---
+## 🧰 Common Runbooks (Cloudflare-first)
+
+### 1. Create a New Environment (e.g. `stage`)
+
+1. Create or configure a new D1 database in the Cloudflare dashboard.
+2. Add a new `env.<name>` block in `apps/web/wrangler.jsonc` with:
+   - A D1 binding named `DB`
+   - `database_name` + `database_id` for that environment
+   - Optional `routes` if you use a custom domain (e.g. `stg.1pet.me/*`).
+3. Add or update environment variables in Cloudflare Pages for that project
+   (`ARCJET_ENV`, monitoring flags, etc.).
+4. Run D1 migrations for the new environment:
+   ```bash
+   pnpm --filter web d1:migrate:<name>
+   ```
+
+### 2. Rotate D1 Credentials / Database
+
+1. Create a new D1 database in Cloudflare.
+2. Update the corresponding `database_id` (and name if needed) in `apps/web/wrangler.jsonc`.
+3. Apply migrations to the new database:
+   ```bash
+   pnpm --filter web d1:migrate:<env>
+   ```
+4. Deploy via Cloudflare:
+   ```bash
+   pnpm cf:deploy
+   ```
+5. After verifying traffic and data are correct, decommission the old D1 database.
+
+### 3. Temporarily Disable Monitoring
+
+Use the feature flags to disable Sentry/PostHog/Cloudflare Analytics without code changes:
+
+```bash
+# In Cloudflare Pages project settings (environment variables)
+NEXT_PUBLIC_ENABLE_SENTRY=false
+NEXT_PUBLIC_ENABLE_POSTHOG=false
+NEXT_PUBLIC_ENABLE_CF_ANALYTICS=false
+```
+
+Deploy a new build; the monitoring providers will no longer initialize but the code paths remain intact.
+
+---
+
+
+
+
+---
+
 ## 🔧 Troubleshooting
 
 ### Issue: "D1 database binding not found"
@@ -250,7 +349,7 @@ Update `apps/web/wrangler.jsonc`:
 
 ### Issue: "Module not found: Can't resolve 'pg'"
 
-**Solution:** Remove PostgreSQL-specific dependencies. D1 uses SQLite, no need for `pg` or `@neondatabase/serverless`.
+**Solution:** Remove any **Neon-specific** PostgreSQL clients (for example `@neondatabase/serverless`) and stale imports that point at your old Neon setup. This boilerplate still uses `pg` + PGlite for local development and Node-based builds, so you should **keep the `pg` dependency** unless you intentionally drop the Postgres dev path.
 
 ### Issue: Middleware errors in production
 

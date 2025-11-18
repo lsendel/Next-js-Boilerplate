@@ -1,20 +1,20 @@
-import type { NextRequest } from "next/server";
+import type { NextRequest } from 'next/server';
 import type {
   AuthMiddlewareConfig,
   AuthSession,
   AuthUser,
   IAuthAdapter,
-} from "../types";
+} from '../types';
 import {
   ClerkProvider,
   SignIn,
   SignOutButton,
   SignUp,
   UserProfile,
-} from "@clerk/nextjs";
-import { clerkMiddleware, currentUser } from "@clerk/nextjs/server";
-import { routing } from "@/libs/I18nRouting";
-import { ClerkLocalizations } from "@/shared/config/app.config";
+} from '@clerk/nextjs';
+import { clerkMiddleware, currentUser } from '@clerk/nextjs/server';
+import { routing } from '@/libs/I18nRouting';
+import { ClerkLocalizations } from '@/shared/config/app.config';
 
 /**
  * Clerk Authentication Adapter
@@ -72,14 +72,14 @@ export class ClerkAdapter implements IAuthAdapter {
     children: React.ReactNode;
     locale: string;
   }): React.ReactElement {
-    const clerkLocale =
-      ClerkLocalizations.supportedLocales[props.locale] ??
-      ClerkLocalizations.defaultLocale;
+    const clerkLocale
+      = ClerkLocalizations.supportedLocales[props.locale]
+        ?? ClerkLocalizations.defaultLocale;
 
-    let signInUrl = "/sign-in";
-    let signUpUrl = "/sign-up";
-    let dashboardUrl = "/dashboard";
-    let afterSignOutUrl = "/";
+    let signInUrl = '/sign-in';
+    let signUpUrl = '/sign-up';
+    let dashboardUrl = '/dashboard';
+    let afterSignOutUrl = '/';
 
     if (props.locale !== routing.defaultLocale) {
       signInUrl = `/${props.locale}${signInUrl}`;
@@ -91,7 +91,7 @@ export class ClerkAdapter implements IAuthAdapter {
     return (
       <ClerkProvider
         appearance={{
-          cssLayerName: "clerk",
+          cssLayerName: 'clerk',
         }}
         localization={clerkLocale}
         signInUrl={signInUrl}
@@ -129,13 +129,13 @@ export class ClerkAdapter implements IAuthAdapter {
    */
   static createMiddleware(config: AuthMiddlewareConfig) {
     return clerkMiddleware(async (auth, req) => {
-      const isProtectedRoute = config.protectedRoutes.some((route) =>
+      const isProtectedRoute = config.protectedRoutes.some(route =>
         req.nextUrl.pathname.includes(route),
       );
 
       if (isProtectedRoute) {
-        const locale =
-          req.nextUrl.pathname.match(/(\/.*)\/dashboard/)?.at(1) ?? "";
+        const locale
+          = req.nextUrl.pathname.match(/(\/.*)\/dashboard/)?.at(1) ?? '';
         const signInUrl = new URL(`${locale}${config.signInUrl}`, req.url);
 
         await auth.protect({

@@ -1,4 +1,5 @@
 import { expect, test } from './fixtures/auth.fixture';
+import { cleanupTestAuth } from './helpers';
 
 /**
  * Dashboard E2E Tests
@@ -7,6 +8,11 @@ import { expect, test } from './fixtures/auth.fixture';
  */
 
 test.describe('Dashboard Access', () => {
+  test.beforeEach(async ({ page }) => {
+    // Clean up test auth state before each test
+    await cleanupTestAuth(page);
+  });
+
   test('should redirect to sign-in when not authenticated', async ({ page }) => {
     await page.goto('/en/dashboard');
 

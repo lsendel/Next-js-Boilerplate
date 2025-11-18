@@ -1,3 +1,8 @@
+> **Note (Cloudflare-first):** This guide describes the legacy Vercel-based deployment pipeline.
+> The current recommended deployment target is **Cloudflare Pages + Workers + D1**.
+> For the up-to-date flow, see `CLOUDFLARE_MIGRATION_GUIDE.md` and `.github/workflows/deploy-cloudflare.yml`.
+
+
 # Production Deployment Guide
 
 **Project:** Next.js 16 Boilerplate (Sprint 3 Optimized)
