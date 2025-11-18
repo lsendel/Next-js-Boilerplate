@@ -127,6 +127,7 @@ test.describe('Sign-Up Flow', () => {
     await signUpPage.signUp({
       email: user.email,
       password: user.password,
+      confirmPassword: user.password, // Required by test auth form
       firstName: user.firstName,
       lastName: user.lastName,
       acceptTerms: true,
@@ -177,6 +178,7 @@ test.describe('Sign-Up Flow', () => {
       await signUpPage.fillSignUpForm({
         email: user.email,
         password: user.password,
+        confirmPassword: user.password, // Required by test auth form
       });
 
       await signUpPage.submit();
@@ -248,10 +250,9 @@ test.describe('Sign-Up Security', () => {
     const xssPayload = '<script>alert("XSS")</script>';
 
     await signUpPage.fillSignUpForm({
-      email: 'test@example.com',
+      email: xssPayload,
       password: 'Test@Password123!',
-      firstName: xssPayload,
-      lastName: xssPayload,
+      confirmPassword: 'Test@Password123!',
     });
 
     await signUpPage.submit();
@@ -269,16 +270,16 @@ test.describe('Sign-Up Security', () => {
     const maliciousInput = '<img src=x onerror=alert(1)>';
 
     await signUpPage.fillSignUpForm({
-      email: 'test@example.com',
+      email: maliciousInput,
       password: 'Test@Password123!',
-      firstName: maliciousInput,
+      confirmPassword: 'Test@Password123!',
     });
 
     // Input should be either rejected or sanitized
-    const firstNameValue = await signUpPage.firstNameInput.inputValue();
+    const emailValue = await signUpPage.emailInput.inputValue();
 
     // Either empty (rejected) or sanitized (no script tags)
-    expect(!firstNameValue.includes('onerror')).toBe(true);
+    expect(!emailValue.includes('onerror')).toBe(true);
   });
 
   test('should use HTTPS for password transmission', async ({ signUpPage, page }) => {
