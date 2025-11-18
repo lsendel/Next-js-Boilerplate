@@ -296,11 +296,15 @@ jobs:
         env:
           NEXT_PUBLIC_APP_VERSION: ${{ needs.prepare.outputs.version }}
 
+      - name: Convert to Cloudflare format
+        run: pnpm --filter web exec opennextjs-cloudflare build
+        working-directory: apps/web
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ needs.prepare.outputs.environment }}-${{ github.sha }}
-          path: apps/web/.next
+          path: apps/web/.open-next
           retention-days: 7
           compression-level: 6
 
@@ -309,7 +313,8 @@ jobs:
           echo "## 📦 Build Complete" >> $GITHUB_STEP_SUMMARY
           echo "**Environment:** ${{ needs.prepare.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
           echo "**Version:** ${{ needs.prepare.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Size:** $(du -sh apps/web/.next | cut -f1)" >> $GITHUB_STEP_SUMMARY
+          echo "**Next.js Build:** $(du -sh apps/web/.next 2>/dev/null | cut -f1 || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
+          echo "**Cloudflare Build:** $(du -sh apps/web/.open-next | cut -f1)" >> $GITHUB_STEP_SUMMARY
 
   # ============================================================================
   # JOB 6: Deploy to Environment
@@ -346,7 +351,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-${{ needs.prepare.outputs.environment }}-${{ github.sha }}
-          path: apps/web/.next
+          path: apps/web/.open-next
 
       # Apply database migrations before deployment
       - name: Apply D1 migrations
@@ -370,7 +375,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy .open-next --project-name=socialpet --branch=${{ needs.prepare.outputs.environment }}
+          command: pages deploy apps/web/.open-next --project-name=socialpet --branch=${{ needs.prepare.outputs.environment }}
         env:
           # Environment-specific variables
           NEXT_PUBLIC_APP_VERSION: ${{ needs.prepare.outputs.version }}
