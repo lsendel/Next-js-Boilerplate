@@ -16,7 +16,7 @@
     {
       "binding": "DB",
       "database_name": "socialpet-db-production",
-      "database_id": "YOUR_PRODUCTION_D1_DATABASE_ID",
+      "database_id": "1894c80b-52ed-4f1b-94b6-1f8059cb98b9",
       "migrations_dir": "./migrations-d1"
     }
   ],
@@ -74,7 +74,7 @@
         {
           "binding": "DB",
           "database_name": "socialpet-db-dev",
-          "database_id": "YOUR_DEV_D1_DATABASE_ID",
+          "database_id": "af8b36c5-ddee-4bfc-bab8-d3dfb82c80c2",
           "migrations_dir": "./migrations-d1"
         }
       ],
@@ -102,7 +102,7 @@
         {
           "binding": "DB",
           "database_name": "socialpet-db-staging",
-          "database_id": "YOUR_STAGING_D1_DATABASE_ID",
+          "database_id": "e992a2d6-cb96-4670-8ea6-5f0d940e6d73",
           "migrations_dir": "./migrations-d1"
         }
       ],
@@ -131,7 +131,7 @@
         {
           "binding": "DB",
           "database_name": "socialpet-db-test",
-          "database_id": "YOUR_TEST_D1_DATABASE_ID",
+          "database_id": "e5da8a2f-e222-4e08-b315-e825b20363ec",
           "migrations_dir": "./migrations-d1"
         }
       ],
