@@ -143,9 +143,31 @@ describe('Authentication Integration Tests', () => {
     beforeEach(async () => {
       // Create a user for login tests
       const email = `login-test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`;
-      // Generate truly random password to avoid pattern detection
-      const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-      const password = Array.from({ length: 16 }, () => chars[Math.floor(Math.random() * chars.length)]).join('') + 'Xq9!';
+      // Generate truly random password with mixed character types to avoid pattern detection
+      const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+      const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const numbers = '0123456789';
+      const special = '!@#$%^&*';
+
+      // Ensure at least one of each type, then fill with random chars
+      let password = '';
+      password += lowercase[Math.floor(Math.random() * lowercase.length)];
+      password += uppercase[Math.floor(Math.random() * uppercase.length)];
+      password += numbers[Math.floor(Math.random() * numbers.length)];
+      password += special[Math.floor(Math.random() * special.length)];
+
+      // Add more random characters (total length: 20)
+      const allChars = lowercase + uppercase + numbers + special;
+      for (let i = 0; i < 16; i++) {
+        let char;
+        do {
+          char = allChars[Math.floor(Math.random() * allChars.length)];
+        } while (i > 0 && char === password[password.length - 1]); // Avoid consecutive repeats
+        password += char;
+      }
+
+      // Shuffle the password to distribute character types
+      password = password.split('').sort(() => Math.random() - 0.5).join('');
 
       const result = await userService.registerUser({ email, password });
       testUserIds.push(result.user.id);
@@ -477,9 +499,31 @@ describe('Authentication Integration Tests', () => {
 
     beforeEach(async () => {
       const email = `account-test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`;
-      // Generate truly random password to avoid pattern detection
-      const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-      const password = Array.from({ length: 16 }, () => chars[Math.floor(Math.random() * chars.length)]).join('') + 'Xq9!';
+      // Generate truly random password with mixed character types to avoid pattern detection
+      const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+      const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const numbers = '0123456789';
+      const special = '!@#$%^&*';
+
+      // Ensure at least one of each type, then fill with random chars
+      let password = '';
+      password += lowercase[Math.floor(Math.random() * lowercase.length)];
+      password += uppercase[Math.floor(Math.random() * uppercase.length)];
+      password += numbers[Math.floor(Math.random() * numbers.length)];
+      password += special[Math.floor(Math.random() * special.length)];
+
+      // Add more random characters (total length: 20)
+      const allChars = lowercase + uppercase + numbers + special;
+      for (let i = 0; i < 16; i++) {
+        let char;
+        do {
+          char = allChars[Math.floor(Math.random() * allChars.length)];
+        } while (i > 0 && char === password[password.length - 1]); // Avoid consecutive repeats
+        password += char;
+      }
+
+      // Shuffle the password to distribute character types
+      password = password.split('').sort(() => Math.random() - 0.5).join('');
 
       const result = await userService.registerUser({ email, password });
       testUserIds.push(result.user.id);
