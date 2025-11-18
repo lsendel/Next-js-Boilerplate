@@ -182,6 +182,17 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
 
+      - name: Clean test database
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "
+            TRUNCATE TABLE sessions CASCADE;
+            TRUNCATE TABLE users CASCADE;
+            ALTER SEQUENCE users_id_seq RESTART WITH 1;
+            ALTER SEQUENCE sessions_id_seq RESTART WITH 1;
+          "
+        env:
+          PGPASSWORD: postgres
+
       - name: Run integration tests
         run: pnpm --filter web test:integration
         env:
