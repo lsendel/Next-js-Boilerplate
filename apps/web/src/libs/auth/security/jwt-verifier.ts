@@ -1,9 +1,9 @@
 /**
  * JWT Verification Utilities
  * Provides JWT signature verification using Web Crypto API (no external dependencies)
+ * Compatible with Edge Runtime (no Node.js dependencies)
  */
 
-import { Buffer } from 'node:buffer';
 import { securityLogger } from '@/libs/Logger';
 
 export type JWK = {
@@ -37,6 +37,33 @@ export type JWTPayload = {
 };
 
 /**
+ * Decode base64url string to Uint8Array using Web APIs
+ * Compatible with Edge Runtime
+ */
+function base64urlDecode(input: string): Uint8Array {
+  // Convert base64url to base64
+  const base64 = input.replace(/-/g, '+').replace(/_/g, '/');
+  // Pad if necessary
+  const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+  // Decode base64 to binary string
+  const binary = atob(padded);
+  // Convert binary string to Uint8Array
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+/**
+ * Decode base64url string to UTF-8 string
+ */
+function base64urlDecodeToString(input: string): string {
+  const bytes = base64urlDecode(input);
+  return new TextDecoder().decode(bytes);
+}
+
+/**
  * Decode JWT without verification (for header and payload inspection)
  */
 export function decodeJWT(token: string): {
@@ -57,11 +84,11 @@ export function decodeJWT(token: string): {
     }
 
     const header = JSON.parse(
-      Buffer.from(headerPart, 'base64url').toString('utf-8'),
+      base64urlDecodeToString(headerPart),
     ) as JWTHeader;
 
     const payload = JSON.parse(
-      Buffer.from(payloadPart, 'base64url').toString('utf-8'),
+      base64urlDecodeToString(payloadPart),
     ) as JWTPayload;
 
     return {
@@ -180,8 +207,8 @@ export async function verifyJWTSignature(
     const signedData = `${headerPart}.${payloadPart}`;
     const signedDataBuffer = new TextEncoder().encode(signedData);
 
-    // Decode the signature from base64url
-    const signatureBuffer = Buffer.from(signaturePart, 'base64url');
+    // Decode the signature from base64url using Web APIs
+    const signatureBuffer = base64urlDecode(signaturePart);
 
     // Verify the signature
     return await crypto.subtle.verify(
