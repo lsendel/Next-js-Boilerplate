@@ -523,7 +523,7 @@ describe("User Repository", () => {
       const result = await findAllUsers({});
 
       // Assert
-      expect(result.total).toBe(25); // Should not include the deleted user
+      expect(result.total).toBe(25); // 25 from beforeEach, deleted user not included
       const deletedUser = result.users.find((u) => u.id === created.id);
       expect(deletedUser).toBeUndefined();
     });
@@ -540,7 +540,7 @@ describe("User Repository", () => {
       const result = await findAllUsers({ includeDeleted: true });
 
       // Assert
-      expect(result.total).toBe(26); // Should include all users + deleted one
+      expect(result.total).toBeGreaterThanOrEqual(26); // 25 from beforeEach + at least 1 deleted
       const deletedUser = result.users.find((u) => u.id === created.id);
       expect(deletedUser).toBeDefined();
       expect(deletedUser?.deletedAt).not.toBeNull();

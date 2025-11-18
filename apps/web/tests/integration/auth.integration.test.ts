@@ -143,7 +143,9 @@ describe('Authentication Integration Tests', () => {
     beforeEach(async () => {
       // Create a user for login tests
       const email = `login-test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`;
-      const password = `Aa1!${Date.now().toString().substring(0, 8)}Zz9@${Math.random().toString(36).substring(2, 8)}`;
+      // Generate truly random password to avoid pattern detection
+      const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+      const password = Array.from({ length: 16 }, () => chars[Math.floor(Math.random() * chars.length)]).join('') + 'Xq9!';
 
       const result = await userService.registerUser({ email, password });
       testUserIds.push(result.user.id);
@@ -475,9 +477,9 @@ describe('Authentication Integration Tests', () => {
 
     beforeEach(async () => {
       const email = `account-test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`;
-      // Generate strong password: uppercase, lowercase, number, special char, no patterns
-      const randomStr = Math.random().toString(36).substring(2, 10);
-      const password = `Xp${randomStr}9!Bq${Date.now().toString().substring(8)}@Ky7`;
+      // Generate truly random password to avoid pattern detection
+      const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+      const password = Array.from({ length: 16 }, () => chars[Math.floor(Math.random() * chars.length)]).join('') + 'Xq9!';
 
       const result = await userService.registerUser({ email, password });
       testUserIds.push(result.user.id);
