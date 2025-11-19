@@ -41,15 +41,15 @@
     }
   ],
 
-  // Logpush for production monitoring
-  "logpush": true,
+  // Logpush for production monitoring (disabled until configured)
+  // "logpush": true,
 
-  // Tail consumers for real-time logs
-  "tail_consumers": [
-    {
-      "service": "socialpet-log-consumer"
-    }
-  ],
+  // Tail consumers for real-time logs (disabled until service exists)
+  // "tail_consumers": [
+  //   {
+  //     "service": "socialpet-log-consumer"
+  //   }
+  // ],
 
   // Routes configuration - PRODUCTION
   // Primary domain: socialpet.io
