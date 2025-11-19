@@ -300,7 +300,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ needs.prepare.outputs.environment }}-${{ github.sha }}
-          path: apps/web/.open-next
+          path: .open-next
           retention-days: 7
           compression-level: 6
 
@@ -310,7 +310,7 @@ jobs:
           echo "**Environment:** ${{ needs.prepare.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
           echo "**Version:** ${{ needs.prepare.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "**Next.js Build:** $(du -sh apps/web/.next 2>/dev/null | cut -f1 || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
-          echo "**Cloudflare Build:** $(du -sh apps/web/.open-next | cut -f1)" >> $GITHUB_STEP_SUMMARY
+          echo "**Cloudflare Build:** $(du -sh .open-next | cut -f1)" >> $GITHUB_STEP_SUMMARY
 
   # ============================================================================
   # JOB 6: Deploy to Environment
@@ -347,7 +347,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-${{ needs.prepare.outputs.environment }}-${{ github.sha }}
-          path: apps/web/.open-next
+          path: .open-next
 
       # Apply database migrations before deployment
       - name: Apply D1 migrations
@@ -371,7 +371,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy apps/web/.open-next --project-name=socialpet --branch=${{ needs.prepare.outputs.environment }}
+          command: pages deploy .open-next --project-name=socialpet --branch=${{ needs.prepare.outputs.environment }}
         env:
           # Environment-specific variables
           NEXT_PUBLIC_APP_VERSION: ${{ needs.prepare.outputs.version }}
