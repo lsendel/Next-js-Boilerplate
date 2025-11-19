@@ -17,7 +17,10 @@ export const Env = createEnv({
     CLOUDFLARE_API_TOKEN: z.string().optional(),
     D1_DATABASE_ID: z.string().optional(),
     // Sentry
-    SENTRY_DSN: z.string().url().optional(),
+    SENTRY_DSN: z.preprocess(
+      val => (val === '' ? undefined : val),
+      z.string().url().optional(),
+    ),
   },
   client: {
     NEXT_PUBLIC_APP_URL: z.string().optional(),
