@@ -217,7 +217,7 @@ export async function verifyJWTSignature(
         name: 'RSASSA-PKCS1-v1_5',
       },
       publicKey,
-      signatureBuffer,
+      signatureBuffer as BufferSource,
       signedDataBuffer,
     );
   } catch (error) {
