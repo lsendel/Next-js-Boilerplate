@@ -3,8 +3,36 @@
  * Provides JWT signature verification using Web Crypto API (no external dependencies)
  */
 
-import { Buffer } from 'node:buffer';
 import { securityLogger } from '@/libs/Logger';
+
+/**
+ * Decode base64url string to Uint8Array (Edge-compatible)
+ */
+function base64urlDecode(input: string): Uint8Array {
+  // Convert base64url to base64
+  const base64 = input.replace(/-/g, '+').replace(/_/g, '/');
+  // Add padding if needed
+  const padded = base64.padEnd(
+    base64.length + ((4 - (base64.length % 4)) % 4),
+    '=',
+  );
+  // Decode using built-in atob
+  const binary = atob(padded);
+  // Convert to Uint8Array
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+/**
+ * Decode base64url string to UTF-8 string (Edge-compatible)
+ */
+function base64urlDecodeToString(input: string): string {
+  const bytes = base64urlDecode(input);
+  return new TextDecoder().decode(bytes);
+}
 
 export type JWK = {
   kid: string;
@@ -57,11 +85,11 @@ export function decodeJWT(token: string): {
     }
 
     const header = JSON.parse(
-      Buffer.from(headerPart, 'base64url').toString('utf-8'),
+      base64urlDecodeToString(headerPart),
     ) as JWTHeader;
 
     const payload = JSON.parse(
-      Buffer.from(payloadPart, 'base64url').toString('utf-8'),
+      base64urlDecodeToString(payloadPart),
     ) as JWTPayload;
 
     return {
@@ -181,7 +209,7 @@ export async function verifyJWTSignature(
     const signedDataBuffer = new TextEncoder().encode(signedData);
 
     // Decode the signature from base64url
-    const signatureBuffer = Buffer.from(signaturePart, 'base64url');
+    const signatureBuffer = base64urlDecode(signaturePart);
 
     // Verify the signature
     return await crypto.subtle.verify(
