@@ -17,6 +17,35 @@ import {
 import * as userRepo from "@/server/db/repositories/user.repository";
 import * as sessionRepo from "@/server/db/repositories/session.repository";
 
+// Helper function to generate truly random passwords that avoid patterns
+function generateRandomPassword(): string {
+  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const numbers = '0123456789';
+  const special = '!@#$%^&*';
+
+  // Ensure at least one of each type
+  let password = '';
+  password += lowercase[Math.floor(Math.random() * lowercase.length)];
+  password += uppercase[Math.floor(Math.random() * uppercase.length)];
+  password += numbers[Math.floor(Math.random() * numbers.length)];
+  password += special[Math.floor(Math.random() * special.length)];
+
+  // Add more random characters (total length: 20)
+  const allChars = lowercase + uppercase + numbers + special;
+  for (let i = 0; i < 16; i++) {
+    let char;
+    do {
+      char = allChars[Math.floor(Math.random() * allChars.length)];
+    } while (i > 0 && char === password[password.length - 1]); // Avoid consecutive repeats
+    password += char;
+  }
+
+  // Shuffle the password to distribute character types
+  password = password.split('').sort(() => Math.random() - 0.5).join('');
+  return password;
+}
+
 // Test data
 let userService: UserService;
 let testUserIds: number[] = [];
@@ -39,7 +68,7 @@ describe("UserService", () => {
     it("should register a new user with valid data", async () => {
       const userData = {
         email: `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`,
-        password: "StrongPass123!@#",
+        password: generateRandomPassword(),
         firstName: "Test",
         lastName: "User",
       };
@@ -60,7 +89,7 @@ describe("UserService", () => {
     it("should normalize email to lowercase", async () => {
       const userData = {
         email: `TEST-${Date.now()}@EXAMPLE.COM`,
-        password: "StrongPass123!@#",
+        password: generateRandomPassword(),
       };
 
       const result = await userService.registerUser(userData);
@@ -72,7 +101,7 @@ describe("UserService", () => {
     it("should throw ValidationError for invalid email format", async () => {
       const userData = {
         email: "invalid-email",
-        password: "StrongPass123!@#",
+        password: generateRandomPassword(),
       };
 
       await expect(userService.registerUser(userData)).rejects.toThrow(
@@ -84,7 +113,7 @@ describe("UserService", () => {
       const email = `duplicate-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`;
       const userData = {
         email,
-        password: "StrongPass123!@#",
+        password: generateRandomPassword(),
       };
 
       const result = await userService.registerUser(userData);
@@ -109,7 +138,7 @@ describe("UserService", () => {
     it("should hash password before storing", async () => {
       const userData = {
         email: `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`,
-        password: "StrongPass123!@#",
+        password: generateRandomPassword(),
       };
 
       const result = await userService.registerUser(userData);
@@ -124,7 +153,7 @@ describe("UserService", () => {
     it("should set displayName from firstName and lastName", async () => {
       const userData = {
         email: `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`,
-        password: "StrongPass123!@#",
+        password: generateRandomPassword(),
         firstName: "John",
         lastName: "Doe",
       };
@@ -138,7 +167,7 @@ describe("UserService", () => {
     it("should set displayName from firstName if no lastName", async () => {
       const userData = {
         email: `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`,
-        password: "StrongPass123!@#",
+        password: generateRandomPassword(),
         firstName: "John",
       };
 
@@ -151,7 +180,7 @@ describe("UserService", () => {
     it("should set displayName from email username if no name provided", async () => {
       const userData = {
         email: `johndoe-${Date.now()}@example.com`,
-        password: "StrongPass123!@#",
+        password: generateRandomPassword(),
       };
 
       const result = await userService.registerUser(userData);
@@ -163,7 +192,7 @@ describe("UserService", () => {
     it("should create session with 30-day expiration", async () => {
       const userData = {
         email: `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`,
-        password: "StrongPass123!@#",
+        password: generateRandomPassword(),
       };
 
       const result = await userService.registerUser(userData);
@@ -287,7 +316,7 @@ describe("UserService", () => {
     beforeEach(async () => {
       const result = await userService.registerUser({
         email: `profile-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`,
-        password: "StrongPass123!@#",
+        password: generateRandomPassword(),
         firstName: "Original",
         lastName: "Name",
       });
@@ -340,8 +369,8 @@ describe("UserService", () => {
 
     beforeEach(async () => {
       const email = `password-${Date.now()}@example.com`;
-      // Use a unique password unlikely to be breached
-      const password = `OldPass${Date.now()}!SecureTest#${Math.random().toString(36).substring(7)}`;
+      // Use a truly random password to avoid pattern detection
+      const password = generateRandomPassword();
       const result = await userService.registerUser({ email, password });
       testUser = {
         email,
@@ -352,7 +381,7 @@ describe("UserService", () => {
     });
 
     it("should change password with correct old password", async () => {
-      const newPassword = `NewPass${Date.now()}!SecureTest#${Math.random().toString(36).substring(7)}`;
+      const newPassword = generateRandomPassword();
       await userService.changePassword(testUser.userId, {
         oldPassword: testUser.password,
         newPassword,
@@ -368,7 +397,7 @@ describe("UserService", () => {
     });
 
     it("should throw UnauthorizedError for incorrect old password", async () => {
-      const newPassword = `NewPass${Date.now()}!SecureTest#${Math.random().toString(36).substring(7)}`;
+      const newPassword = generateRandomPassword();
       await expect(
         userService.changePassword(testUser.userId, {
           oldPassword: "WrongOldPassword",
@@ -432,7 +461,7 @@ describe("UserService", () => {
       const email = `reset-${Date.now()}@example.com`;
       const result = await userService.registerUser({
         email,
-        password: "StrongPass123!@#",
+        password: generateRandomPassword(),
       });
       testUser = {
         email,
@@ -486,7 +515,7 @@ describe("UserService", () => {
     beforeEach(async () => {
       const result = await userService.registerUser({
         email: `getuser-${Date.now()}@example.com`,
-        password: "StrongPass123!@#",
+        password: generateRandomPassword(),
       });
       testUserId = result.user.id;
       testUserIds.push(testUserId);
@@ -520,7 +549,7 @@ describe("UserService", () => {
     beforeEach(async () => {
       const result = await userService.registerUser({
         email: `deactivate-${Date.now()}@example.com`,
-        password: "StrongPass123!@#",
+        password: generateRandomPassword(),
       });
       testUserId = result.user.id;
       testUserIds.push(testUserId);
@@ -554,7 +583,7 @@ describe("UserService", () => {
     beforeEach(async () => {
       const result = await userService.registerUser({
         email: `delete-${Date.now()}@example.com`,
-        password: "StrongPass123!@#",
+        password: generateRandomPassword(),
       });
       testUserId = result.user.id;
       testUserIds.push(testUserId);
