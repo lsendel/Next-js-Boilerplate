@@ -5,6 +5,8 @@
  * Uses direct PostgreSQL connection to delete data and reset sequences.
  */
 
+/* eslint-disable no-console */
+
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { sql } from 'drizzle-orm';
