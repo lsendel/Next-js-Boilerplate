@@ -291,13 +291,10 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           restore-nextjs-cache: true
 
-      - name: Build application
-        run: pnpm --filter web build:next
+      - name: Build for Cloudflare
+        run: pnpm --filter web exec opennextjs-cloudflare build
         env:
           NEXT_PUBLIC_APP_VERSION: ${{ needs.prepare.outputs.version }}
-
-      - name: Convert to Cloudflare format
-        run: pnpm --filter web exec opennextjs-cloudflare build --skipBuild
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
